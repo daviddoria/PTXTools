@@ -15,6 +15,7 @@
 
 // VTK
 #include <vtkAppendPolyData.h>
+#include <vtkFloatArray.h>
 #include <vtkPoints.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
@@ -307,6 +308,16 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
   colors->SetNumberOfComponents(3);
   colors->SetName("Colors");
 
+  vtkSmartPointer<vtkFloatArray> depthArray =
+    vtkSmartPointer<vtkFloatArray>::New();
+  depthArray->SetNumberOfComponents(1);
+  depthArray->SetName("Depths");
+
+  vtkSmartPointer<vtkIntArray> originalPixelArray =
+    vtkSmartPointer<vtkIntArray>::New();
+  originalPixelArray->SetNumberOfComponents(2);
+  originalPixelArray->SetName("OriginalPixel");
+
   // Iterate through the full image extracting the coordinate and color information and adding them to their respective arrays
   itk::ImageRegionConstIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
@@ -322,6 +333,13 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
       {
       colors->InsertNextTupleValue(rgb);
       points->InsertNextPoint(pixel.X, pixel.Y, pixel.Z);
+      depthArray->InsertNextValue(pixel.GetDepth());
+
+      int originalPixel[2];
+      originalPixel[0] = imageIterator.GetIndex()[0];
+      originalPixel[1] = imageIterator.GetIndex()[1];
+
+      originalPixelArray->InsertNextTupleValue(originalPixel);
       }
 
     ++imageIterator;
@@ -332,6 +350,8 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
     vtkSmartPointer<vtkPolyData>::New();
   polydata->SetPoints(points);
   polydata->GetPointData()->SetScalars(colors);
+  polydata->GetPointData()->AddArray(depthArray);
+  polydata->GetPointData()->AddArray(originalPixelArray);
 
   // Create a vertex at each point
   vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
@@ -1258,13 +1278,15 @@ void PTXImage::OrthogonalProjection(std::string filename)
     plane->ProjectPoint(point, projected);
 
     projectedPoints->InsertNextPoint(projected);
+
     }
 
   // Create a polydata of the projected points
   vtkSmartPointer<vtkPolyData> projectedPointsPolydata =
     vtkSmartPointer<vtkPolyData>::New();
-  projectedPointsPolydata->SetPoints(projectedPoints);
-  projectedPointsPolydata->GetPointData()->SetScalars(pointCloud->GetPointData()->GetScalars());
+  projectedPointsPolydata->ShallowCopy(pointCloud); // copy the colors and depths
+  projectedPointsPolydata->SetPoints(projectedPoints); // replace the point coordinates
+  //projectedPointsPolydata->GetPointData()->SetScalars(pointCloud->GetPointData()->GetScalars());
 
   {
   // Output projected points for debugging
@@ -1443,6 +1465,13 @@ void PTXImage::OrthogonalProjection(std::string filename)
   binSize[0] = newBounds[1] / static_cast<float>(projectedImage->GetLargestPossibleRegion().GetSize()[0]); // xmax / width
   binSize[1] = newBounds[3] / static_cast<float>(projectedImage->GetLargestPossibleRegion().GetSize()[1]); // ymax / height
 
+  // Create an image to track the depths of previously projected pixels
+  typedef itk::Image<float, 2> DepthImageType;
+  DepthImageType::Pointer depthImage = DepthImageType::New();
+  depthImage->SetRegions(this->FullImage->GetLargestPossibleRegion());
+  depthImage->Allocate();
+  depthImage->FillBuffer(itk::NumericTraits<float>::max());
+
   for(unsigned int i = 0; i < static_cast<unsigned int>(shiftTransformFilter->GetOutput()->GetNumberOfPoints()); i++)
     {
     // Divide the 3D coordinates by the number of pixels (aka bins) to get the image coordinate
@@ -1462,8 +1491,28 @@ void PTXImage::OrthogonalProjection(std::string filename)
     color[2] = pointColor[2];
 
     //std::cout << "color: " << color << std::endl;
+    // Ensure the projected point is the closest to the camera to be projected into this bin
+    int originalPixel[2];
+    vtkIntArray::SafeDownCast(shiftTransformFilter->GetOutput()->GetPointData()->GetArray("OriginalPixel"))->GetTupleValue(i, originalPixel);
 
-    projectedImage->SetPixel(index, color);
+    itk::Index<2> originalPixelIndex;
+    originalPixelIndex[0] = originalPixel[0];
+    originalPixelIndex[1] = originalPixel[1];
+
+    if(depthImage->GetPixel(index) < FullImage->GetPixel(originalPixelIndex).GetDepth())
+      {
+      // do nothing, there is already a closer pixel projected
+      std::cout << "Trying to project pixel from depth " << FullImage->GetPixel(originalPixelIndex).GetDepth()
+                << " but there is already a projected pixel from depth " << depthImage->GetPixel(index) << std::endl;
+      }
+    else
+      {
+      // Project the point into this bin
+      projectedImage->SetPixel(index, color);
+
+      // Update the "depth buffer" to track previously projected pixels
+      depthImage->SetPixel(index, FullImage->GetPixel(originalPixelIndex).GetDepth());
+      }
     }
 
   typedef  itk::ImageFileWriter<RGBImageType> RGBWriterType;
