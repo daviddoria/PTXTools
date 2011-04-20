@@ -13,6 +13,9 @@ int main (int argc, char *argv[])
 
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
+  
+  VectorType principalAxis = GetPrincipalAxis();
+  
   ptxImage.OrthogonalProjection(outputFilename);
 
   return EXIT_SUCCESS;

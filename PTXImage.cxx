@@ -1234,11 +1234,11 @@ void PTXImage::WriteProjectionPlane(const std::string filename)
   writer->Write();
 }
 
-void PTXImage::OrthogonalProjection(std::string filename)
+void PTXImage::OrthogonalProjection(VectorType axis)
 {
-  WriteProjectionPlane("projectionPlane.vtp"); // for debugging
+  //WriteProjectionPlane("projectionPlane.vtp"); // for debugging
 
-  VectorType principalAxis = GetPrincipalAxis();
+  
 
   // Create a plane through the origin "aimed" at the scanned points
   vtkSmartPointer<vtkPlane> plane =
@@ -1305,17 +1305,13 @@ void PTXImage::OrthogonalProjection(std::string filename)
   // Compute the projection of the vector pointing to the top-center pixel on the projection plane
 
   // Get top center pixel
-  itk::Index<2> topCenterIndex;
-  topCenterIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
-  topCenterIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1;
+  itk::Index<2> topCenterIndex = FindValidTopCenterPixel();
+  std::cout << "topCenterIndex: " << topCenterIndex << std::endl;
+  std::cout << "image dims: " << this->FullImage->GetLargestPossibleRegion().GetSize() << std::endl;
 
   FullImageType::PixelType topCenterPixel = this->FullImage->GetPixel(topCenterIndex);
-
-  if(!topCenterPixel.Valid)
-    {
-    std::cerr << "topCenterPixel is not valid!" << std::endl;
-    exit(-1);
-    }
+  std::cout << "topCenterPixel depth: " << topCenterPixel.GetDepth() << std::endl;;
+  std::cout << "topCenterPixel: " << topCenterPixel << std::endl;;
 
   {
   // for debugging only
@@ -1339,16 +1335,17 @@ void PTXImage::OrthogonalProjection(std::string filename)
   v[0] = topCenterPixel.X;
   v[1] = topCenterPixel.Y;
   v[2] = topCenterPixel.Z;
+  std::cout << "v: " << v[0] << " " << v[1] << " " << v[2] << std::endl;
 
   double up[3];
   plane->ProjectVector(v, up);
+  std::cout << "up: " << up[0] << " " << up[1] << " " << up[2] << std::endl;
 
   // We will eventually create an image with orientation described by 'up' and the cross product of 'up' and 'principalAxis'
 
   double horizontalAxis[3];
   double principalAxisArray[3] = {principalAxis[0], principalAxis[1], principalAxis[2]};
   vtkMath::Cross(principalAxisArray, up, horizontalAxis);
-
 
   // Create the standard frame
   float standardFrameOrigin[3] = {0,0,0};
@@ -1520,4 +1517,40 @@ void PTXImage::OrthogonalProjection(std::string filename)
   writer->SetFileName(filename);
   writer->SetInput(projectedImage);
   writer->Update();
+}
+
+itk::Index<2> PTXImage::FindValidTopCenterPixel()
+{
+  itk::Index<2> topCenterIndex;
+  topCenterIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
+  topCenterIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1;
+
+  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+    {
+    return topCenterIndex;
+    }
+
+  topCenterIndex[1] -= 1;
+  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+    {
+    return topCenterIndex;
+    }
+
+  topCenterIndex[1] += 1;
+  topCenterIndex[0] += 1;
+  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+    {
+    return topCenterIndex;
+    }
+
+  topCenterIndex[0] -= 2;
+  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+    {
+    return topCenterIndex;
+    }
+
+  // if we get to here, all pixels around the top center pixel are invalid
+  std::cerr << "All pixels around the top center pixel are invalid!" << std::endl;
+  exit(-1);
+  return topCenterIndex;
 }

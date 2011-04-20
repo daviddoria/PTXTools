@@ -116,6 +116,8 @@ public:
   float DistanceBetweenPoints(PTXPixel a, PTXPixel b);
 
   void OrthogonalProjection(std::string filename);
+
+  itk::Index<2> FindValidTopCenterPixel();
 };
 
 template<typename TImage>
