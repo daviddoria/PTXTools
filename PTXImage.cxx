@@ -1,17 +1,23 @@
 #include "PTXImage.h"
 #include "Frame.h"
+#include "Helpers.h"
 
 // ITK
+#include "itkAzimuthElevationToCartesianTransform.h"
+#include "itkCompose3DCovariantVectorImageFilter.h"
+#include "itkConstNeighborhoodIterator.h"
+#include "itkConstantBoundaryCondition.h"
 #include "itkCovariantVector.h"
+#include "itkDerivativeImageFilter.h"
 #include "itkImageFileWriter.h"
 #include "itkImageRegionIterator.h"
 #include "itkImageRegionConstIteratorWithIndex.h"
-#include "itkRescaleIntensityImageFilter.h"
+#include "itkLaplacianRecursiveGaussianImageFilter.h"
 #include "itkPoint.h"
-#include "itkAzimuthElevationToCartesianTransform.h"
+#include "itkRegionOfInterestImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
 #include "itkShrinkImageFilter.h"
-#include "itkConstNeighborhoodIterator.h"
-#include "itkConstantBoundaryCondition.h"
+#include "itkTileImageFilter.h"
 
 // VTK
 #include <vtkAppendPolyData.h>
@@ -39,6 +45,36 @@ PTXImage::PTXImage()
   this->FullImage = FullImageType::New();
 }
 
+void PTXImage::AppendPTXRight(PTXImage ptxImage)
+{
+  if(ptxImage.GetHeight() != this->GetHeight())
+    {
+    std::cerr << "Images to append side-by-side must be the same height!" << std::endl
+              << "Current image is height " << this->GetHeight() << " while image to append is "
+              << " height " << ptxImage.GetHeight() << std::endl;
+    return;
+    }
+  // Tile the images side-by-side
+  typedef itk::TileImageFilter< FullImageType, FullImageType > TileFilterType;
+
+  TileFilterType::Pointer tileImageFilter = TileFilterType::New();
+
+  // The following means "append to the right"
+  itk::FixedArray< unsigned int, 2 > layout;
+  layout[0] = 2;
+  layout[1] = 0;
+  tileImageFilter->SetLayout( layout );
+
+  PTXPixel fillerValue;
+  tileImageFilter->SetDefaultPixelValue( fillerValue );
+  
+  tileImageFilter->SetInput(0, this->FullImage);
+  tileImageFilter->SetInput(1, ptxImage.GetFullImage());
+  tileImageFilter->Update();
+
+  Helpers::DeepCopy<FullImageType>(tileImageFilter->GetOutput(), this->FullImage);
+}
+
 void PTXImage::CountInvalidPoints()
 {
   itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
@@ -57,6 +93,183 @@ void PTXImage::CountInvalidPoints()
     }
 
   std::cout << "There are " << numberOfInvalidPoints << " invalid points." << std::endl;
+}
+
+void PTXImage::WriteXYZ(const std::string filePrefix)
+{
+  typedef itk::ImageFileWriter< XYZImageType > XYZWriterType;
+  XYZWriterType::Pointer xyzWriter = XYZWriterType::New();
+  std::stringstream ssXYZ;
+  ssXYZ << filePrefix << "_xyz.mhd";
+  xyzWriter->SetFileName(ssXYZ.str());
+  xyzWriter->SetInput(GetXYZImage());
+  xyzWriter->Update();
+}
+
+PTXImage::XYZImageType::Pointer PTXImage::GetXYZImage()
+{
+  typedef itk::Compose3DCovariantVectorImageFilter<FloatImageType,
+                              XYZImageType> ComposeCovariantVectorImageFilterType;
+ 
+  ComposeCovariantVectorImageFilterType::Pointer composeFilter = ComposeCovariantVectorImageFilterType::New();
+ 
+  composeFilter->SetInput1(GetCoordinateImage(0));
+  composeFilter->SetInput2(GetCoordinateImage(1));
+  composeFilter->SetInput3(GetCoordinateImage(2));
+  composeFilter->Update();
+  
+  return composeFilter->GetOutput();
+}
+
+void PTXImage::WriteXYZLaplacian(const std::string filePrefix)
+{
+  typedef itk::ImageFileWriter< XYZImageType > XYZWriterType;
+  XYZWriterType::Pointer xyzWriter = XYZWriterType::New();
+  std::stringstream ssXYZ;
+  ssXYZ << filePrefix << "_xyzLaplacian.mhd";
+  xyzWriter->SetFileName(ssXYZ.str());
+  xyzWriter->SetInput(GetXYZLaplacian());
+  xyzWriter->Update();
+}
+
+PTXImage::XYZImageType::Pointer PTXImage::GetXYZLaplacian()
+{
+  typedef itk::Compose3DCovariantVectorImageFilter<FloatImageType,
+                              XYZImageType> ComposeCovariantVectorImageFilterType;
+ 
+  ComposeCovariantVectorImageFilterType::Pointer composeFilter = ComposeCovariantVectorImageFilterType::New();
+ 
+  composeFilter->SetInput1(GetLaplacian(0));
+  composeFilter->SetInput2(GetLaplacian(1));
+  composeFilter->SetInput3(GetLaplacian(2));
+  composeFilter->Update();
+  
+  return composeFilter->GetOutput();
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetCoordinateImage(unsigned int dimension)
+{
+  itk::ImageRegionConstIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+ 
+  FloatImageType::Pointer image = FloatImageType::New();
+  image->SetRegions(this->FullImage->GetLargestPossibleRegion());
+  image->Allocate();
+  image->FillBuffer(0);
+  
+  while(!imageIterator.IsAtEnd())
+    {
+    PTXPixel pixel = imageIterator.Get();
+    image->SetPixel(imageIterator.GetIndex(), pixel.GetCoordinate(dimension));
+    ++imageIterator;
+    }
+    
+  return image;
+}
+
+void PTXImage::WriteFloatImage(FloatImageType::Pointer image, const std::string filename)
+{
+  typedef itk::ImageFileWriter< FloatImageType > FloatWriterType;
+  FloatWriterType::Pointer writer = FloatWriterType::New();
+  writer->SetFileName(filename);
+  writer->SetInput(image);
+  writer->Update();
+}
+
+void PTXImage::WriteX(const std::string filePrefix)
+{
+  std::stringstream ssX;
+  ssX << filePrefix << "_x.mhd";
+  WriteFloatImage(GetXImage(), ssX.str());
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetXImage()
+{
+  return GetCoordinateImage(0);
+}
+
+void PTXImage::WriteY(const std::string filePrefix)
+{
+  std::stringstream ss;
+  ss << filePrefix << "_y.mhd";
+  WriteFloatImage(GetYImage(), ss.str());
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetYImage()
+{
+  return GetCoordinateImage(1);
+}
+
+void PTXImage::WriteZ(const std::string filePrefix)
+{
+  std::stringstream ss;
+  ss << filePrefix << "_z.mhd";
+  WriteFloatImage(GetZImage(), ss.str());
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetZImage()
+{
+  return GetCoordinateImage(2);
+}
+  
+PTXImage::FloatImageType::Pointer PTXImage::GetLaplacian(unsigned int dimension)
+{
+#if 0
+  typedef itk::DerivativeImageFilter<FloatImageType, FloatImageType >  DerivativeFilterType;
+ 
+  // Create and setup a derivative filter
+  DerivativeFilterType::Pointer derivativeFilter = DerivativeFilterType::New();
+  derivativeFilter->SetInput( GetCoordinateImage(dimension) );
+  derivativeFilter->SetDirection(dimension);
+  derivativeFilter->Update();
+  
+  return derivativeFilter->GetOutput();
+  
+#endif
+
+  typedef itk::LaplacianRecursiveGaussianImageFilter<
+    FloatImageType, FloatImageType >  LaplacianFilterType;
+ 
+  LaplacianFilterType::Pointer laplacianFilter = LaplacianFilterType::New();
+  laplacianFilter->SetInput( GetCoordinateImage(dimension) );
+  laplacianFilter->Update();
+  
+  return laplacianFilter->GetOutput();
+}
+
+void PTXImage::WriteXLaplacian(const std::string filePrefix)
+{
+  std::stringstream ss;
+  ss << filePrefix << "_xLaplacian.mhd";
+  WriteFloatImage(GetXLaplacian(), ss.str());
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetXLaplacian()
+{
+  return GetLaplacian(0);
+}
+
+void PTXImage::WriteYLaplacian(const std::string filePrefix)
+{
+  std::stringstream ss;
+  ss << filePrefix << "_yLaplacian.mhd";
+  WriteFloatImage(GetYLaplacian(), ss.str());
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetYLaplacian()
+{
+  return GetLaplacian(1);
+}
+
+void PTXImage::WriteZLaplacian(const std::string filePrefix)
+{
+  std::stringstream ss;
+  ss << filePrefix << "_zLaplacian.mhd";
+  WriteFloatImage(GetZLaplacian(), ss.str());
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetZLaplacian()
+{
+  return GetLaplacian(2);
 }
 
 void PTXImage::WriteDepthThresholdMask(std::string& filename, float depthThreshold)
@@ -280,14 +493,26 @@ void PTXImage::CreateRGBImage(RGBImageType::Pointer image)
 
 }
 
-void PTXImage::WriteRGBImage(std::string filename)
+void PTXImage::WriteEverything(std::string filePrefix)
+{
+  WritePTX(filePrefix);
+  
+  WriteRGBImage(filePrefix);
+  
+  WriteDepthImage(filePrefix);
+  
+  WritePointCloud(filePrefix);
+
+}
+
+void PTXImage::WriteRGBImage(std::string filePrefix)
 {
   // This a convenience function which simply calls CreateRGBImage and then writes the result to a file
   RGBImageType::Pointer image = RGBImageType::New();
   CreateRGBImage(image);
 
   std::stringstream ss;
-  ss << filename << "_RGB.png";
+  ss << filePrefix << "_RGB.png";
 
   typedef  itk::ImageFileWriter< RGBImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -362,11 +587,11 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
   pointCloud->ShallowCopy(vertexGlyphFilter->GetOutput());
 }
 
-void PTXImage::WritePointCloud(std::string filename)
+void PTXImage::WritePointCloud(std::string filePrefix)
 {
   // This a convenience function which simply calls CreatePointCloud and then writes the result to a file
   std::stringstream ss;
-  ss << filename << ".vtp";
+  ss << filePrefix << ".vtp";
 
   vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
   CreatePointCloud(pointCloud);
@@ -435,6 +660,33 @@ void PTXImage::WriteDepthImage(std::string filePrefix)
 
 }
 
+void PTXImage::WriteDepthLaplacian(const std::string filePrefix)
+{
+  FloatImageType::Pointer image = GetDepthLaplacian();
+
+  std::stringstream ss;
+  ss << filePrefix << "_DepthLaplacian.mhd";
+
+  typedef  itk::ImageFileWriter< FloatImageType > WriterType;
+  WriterType::Pointer writer = WriterType::New();
+  writer->SetFileName(ss.str());
+  writer->SetInput(image);
+  writer->Update();
+}
+
+PTXImage::FloatImageType::Pointer PTXImage::GetDepthLaplacian()
+{
+  FloatImageType::Pointer depthImage = FloatImageType::New();
+  CreateDepthImage(depthImage);
+  
+  typedef itk::LaplacianRecursiveGaussianImageFilter<
+    FloatImageType, FloatImageType >  LaplacianFilterType;
+  LaplacianFilterType::Pointer laplacianFilter = LaplacianFilterType::New();
+  laplacianFilter->SetInput( depthImage );
+  laplacianFilter->Update();
+
+  return laplacianFilter->GetOutput();
+}
 
 void PTXImage::CreateIntensityImage(FloatImageType::Pointer image)
 {
@@ -550,6 +802,66 @@ void PTXImage::ReplaceDepth(itk::Image<float, 2>::Pointer depthImage)
 
 }
 
+void PTXImage::ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer rgb)
+{
+  // Setup iterators
+  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<itk::Image<itk::CovariantVector<float, 3>, 2> > rgbIterator(rgb, rgb->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    // Get the old point
+    PTXPixel pixel = imageIterator.Get();
+
+    // Copy the color from the RGB image
+    pixel.R = rgbIterator.Get()[0];
+    pixel.G = rgbIterator.Get()[1];
+    pixel.B = rgbIterator.Get()[2];
+    imageIterator.Set(pixel);
+  
+    if(pixel.Valid)
+      {
+
+      }
+
+    ++imageIterator;
+    ++rgbIterator;  
+    }
+
+}
+
+
+void PTXImage::ReplaceXYZ(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer xyz)
+{
+  // Setup iterators
+  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<itk::Image<itk::CovariantVector<float, 3>, 2> > xyzIterator(xyz, xyz->GetLargestPossibleRegion());
+
+  unsigned int newPoints = 0; // These points were previously invalid. This is just record keeping for fun.
+  
+  while(!imageIterator.IsAtEnd())
+    {
+    // Get the old point
+    PTXPixel pixel = imageIterator.Get();
+
+    // Copy the point from the XYZ image
+    pixel.X = xyzIterator.Get()[0];
+    pixel.Y = xyzIterator.Get()[1];
+    pixel.Z = xyzIterator.Get()[2];
+    imageIterator.Set(pixel);
+  
+    if(pixel.Valid)
+      {
+      newPoints++;
+      }
+
+    ++imageIterator;
+    ++xyzIterator;  
+    }
+
+  std::cout << "There were " << newPoints << " new points (previously invalid)" << std::endl;
+  
+}
 
 void PTXImage::ReplaceRGBD(itk::Image<itk::CovariantVector<float, 4>, 2>::Pointer rgbd)
 {
@@ -968,7 +1280,7 @@ itk::Index<2> PTXImage::FindNearestValidPixel(itk::Index<2> pixel, itk::Offset<2
   // This function finds the nearest valid pixel along a row or column (specified by offset) of an image
   itk::Index<2> currentPixel = pixel;
 
-  itk::Size<2> size = this->FullImage->GetLargestPossibleRegion().GetSize();
+  //itk::Size<2> size = this->FullImage->GetLargestPossibleRegion().GetSize();
 
   // Step forward
   unsigned int pixelCounter = 0;
@@ -1025,19 +1337,25 @@ PTXImage PTXImage::Downsample(const unsigned int factor)
   shrinkFilter->Update();
 
   PTXImage output;
-  DeepCopy<FullImageType>(shrinkFilter->GetOutput(), output.FullImage);
+  Helpers::DeepCopy<FullImageType>(shrinkFilter->GetOutput(), output.FullImage);
 
   return output;
 }
 
-void PTXImage::WritePTX(const std::string filename)
+void PTXImage::WritePTX(const std::string filePrefix)
 {
-  std::ofstream fout(filename.c_str());
+  std::stringstream ss;
+  ss << filePrefix << ".ptx";
+  std::ofstream fout(ss.str().c_str());
 
   unsigned int numberOfThetaPoints = this->FullImage->GetLargestPossibleRegion().GetSize()[0];
   unsigned int numberOfPhiPoints = this->FullImage->GetLargestPossibleRegion().GetSize()[1];
 
-  fout <<  numberOfThetaPoints << std::endl;
+  std::cout << "Writing PTX with: " << std::endl;
+  std::cout << "Theta points: " << numberOfThetaPoints << std::endl;
+  std::cout << "Phi points: " << numberOfPhiPoints << std::endl;
+  
+  fout << numberOfThetaPoints << std::endl;
   fout << numberOfPhiPoints << std::endl;
   fout << "0 0 0" << std::endl
        << "1 0 0" << std::endl
@@ -1064,6 +1382,17 @@ void PTXImage::WritePTX(const std::string filename)
     }
 
   fout.close();
+}
+
+void PTXImage::Crop(const itk::ImageRegion<2> region)
+{
+  typedef itk::RegionOfInterestImageFilter< FullImageType, FullImageType > RegionOfInterestImageFilterType;
+  RegionOfInterestImageFilterType::Pointer regionOfInterestImageFilter = RegionOfInterestImageFilterType::New();
+  regionOfInterestImageFilter->SetRegionOfInterest(region);
+  regionOfInterestImageFilter->SetInput(this->FullImage);
+  regionOfInterestImageFilter->Update();
+
+  Helpers::DeepCopy<FullImageType>(regionOfInterestImageFilter->GetOutput(), this->FullImage);
 }
 
 void PTXImage::ComputeWeightedDepthLaplacian(const std::string filename)
@@ -1234,17 +1563,23 @@ void PTXImage::WriteProjectionPlane(const std::string filename)
   writer->Write();
 }
 
-void PTXImage::OrthogonalProjection(VectorType axis)
+void PTXImage::SetSize(itk::ImageRegion<2> region)
+{
+  this->FullImage->SetRegions(region);
+  this->FullImage->Allocate();
+  this->FullImage->FillBuffer(PTXPixel());
+}
+
+PTXImage PTXImage::OrthogonalProjection(VectorType axis)
 {
   //WriteProjectionPlane("projectionPlane.vtp"); // for debugging
-
-  
+ 
 
   // Create a plane through the origin "aimed" at the scanned points
   vtkSmartPointer<vtkPlane> plane =
     vtkSmartPointer<vtkPlane>::New();
   plane->SetOrigin(0.0, 0.0, 0.0);
-  plane->SetNormal(principalAxis[0], principalAxis[1], principalAxis[2]);
+  plane->SetNormal(axis[0], axis[1], axis[2]);
 
   itk::ImageRegionConstIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
@@ -1266,6 +1601,8 @@ void PTXImage::OrthogonalProjection(VectorType axis)
     }
   */
 
+  // Project the points onto the plane
+  
   vtkSmartPointer<vtkPolyData> pointCloud =
     vtkSmartPointer<vtkPolyData>::New();
   CreatePointCloud(pointCloud);
@@ -1288,19 +1625,9 @@ void PTXImage::OrthogonalProjection(VectorType axis)
   projectedPointsPolydata->SetPoints(projectedPoints); // replace the point coordinates
   //projectedPointsPolydata->GetPointData()->SetScalars(pointCloud->GetPointData()->GetScalars());
 
-  {
-  // Output projected points for debugging
-  vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
-    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexGlyphFilter->AddInput(projectedPointsPolydata);
-  vertexGlyphFilter->Update();
+  Helpers::OutputPolyData(projectedPointsPolydata, "projectedPoints.vtp");
 
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName("projectedPoints.vtp");
-  writer->SetInputConnection(vertexGlyphFilter->GetOutputPort());
-  writer->Write();
-  }
+  //// Determine a coordinate system for the new image ////
 
   // Compute the projection of the vector pointing to the top-center pixel on the projection plane
 
@@ -1322,8 +1649,7 @@ void PTXImage::OrthogonalProjection(VectorType axis)
   WriteRGBImage("topCenterColoredRed.png");
   }
 
-
-  // Assuming the scanner is at the origin, the direction is simply the coordinate
+  // Assuming the scanner is at the origin, the direction is simply the normalized coordinate (x-0, y-0, z-0).
   typedef itk::CovariantVector<double, 3> VectorType;
   VectorType topCenterVector;
   topCenterVector[0] = topCenterPixel.X;
@@ -1344,7 +1670,7 @@ void PTXImage::OrthogonalProjection(VectorType axis)
   // We will eventually create an image with orientation described by 'up' and the cross product of 'up' and 'principalAxis'
 
   double horizontalAxis[3];
-  double principalAxisArray[3] = {principalAxis[0], principalAxis[1], principalAxis[2]};
+  double principalAxisArray[3] = {axis[0], axis[1], axis[2]};
   vtkMath::Cross(principalAxisArray, up, horizontalAxis);
 
   // Create the standard frame
@@ -1356,9 +1682,10 @@ void PTXImage::OrthogonalProjection(VectorType axis)
   standardFrame.Write("standardFrame.vtp");
 
   // Get center pixel
-  itk::Index<2> centerIndex;
-  centerIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
-  centerIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] / 2;
+  itk::Index<2> centerIndex = FindValidCenterPixel();
+  
+  //centerIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
+  //centerIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] / 2;
 
   FullImageType::PixelType centerPixel = this->FullImage->GetPixel(centerIndex);
 
@@ -1400,20 +1727,8 @@ void PTXImage::OrthogonalProjection(VectorType axis)
   transformFilter->SetTransform(transform);
   transformFilter->Update();
 
-  {
-  // Output projected points for debugging
-  vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
-    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexGlyphFilter->AddInput(transformFilter->GetOutput());
-  vertexGlyphFilter->Update();
-
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName("transformedProjectedPoints.vtp");
-  writer->SetInputConnection(vertexGlyphFilter->GetOutputPort());
-  writer->Write();
-  }
-
+  Helpers::OutputPolyData(vtkPolyData::SafeDownCast(transformFilter->GetOutput()), "transformedProjectedPoints.vtp");
+  
   // Compute the corner of the image
   double bounds[6];
   transformFilter->GetOutput()->GetBounds(bounds);
@@ -1430,37 +1745,18 @@ void PTXImage::OrthogonalProjection(VectorType axis)
   shiftTransformFilter->SetTransform(translation);
   shiftTransformFilter->Update();
 
-  {
-  // Output projected points for debugging
-  vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
-    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexGlyphFilter->AddInput(shiftTransformFilter->GetOutput());
-  vertexGlyphFilter->Update();
-
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName("shiftedTransformedProjectedPoints.vtp");
-  writer->SetInputConnection(vertexGlyphFilter->GetOutputPort());
-  writer->Write();
-  }
+  Helpers::OutputPolyData(vtkPolyData::SafeDownCast(shiftTransformFilter->GetOutput()), "shiftedTransformedProjectedPoints.vtp");
 
   // Create an image into which to project the points
-  typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> RGBImageType;
-  RGBImageType::Pointer projectedImage = RGBImageType::New();
-  projectedImage->SetRegions(this->FullImage->GetLargestPossibleRegion());
-  projectedImage->Allocate();
-  itk::CovariantVector<unsigned char, 3> black;
-  black[0] = 0;
-  black[1] = 0;
-  black[2] = 0;
-  projectedImage->FillBuffer(black);
-
+  PTXImage orthoPTX;
+  orthoPTX.SetSize(this->FullImage->GetLargestPossibleRegion());
+  
   double newBounds[6];
   shiftTransformFilter->GetOutput()->GetBounds(newBounds);
 
   float binSize[2];
-  binSize[0] = newBounds[1] / static_cast<float>(projectedImage->GetLargestPossibleRegion().GetSize()[0]); // xmax / width
-  binSize[1] = newBounds[3] / static_cast<float>(projectedImage->GetLargestPossibleRegion().GetSize()[1]); // ymax / height
+  binSize[0] = newBounds[1] / static_cast<float>(orthoPTX.GetSize()[0]); // xmax / width
+  binSize[1] = newBounds[3] / static_cast<float>(orthoPTX.GetSize()[1]); // ymax / height
 
   // Create an image to track the depths of previously projected pixels
   typedef itk::Image<float, 2> DepthImageType;
@@ -1482,41 +1778,62 @@ void PTXImage::OrthogonalProjection(VectorType axis)
     unsigned char pointColor[3];
     vtkUnsignedCharArray::SafeDownCast(shiftTransformFilter->GetOutput()->GetPointData()->GetScalars())->GetTupleValue(i, pointColor);
 
-    itk::CovariantVector<unsigned char, 3> color;
-    color[0] = pointColor[0];
-    color[1] = pointColor[1];
-    color[2] = pointColor[2];
-
-    //std::cout << "color: " << color << std::endl;
-    // Ensure the projected point is the closest to the camera to be projected into this bin
+    // Get the index of the pixel in the original image from which this point came from
     int originalPixel[2];
     vtkIntArray::SafeDownCast(shiftTransformFilter->GetOutput()->GetPointData()->GetArray("OriginalPixel"))->GetTupleValue(i, originalPixel);
 
     itk::Index<2> originalPixelIndex;
     originalPixelIndex[0] = originalPixel[0];
     originalPixelIndex[1] = originalPixel[1];
-
+    
+    // Create the new PTX point
+    PTXPixel newPixel;
+    newPixel.Valid = true;
+    newPixel.R = pointColor[0];
+    newPixel.G = pointColor[1];
+    newPixel.B = pointColor[2];
+    //newPixel.X = p[0];
+    //newPixel.Y = p[1];
+    //newPixel.Z = p[2];
+    newPixel.X = FullImage->GetPixel(originalPixelIndex).X;
+    newPixel.Y = FullImage->GetPixel(originalPixelIndex).Y;
+    newPixel.Z = FullImage->GetPixel(originalPixelIndex).Z;
+    
+    // Ensure the projected point is the closest to the camera to be projected into this bin
     if(depthImage->GetPixel(index) < FullImage->GetPixel(originalPixelIndex).GetDepth())
       {
       // do nothing, there is already a closer pixel projected
+#ifdef DEBUGMODE
       std::cout << "Trying to project pixel from depth " << FullImage->GetPixel(originalPixelIndex).GetDepth()
                 << " but there is already a projected pixel from depth " << depthImage->GetPixel(index) << std::endl;
+#endif
       }
     else
       {
       // Project the point into this bin
-      projectedImage->SetPixel(index, color);
+      orthoPTX.SetPixel(index, newPixel);
 
       // Update the "depth buffer" to track previously projected pixels
       depthImage->SetPixel(index, FullImage->GetPixel(originalPixelIndex).GetDepth());
       }
     }
+  
+  return orthoPTX;
+}
 
-  typedef  itk::ImageFileWriter<RGBImageType> RGBWriterType;
-  RGBWriterType::Pointer writer = RGBWriterType::New();
-  writer->SetFileName(filename);
-  writer->SetInput(projectedImage);
-  writer->Update();
+void PTXImage::SetPixel(itk::Index<2> index, PTXPixel& pixel)
+{
+  this->FullImage->SetPixel(index, pixel);
+}
+
+PTXImage::FullImageType::Pointer PTXImage::GetFullImage()
+{
+  return this->FullImage;
+}
+
+itk::Size<2> PTXImage::GetSize()
+{
+  return this->FullImage->GetLargestPossibleRegion().GetSize();
 }
 
 itk::Index<2> PTXImage::FindValidTopCenterPixel()
@@ -1553,4 +1870,63 @@ itk::Index<2> PTXImage::FindValidTopCenterPixel()
   std::cerr << "All pixels around the top center pixel are invalid!" << std::endl;
   exit(-1);
   return topCenterIndex;
+}
+
+
+itk::Index<2> PTXImage::FindValidCenterPixel()
+{
+  itk::Index<2> centerIndex;
+  centerIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
+  centerIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] / 2;
+
+  if(this->FullImage->GetPixel(centerIndex).Valid)
+    {
+    return centerIndex;
+    }
+
+  itk::Offset<2> offset;
+  offset[0] = 1;
+  offset[1] = 0;
+  
+  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+    {
+    return centerIndex + offset;
+    }
+
+  offset[0] = -1;
+  offset[1] = 0;
+  
+  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+    {
+    return centerIndex + offset;
+    }
+
+  offset[0] = 0;
+  offset[1] = 1;
+  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+    {
+    return centerIndex + offset;
+    }
+    
+  offset[0] = 0;
+  offset[1] = -1;
+  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+    {
+    return centerIndex + offset;
+    }
+
+  // if we get to here, all pixels around the center pixel are invalid
+  std::cerr << "All pixels around the center pixel are invalid!" << std::endl;
+  exit(-1);
+  return centerIndex;
+}
+
+unsigned int PTXImage::GetHeight()
+{
+  return this->GetSize()[1];
+}
+
+unsigned int PTXImage::GetWidth()
+{
+  return this->GetSize()[0];
 }

@@ -1,6 +1,8 @@
 #ifndef PTXPIXEL_H
 #define PTXPIXEL_H
 
+#include "itkNumericTraits.h"
+
 #include <iostream>
 
 struct PTXPixel
@@ -25,6 +27,8 @@ struct PTXPixel
   float X;
   float Y;
   float Z;
+  
+  float GetCoordinate(unsigned int coordinate);
 
   // Output operator for PTXPixel
   friend std::ostream& operator<<(std::ostream& output,  const PTXPixel &pixel);
@@ -38,6 +42,29 @@ struct PTXPixel
   // Compute depth (assuming scanner is at (0,0,0) )
   float GetDepth();
 
+  bool operator==(const PTXPixel &pixel) const;
+  bool operator!=(const PTXPixel &pixel) const;
 };
+
+// This is needed to allow the TileImagesFilter to work with PTXPixel images.
+namespace itk
+{
+template<>
+class NumericTraits< PTXPixel >
+{
+private:
+public:
+
+  typedef PTXPixel Self;
+
+  static const Self ZeroValue()
+  {
+    PTXPixel temp;
+    return temp;
+  }
+
+  typedef PTXPixel PrintType;
+};
+} // end namespace itk
 
 #endif

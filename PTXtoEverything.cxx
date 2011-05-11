@@ -1,5 +1,9 @@
 #include "PTXImage.h"
 
+#include "itkImageFileWriter.h"
+
+#include <sstream>
+
 int main (int argc, char *argv[])
 {
   if(argc != 3)
@@ -33,6 +37,19 @@ int main (int argc, char *argv[])
   ptxImage.WriteInvalidMask(outputPrefix);
 
   ptxImage.WriteDepthThresholdMask(outputPrefix, 2.5);
+  
+  ptxImage.WriteX(outputPrefix);
+  ptxImage.WriteY(outputPrefix);
+  ptxImage.WriteZ(outputPrefix);
+  
+  ptxImage.WriteXYZ(outputPrefix);
+  
+  ptxImage.WriteXLaplacian(outputPrefix);
+  ptxImage.WriteYLaplacian(outputPrefix);
+  ptxImage.WriteZLaplacian(outputPrefix);
+  
+  ptxImage.WriteXYZLaplacian(outputPrefix);
+  
 
   return EXIT_SUCCESS;
 }

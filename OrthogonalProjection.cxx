@@ -1,5 +1,7 @@
 #include "PTXImage.h"
 
+#include <sstream>
+
 int main (int argc, char *argv[])
 {
   if(argc != 3)
@@ -9,14 +11,20 @@ int main (int argc, char *argv[])
     }
 
   std::string inputFilename = argv[1];
-  std::string outputFilename = argv[2];
+  std::string outputPrefix = argv[2];
 
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
   
-  VectorType principalAxis = GetPrincipalAxis();
+  //PTXImage::VectorType projectionAxis = ptxImage.GetPrincipalAxis();
+  PTXImage::VectorType projectionAxis;
+  projectionAxis[0] = .0036;
+  projectionAxis[1] = -.0026;
+  projectionAxis[2] = .9999;
   
-  ptxImage.OrthogonalProjection(outputFilename);
-
+  PTXImage orthoPTX = ptxImage.OrthogonalProjection(projectionAxis);
+    
+  orthoPTX.WriteEverything(outputPrefix);
+  
   return EXIT_SUCCESS;
 }

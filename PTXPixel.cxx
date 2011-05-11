@@ -9,6 +9,27 @@ PTXPixel::PTXPixel() : Valid(false), X(0), Y(0), Z(0)
 
 }
 
+float PTXPixel::GetCoordinate(unsigned int coordinate)
+{
+  if(coordinate == 0)
+    {
+    return X;
+    }
+  else if(coordinate == 1)
+    {
+    return Y;
+    }
+  else if(coordinate == 2)
+    {
+    return Z;
+    }
+  else
+    {
+    std::cerr << "Invalid coordinate " << coordinate << " specified..." << std::endl;
+    return 0;
+    }
+}
+
 float PTXPixel::GetTheta()
 {
   // Compute the "left/right" angle
@@ -46,4 +67,25 @@ std::ostream& operator<<(std::ostream& output, const PTXPixel &pixel)
   output << "Color: " << (int)pixel.R << " " << (int)pixel.G << " " << (int)pixel.B << std::endl;
   output << "Intensity: " << pixel.Intensity << std::endl << std::endl;
   return output;
+}
+
+bool PTXPixel::operator==(const PTXPixel &pixel) const
+{
+  if(this->R == pixel.R &&
+    this->G == pixel.G &&
+    this->B == pixel.B &&
+    this->Valid == pixel.Valid &&
+    this->Intensity == pixel.Intensity &&
+    this->X == pixel.X &&
+    this->Y == pixel.Y &&
+    this->Z == pixel.Z)
+    {
+    return true;
+    }
+  return false;
+}
+
+bool PTXPixel::operator!=(const PTXPixel &pixel) const
+{
+  return !(*this == pixel);
 }
