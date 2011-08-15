@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>900</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>900</width>
+    <height>900</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Interactive Graph Cut Segmentation</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QGridLayout" name="gridLayout" rowstretch="1,17,6">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Image</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>3D Points</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QVTKWidget" name="qvtkWidgetLeft" native="true"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="QVTKWidget" name="qvtkWidgetRight" native="true"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QGroupBox" name="grpSelection">
+        <property name="styleSheet">
+         <string notr="true">QGroupBox#grpSelection { 
+     border: 2px solid gray; 
+     border-radius: 3px; 
+ } 
+
+QGroupBox#grpSelection::title { 
+    background-color: transparent;
+ } </string>
+        </property>
+        <property name="title">
+         <string>Image type</string>
+        </property>
+        <widget class="QRadioButton" name="radDepth">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>80</y>
+           <width>106</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Depth</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="radRGB">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>50</y>
+           <width>106</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>RGB</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="radIntensity">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>110</y>
+           <width>106</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Intensity</string>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QGroupBox" name="groupBox">
+        <property name="styleSheet">
+         <string notr="true">QGroupBox#groupBox { 
+     border: 2px solid gray; 
+     border-radius: 3px; 
+ } 
+
+QGroupBox#groupBox::title { 
+    background-color: transparent;
+ } </string>
+        </property>
+        <property name="title">
+         <string/>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>900</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpenImage"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="actionFlipImage"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpenImage">
+   <property name="text">
+    <string>Open Image</string>
+   </property>
+  </action>
+  <action name="actionOpen_Grayscale_Image">
+   <property name="text">
+    <string>Open As Grayscale Image</string>
+   </property>
+  </action>
+  <action name="actionOpen_RGBDI_Image">
+   <property name="text">
+    <string>Open As RGBDI Image</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionFlipImage">
+   <property name="text">
+    <string>Flip Image</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QVTKWidget</class>
+   <extends>QWidget</extends>
+   <header>QVTKWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

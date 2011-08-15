@@ -468,21 +468,27 @@ void PTXImage::CreateRGBImage(RGBImageType::Pointer image)
     {
     PTXPixel fullPixel = fullImageIterator.Get();
 
-    itk::CovariantVector<unsigned char, 3> rgbPixel;
+    //itk::CovariantVector<unsigned char, 3> rgbPixel;
+    RGBImageType::PixelType rgbPixel;
 
     if(fullPixel.Valid)
       {
+      /*
       rgbPixel[0] = fullPixel.R;
       rgbPixel[1] = fullPixel.G;
       rgbPixel[2] = fullPixel.B;
+      */
+      rgbPixel.SetRed(fullPixel.R);
+      rgbPixel.SetGreen(fullPixel.G);
+      rgbPixel.SetBlue(fullPixel.B);
       }
     else
       {
       // Set the pixel to bright green
-      rgbPixel[0] = 0;
+      rgbPixel.SetRed(0);
       //rgbPixel[1] = 255;
-      rgbPixel[1] = 0;
-      rgbPixel[2] = 0;
+      rgbPixel.SetGreen(0);
+      rgbPixel.SetBlue(0);
       }
 
     rgbImageIterator.Set(rgbPixel);
@@ -528,18 +534,15 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
   vtkSmartPointer<vtkPoints> points =
     vtkSmartPointer<vtkPoints>::New();
 
-  vtkSmartPointer<vtkUnsignedCharArray> colors =
-    vtkSmartPointer<vtkUnsignedCharArray>::New();
+  vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
   colors->SetNumberOfComponents(3);
   colors->SetName("Colors");
 
-  vtkSmartPointer<vtkFloatArray> depthArray =
-    vtkSmartPointer<vtkFloatArray>::New();
+  vtkSmartPointer<vtkFloatArray> depthArray = vtkSmartPointer<vtkFloatArray>::New();
   depthArray->SetNumberOfComponents(1);
   depthArray->SetName("Depths");
 
-  vtkSmartPointer<vtkIntArray> originalPixelArray =
-    vtkSmartPointer<vtkIntArray>::New();
+  vtkSmartPointer<vtkIntArray> originalPixelArray = vtkSmartPointer<vtkIntArray>::New();
   originalPixelArray->SetNumberOfComponents(2);
   originalPixelArray->SetName("OriginalPixel");
 
@@ -596,8 +599,7 @@ void PTXImage::WritePointCloud(std::string filePrefix)
   vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
   CreatePointCloud(pointCloud);
 
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(ss.str().c_str());
   writer->SetInputConnection(pointCloud->GetProducerPort());
   writer->Write();
@@ -826,6 +828,34 @@ void PTXImage::ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer
 
     ++imageIterator;
     ++rgbIterator;  
+    }
+
+}
+
+void PTXImage::ReplaceRGB(RGBImageType::Pointer rgb)
+{
+  // Setup iterators
+  itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<RGBImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
+
+  while(!fullImageIterator.IsAtEnd())
+    {
+    // Get the old point
+    PTXPixel pixel = fullImageIterator.Get();
+
+    // Copy the color from the RGB image
+    pixel.R = rgbIterator.Get().GetRed();
+    pixel.G = rgbIterator.Get().GetGreen();
+    pixel.B = rgbIterator.Get().GetBlue();
+    fullImageIterator.Set(pixel);
+
+    if(pixel.Valid)
+      {
+
+      }
+
+    ++fullImageIterator;
+    ++rgbIterator;
     }
 
 }
@@ -1351,7 +1381,7 @@ void PTXImage::WritePTX(const std::string filePrefix)
   unsigned int numberOfThetaPoints = this->FullImage->GetLargestPossibleRegion().GetSize()[0];
   unsigned int numberOfPhiPoints = this->FullImage->GetLargestPossibleRegion().GetSize()[1];
 
-  std::cout << "Writing PTX with: " << std::endl;
+  std::cout << "Writing " << ss.str().c_str() << " PTX with: " << std::endl;
   std::cout << "Theta points: " << numberOfThetaPoints << std::endl;
   std::cout << "Phi points: " << numberOfPhiPoints << std::endl;
   

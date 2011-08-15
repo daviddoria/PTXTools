@@ -5,6 +5,7 @@
 #include "itkImage.h"
 #include "itkPoint.h"
 #include "itkImageRegionIterator.h"
+#include "itkRGBPixel.h"
 
 // VTK
 #include <vtkSmartPointer.h>
@@ -23,7 +24,8 @@ public:
   typedef itk::Image<PTXPixel, 2> FullImageType;
 
   // A normal RGB image
-  typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> RGBImageType;
+  //typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> RGBImageType;
+  typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
 
   // A binary image
   typedef itk::Image<unsigned char, 2> MaskImageType;
@@ -137,6 +139,7 @@ public:
   
   // This function allows the color to be modified
   void ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer rgb);
+  void ReplaceRGB(itk::Image<itk::RGBPixel<unsigned char>, 2>::Pointer rgb);
   
   // This function allows the color to be modified
   void ReplaceXYZ(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer xyz);

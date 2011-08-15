@@ -62,6 +62,11 @@ public:
     PTXPixel temp;
     return temp;
   }
+  
+  static unsigned int GetLength(Self)
+  {
+    return 1;
+  }
 
   typedef PTXPixel PrintType;
 };
