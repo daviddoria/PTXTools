@@ -20,6 +20,7 @@
 #include "itkImageRegionConstIterator.h"
 
 // Custom
+#include "Helpers.h"
 #include "PTXImage.h"
 
 Eigen::MatrixXd ReadP(const std::string& filename);
@@ -46,13 +47,24 @@ int main(int argc, char *argv[])
   // Read the PTX file
   PTXImage ptxImage;
   ptxImage.ReadFile(ptxFileName);
-  ptxImage.WritePTX("test.ptx");
+  //FilePrefix prefix("test");
+  //ptxImage.WritePTX(prefix);
   
   PTXImage::XYZImageType::Pointer xyzImage = ptxImage.GetXYZImage();
   
   PTXImage::RGBImageType::Pointer colorImage = PTXImage::RGBImageType::New();
-  ptxImage.CreateRGBImage(colorImage);
-  std::cout << "colorImage: " << colorImage->GetLargestPossibleRegion() << std::endl;
+  colorImage->SetRegions(xyzImage->GetLargestPossibleRegion());
+  colorImage->Allocate();
+  
+  PTXImage::RGBImageType::PixelType green;
+  green.SetRed(0);
+  green.SetGreen(255);
+  green.SetBlue(0);
+  
+  colorImage->FillBuffer(green);
+  //ptxImage.CreateRGBImage(colorImage);
+
+  //std::cout << "colorImage: " << colorImage->GetLargestPossibleRegion() << std::endl;
 
   // Read the camera matrix relating the input image to the PTX/scan/LiDAR file
   Eigen::MatrixXd P = ReadP(cameraMatrixFileName);
@@ -64,11 +76,22 @@ int main(int argc, char *argv[])
   imageReader->SetFileName(imageFileName);
   imageReader->Update();
 
+  typedef itk::Image<std::vector<itk::Index<2> >, 2> PixelImageType;
+  PixelImageType::Pointer projectedImage = PixelImageType::New();
+  projectedImage->SetRegions(imageReader->GetOutput()->GetLargestPossibleRegion());
+  projectedImage->Allocate();
+
+  std::vector<itk::Index<2> > emptyVector;
+  //projectedImage->FillBuffer(emptyVector);
+  Helpers::SetAllPixels<PixelImageType>(projectedImage, emptyVector);
+  
   itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage, xyzImage->GetLargestPossibleRegion());
-  //ptxImage.WritePTX("test2.ptx");
+  
+  unsigned int badPoints = 0;
+
+  // Iterate over the scan points image and track where each projects in the 'projectedImage'
   while(!xyzImageIterator.IsAtEnd())
-  {
-    
+    {
     // Get the value of the current pixel
     PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
 
@@ -91,36 +114,100 @@ int main(int argc, char *argv[])
     projectedPixel[0] = round(projected(0));
     projectedPixel[1] = round(projected(1));
 
-    //std::cout << "pixel: " << projectedPixel << std::endl;
-
-    PTXImage::RGBImageType::PixelType color;
-    
     if(!imageReader->GetOutput()->GetLargestPossibleRegion().IsInside(projectedPixel))
       {
-      std::cout << "Point does not project to image!" << std::endl;
-      color.SetRed(0);
-      color.SetGreen(255);
-      color.SetBlue(0);
+      // Do nothing
       }
     else
       {
-      color = imageReader->GetOutput()->GetPixel(projectedPixel);
+      std::vector<itk::Index<2> > projectedSoFar = projectedImage->GetPixel(projectedPixel);
+      projectedSoFar.push_back(xyzImageIterator.GetIndex());
+      projectedImage->SetPixel(projectedPixel, projectedSoFar);
+      //std::cout << "pixel: " << projectedPixel << std::endl;
       }
-    
-    //std::cout << "color: " << color << std::endl;
-
-    colorImage->SetPixel(xyzImageIterator.GetIndex(), color);
 
     ++xyzImageIterator;
-  }
+    }
 
-  ptxImage.WritePTX("test3.ptx");
+  std::cout << "There were " << badPoints << " that did not project to inside of the image!" << std::endl;
 
-  ptxImage.ReplaceRGB(colorImage);
-  ptxImage.WritePTX("test4.ptx");
+  itk::ImageRegionConstIterator<PixelImageType> projectedImageIterator(projectedImage, projectedImage->GetLargestPossibleRegion());
+
+  while(!projectedImageIterator.IsAtEnd())
+    {
+    if(projectedImageIterator.Get().size() == 0)
+      {
+      //std::cout << "Point does not project to image!" << std::endl;
+      badPoints++;
+      }
+    else
+      {
+      /*
+      // Find and color the closest point
+      itk::Index<2> closestPixel;
+      float minDepth = std::numeric_limits<float>::max();
+      //std::cout << "There were " << projectedImageIterator.Get().size() << " points that projected to this pixel." << std::endl;
+      for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
+        {
+        itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
+        //std::cout << "Current pixel: " << currentPixel << std::endl;
+
+        // Determine the minimum depth
+        PTXPixel ptxPixel = ptxImage.GetPTXPixel(currentPixel);
+        if(ptxPixel.GetDepth() < minDepth)
+          {
+          minDepth = ptxPixel.GetDepth();
+          closestPixel = projectedImageIterator.Get()[i];
+          }
+        }
+      PTXImage::RGBImageType::PixelType color;
+      color = imageReader->GetOutput()->GetPixel(projectedImageIterator.GetIndex());
+      colorImage->SetPixel(closestPixel, color);
+      */
+
+
+      // Find the closest point
+      float minDepth = std::numeric_limits<float>::max();
+      //std::cout << "There were " << projectedImageIterator.Get().size() << " points that projected to this pixel." << std::endl;
+      for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
+        {
+        itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
+        //std::cout << "Current pixel: " << currentPixel << std::endl;
+
+        // Determine the minimum depth
+        PTXPixel ptxPixel = ptxImage.GetPTXPixel(currentPixel);
+        if(ptxPixel.GetDepth() < minDepth)
+          {
+          minDepth = ptxPixel.GetDepth();
+          }
+        }
+        
+      // Color all points within a tolerance of the minimum depth
+      PTXImage::RGBImageType::PixelType color;
+      color = imageReader->GetOutput()->GetPixel(projectedImageIterator.GetIndex());
+      for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
+        {
+        itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
+        PTXPixel ptxPixel = ptxImage.GetPTXPixel(currentPixel);
+
+        if(fabs(ptxPixel.GetDepth() - minDepth) < .1)
+          {
+          colorImage->SetPixel(currentPixel, color);
+          }
+        }
+
+      } // end else over > 0 projections
+
+    ++projectedImageIterator;
+    } // end while over whole image
   
-  ptxImage.WritePointCloud("outputPointCloud");
-  ptxImage.WritePTX("output.ptx");
+  ptxImage.ReplaceRGB(colorImage);
+  
+  //FilePrefix vtpPrefix("outputPointCloud");
+  //ptxImage.WritePointCloud(vtpPrefix);
+  
+  FilePrefix ptxPrefix(outputFileName);
+  ptxImage.WritePTX(ptxPrefix);
 
   return EXIT_SUCCESS;
 }

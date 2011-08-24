@@ -45,6 +45,24 @@ PTXImage::PTXImage()
   this->FullImage = FullImageType::New();
 }
 
+PTXPixel PTXImage::GetPTXPixel(const itk::Index<2> pixel)
+{
+  
+  if(this->FullImage->GetLargestPossibleRegion().IsInside(pixel))
+    {
+    return this->FullImage->GetPixel(pixel);
+    }
+  else
+    {
+    std::cout << "Pixel " << pixel << " is not inside FullImage: " << this->FullImage->GetLargestPossibleRegion() << std::endl;
+    exit(-1);
+    // Should never get here, this is just to avoid no return value warning.
+    PTXPixel zeroPixel;
+    //zeroPixel.Fill(2);
+    return zeroPixel;
+    }
+}
+
 void PTXImage::AppendPTXRight(PTXImage ptxImage)
 {
   if(ptxImage.GetHeight() != this->GetHeight())
@@ -100,7 +118,7 @@ void PTXImage::WriteXYZ(const std::string filePrefix)
   typedef itk::ImageFileWriter< XYZImageType > XYZWriterType;
   XYZWriterType::Pointer xyzWriter = XYZWriterType::New();
   std::stringstream ssXYZ;
-  ssXYZ << filePrefix << "_xyz.mhd";
+  ssXYZ << filePrefix << "_xyz.mha";
   xyzWriter->SetFileName(ssXYZ.str());
   xyzWriter->SetInput(GetXYZImage());
   xyzWriter->Update();
@@ -126,7 +144,7 @@ void PTXImage::WriteXYZLaplacian(const std::string filePrefix)
   typedef itk::ImageFileWriter< XYZImageType > XYZWriterType;
   XYZWriterType::Pointer xyzWriter = XYZWriterType::New();
   std::stringstream ssXYZ;
-  ssXYZ << filePrefix << "_xyzLaplacian.mhd";
+  ssXYZ << filePrefix << "_xyzLaplacian.mha";
   xyzWriter->SetFileName(ssXYZ.str());
   xyzWriter->SetInput(GetXYZLaplacian());
   xyzWriter->Update();
@@ -178,7 +196,7 @@ void PTXImage::WriteFloatImage(FloatImageType::Pointer image, const std::string 
 void PTXImage::WriteX(const std::string filePrefix)
 {
   std::stringstream ssX;
-  ssX << filePrefix << "_x.mhd";
+  ssX << filePrefix << "_x.mha";
   WriteFloatImage(GetXImage(), ssX.str());
 }
 
@@ -190,7 +208,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetXImage()
 void PTXImage::WriteY(const std::string filePrefix)
 {
   std::stringstream ss;
-  ss << filePrefix << "_y.mhd";
+  ss << filePrefix << "_y.mha";
   WriteFloatImage(GetYImage(), ss.str());
 }
 
@@ -202,7 +220,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetYImage()
 void PTXImage::WriteZ(const std::string filePrefix)
 {
   std::stringstream ss;
-  ss << filePrefix << "_z.mhd";
+  ss << filePrefix << "_z.mha";
   WriteFloatImage(GetZImage(), ss.str());
 }
 
@@ -239,7 +257,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetLaplacian(unsigned int dimension)
 void PTXImage::WriteXLaplacian(const std::string filePrefix)
 {
   std::stringstream ss;
-  ss << filePrefix << "_xLaplacian.mhd";
+  ss << filePrefix << "_xLaplacian.mha";
   WriteFloatImage(GetXLaplacian(), ss.str());
 }
 
@@ -251,7 +269,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetXLaplacian()
 void PTXImage::WriteYLaplacian(const std::string filePrefix)
 {
   std::stringstream ss;
-  ss << filePrefix << "_yLaplacian.mhd";
+  ss << filePrefix << "_yLaplacian.mha";
   WriteFloatImage(GetYLaplacian(), ss.str());
 }
 
@@ -263,7 +281,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetYLaplacian()
 void PTXImage::WriteZLaplacian(const std::string filePrefix)
 {
   std::stringstream ss;
-  ss << filePrefix << "_zLaplacian.mhd";
+  ss << filePrefix << "_zLaplacian.mha";
   WriteFloatImage(GetZLaplacian(), ss.str());
 }
 
@@ -499,7 +517,7 @@ void PTXImage::CreateRGBImage(RGBImageType::Pointer image)
 
 }
 
-void PTXImage::WriteEverything(std::string filePrefix)
+void PTXImage::WriteEverything(FilePrefix filePrefix)
 {
   WritePTX(filePrefix);
   
@@ -511,14 +529,14 @@ void PTXImage::WriteEverything(std::string filePrefix)
 
 }
 
-void PTXImage::WriteRGBImage(std::string filePrefix)
+void PTXImage::WriteRGBImage(FilePrefix filePrefix)
 {
   // This a convenience function which simply calls CreateRGBImage and then writes the result to a file
   RGBImageType::Pointer image = RGBImageType::New();
   CreateRGBImage(image);
 
   std::stringstream ss;
-  ss << filePrefix << "_RGB.png";
+  ss << filePrefix.prefix << "_RGB.png";
 
   typedef  itk::ImageFileWriter< RGBImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -531,20 +549,23 @@ void PTXImage::WriteRGBImage(std::string filePrefix)
 void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
 {
   // Create point and color arrays
-  vtkSmartPointer<vtkPoints> points =
-    vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
   vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
   colors->SetNumberOfComponents(3);
   colors->SetName("Colors");
 
-  vtkSmartPointer<vtkFloatArray> depthArray = vtkSmartPointer<vtkFloatArray>::New();
-  depthArray->SetNumberOfComponents(1);
-  depthArray->SetName("Depths");
+//   vtkSmartPointer<vtkFloatArray> depthArray = vtkSmartPointer<vtkFloatArray>::New();
+//   depthArray->SetNumberOfComponents(1);
+//   depthArray->SetName("Depths");
+// 
+//   vtkSmartPointer<vtkIntArray> originalPixelArray = vtkSmartPointer<vtkIntArray>::New();
+//   originalPixelArray->SetNumberOfComponents(2);
+//   originalPixelArray->SetName("OriginalPixel");
 
-  vtkSmartPointer<vtkIntArray> originalPixelArray = vtkSmartPointer<vtkIntArray>::New();
-  originalPixelArray->SetNumberOfComponents(2);
-  originalPixelArray->SetName("OriginalPixel");
+  vtkSmartPointer<vtkFloatArray> intensities = vtkSmartPointer<vtkFloatArray>::New();
+  intensities->SetNumberOfComponents(1);
+  intensities->SetName("Intensity");
 
   // Iterate through the full image extracting the coordinate and color information and adding them to their respective arrays
   itk::ImageRegionConstIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
@@ -561,40 +582,42 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud)
       {
       colors->InsertNextTupleValue(rgb);
       points->InsertNextPoint(pixel.X, pixel.Y, pixel.Z);
-      depthArray->InsertNextValue(pixel.GetDepth());
+      intensities->InsertNextValue(pixel.Intensity);
+      //depthArray->InsertNextValue(pixel.GetDepth());
 
+      /*
       int originalPixel[2];
       originalPixel[0] = imageIterator.GetIndex()[0];
       originalPixel[1] = imageIterator.GetIndex()[1];
 
       originalPixelArray->InsertNextTupleValue(originalPixel);
+      */
       }
 
     ++imageIterator;
     }
 
   // Combine the coordinates and colors into a PolyData
-  vtkSmartPointer<vtkPolyData> polydata =
-    vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
   polydata->SetPoints(points);
   polydata->GetPointData()->SetScalars(colors);
-  polydata->GetPointData()->AddArray(depthArray);
-  polydata->GetPointData()->AddArray(originalPixelArray);
+  //polydata->GetPointData()->AddArray(depthArray);
+  //polydata->GetPointData()->AddArray(originalPixelArray);
+  polydata->GetPointData()->AddArray(intensities);
 
   // Create a vertex at each point
-  vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
-    vtkSmartPointer<vtkVertexGlyphFilter>::New();
+  vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
   vertexGlyphFilter->AddInput(polydata);
   vertexGlyphFilter->Update();
 
   pointCloud->ShallowCopy(vertexGlyphFilter->GetOutput());
 }
 
-void PTXImage::WritePointCloud(std::string filePrefix)
+void PTXImage::WritePointCloud(FilePrefix filePrefix)
 {
   // This a convenience function which simply calls CreatePointCloud and then writes the result to a file
   std::stringstream ss;
-  ss << filePrefix << ".vtp";
+  ss << filePrefix.prefix << ".vtp";
 
   vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
   CreatePointCloud(pointCloud);
@@ -627,21 +650,21 @@ void PTXImage::CreateDepthImage(FloatImageType::Pointer image)
 
 }
 
-void PTXImage::WriteDepthImage(std::string filePrefix)
+void PTXImage::WriteDepthImage(FilePrefix filePrefix)
 {
-  // This a convenience function which simply calls CreateDepthImage and then writes the result to png (scaled) and mhd (unscaled) files.
-  // 'filePrefix' is, for example "filename" which will be used to internally produce the filenames "filename.mhd" and "filename.png"
+  // This a convenience function which simply calls CreateDepthImage and then writes the result to png (scaled) and mha (unscaled) files.
+  // 'filePrefix' is, for example "filename" which will be used to internally produce the filenames "filename.mha" and "filename.png"
 
   FloatImageType::Pointer image = FloatImageType::New();
   CreateDepthImage(image);
 
-  std::stringstream ssMHD;
-  ssMHD << filePrefix << "Depth.mhd";
-  typedef  itk::ImageFileWriter<FloatImageType> MHDWriterType;
-  MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
-  mhdWriter->SetFileName(ssMHD.str());
-  mhdWriter->SetInput(image);
-  mhdWriter->Update();
+  std::stringstream ssMHA;
+  ssMHA << filePrefix.prefix << "Depth.mha";
+  typedef  itk::ImageFileWriter<FloatImageType> MHAWriterType;
+  MHAWriterType::Pointer mhaWriter = MHAWriterType::New();
+  mhaWriter->SetFileName(ssMHA.str());
+  mhaWriter->SetInput(image);
+  mhaWriter->Update();
 
   typedef itk::Image<unsigned char, 2> UnsignedCharImageType;
   typedef itk::RescaleIntensityImageFilter<FloatImageType, UnsignedCharImageType > RescaleFilterType;
@@ -652,7 +675,7 @@ void PTXImage::WriteDepthImage(std::string filePrefix)
   rescaleFilter->Update();
 
   std::stringstream ssPNG;
-  ssPNG << filePrefix << "Depth.png";
+  ssPNG << filePrefix.prefix << "Depth.png";
 
   typedef  itk::ImageFileWriter< UnsignedCharImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -662,12 +685,12 @@ void PTXImage::WriteDepthImage(std::string filePrefix)
 
 }
 
-void PTXImage::WriteDepthLaplacian(const std::string filePrefix)
+void PTXImage::WriteDepthLaplacian(const FilePrefix filePrefix)
 {
   FloatImageType::Pointer image = GetDepthLaplacian();
 
   std::stringstream ss;
-  ss << filePrefix << "_DepthLaplacian.mhd";
+  ss << filePrefix.prefix << "_DepthLaplacian.mha";
 
   typedef  itk::ImageFileWriter< FloatImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -720,21 +743,21 @@ void PTXImage::CreateIntensityImage(FloatImageType::Pointer image)
 
 }
 
-void PTXImage::WriteIntensityImage(std::string filePrefix)
+void PTXImage::WriteIntensityImage(FilePrefix filePrefix)
 {
-  // This a convenience function which simply calls CreateIntensityImage and then writes the result to png (scaled) and mhd (unscaled) files.
-  // 'filePrefix' is, for example "filename" which will be used to internally produce the filenames "filename.mhd" and "filename.png"
+  // This a convenience function which simply calls CreateIntensityImage and then writes the result to png (scaled) and mha (unscaled) files.
+  // 'filePrefix' is, for example "filename" which will be used to internally produce the filenames "filename.mha" and "filename.png"
 
   FloatImageType::Pointer image = FloatImageType::New();
   CreateIntensityImage(image);
 
-  std::stringstream ssMHD;
-  ssMHD << filePrefix << "Intensity.mhd";
-  typedef  itk::ImageFileWriter< FloatImageType > MHDWriterType;
-  MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
-  mhdWriter->SetFileName(ssMHD.str());
-  mhdWriter->SetInput(image);
-  mhdWriter->Update();
+  std::stringstream ssMHA;
+  ssMHA << filePrefix.prefix << "Intensity.mha";
+  typedef  itk::ImageFileWriter< FloatImageType > MHAWriterType;
+  MHAWriterType::Pointer mhaWriter = MHAWriterType::New();
+  mhaWriter->SetFileName(ssMHA.str());
+  mhaWriter->SetInput(image);
+  mhaWriter->Update();
 
   typedef itk::Image<unsigned char, 2> UnsignedCharImageType;
   typedef itk::RescaleIntensityImageFilter< FloatImageType, UnsignedCharImageType > RescaleFilterType;
@@ -745,7 +768,7 @@ void PTXImage::WriteIntensityImage(std::string filePrefix)
   rescaleFilter->Update();
 
   std::stringstream ssPNG;
-  ssPNG << filePrefix << "Intensity.png";
+  ssPNG << filePrefix.prefix << "Intensity.png";
 
   typedef  itk::ImageFileWriter< UnsignedCharImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -1066,13 +1089,13 @@ void PTXImage::CreateRGBDIImage(RGBDIImageType::Pointer image)
     }
 }
 
-void PTXImage::WriteRGBDIImage(std::string filePrefix)
+void PTXImage::WriteRGBDIImage(FilePrefix filePrefix)
 {
   RGBDIImageType::Pointer image = RGBDIImageType::New();
   CreateRGBDIImage(image);
 
   std::stringstream ss;
-  ss << filePrefix << "_RGBDI.mhd";
+  ss << filePrefix.prefix << "_RGBDI.mha";
 
   typedef  itk::ImageFileWriter< RGBDIImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -1118,13 +1141,13 @@ void PTXImage::CreateRGBDImage(RGBDImageType::Pointer image)
     }
 }
 
-void PTXImage::WriteRGBDImage(std::string filePrefix)
+void PTXImage::WriteRGBDImage(FilePrefix filePrefix)
 {
   RGBDImageType::Pointer image = RGBDImageType::New();
   CreateRGBDImage(image);
 
   std::stringstream ss;
-  ss << filePrefix << "_RGBD.mhd";
+  ss << filePrefix.prefix << "_RGBD.mha";
 
   typedef  itk::ImageFileWriter< RGBDImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
@@ -1372,10 +1395,10 @@ PTXImage PTXImage::Downsample(const unsigned int factor)
   return output;
 }
 
-void PTXImage::WritePTX(const std::string filePrefix)
+void PTXImage::WritePTX(const FilePrefix filePrefix)
 {
   std::stringstream ss;
-  ss << filePrefix << ".ptx";
+  ss << filePrefix.prefix << ".ptx";
   std::ofstream fout(ss.str().c_str());
 
   unsigned int numberOfThetaPoints = this->FullImage->GetLargestPossibleRegion().GetSize()[0];
@@ -1633,8 +1656,7 @@ PTXImage PTXImage::OrthogonalProjection(VectorType axis)
 
   // Project the points onto the plane
   
-  vtkSmartPointer<vtkPolyData> pointCloud =
-    vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
   CreatePointCloud(pointCloud);
 
   for(unsigned int i = 0; i < static_cast<unsigned int>(pointCloud->GetNumberOfPoints()); i++)
@@ -1649,8 +1671,7 @@ PTXImage PTXImage::OrthogonalProjection(VectorType axis)
     }
 
   // Create a polydata of the projected points
-  vtkSmartPointer<vtkPolyData> projectedPointsPolydata =
-    vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPolyData> projectedPointsPolydata = vtkSmartPointer<vtkPolyData>::New();
   projectedPointsPolydata->ShallowCopy(pointCloud); // copy the colors and depths
   projectedPointsPolydata->SetPoints(projectedPoints); // replace the point coordinates
   //projectedPointsPolydata->GetPointData()->SetScalars(pointCloud->GetPointData()->GetScalars());
@@ -1676,7 +1697,9 @@ PTXImage PTXImage::OrthogonalProjection(VectorType axis)
   topCenterPixel.G = 0;
   topCenterPixel.B = 0;
   this->FullImage->SetPixel(topCenterIndex, topCenterPixel);
-  WriteRGBImage("topCenterColoredRed.png");
+  
+  FilePrefix prefix("topCenterColoredRed");
+  WriteRGBImage(prefix);
   }
 
   // Assuming the scanner is at the origin, the direction is simply the normalized coordinate (x-0, y-0, z-0).
@@ -1725,7 +1748,8 @@ PTXImage PTXImage::OrthogonalProjection(VectorType axis)
   centerPixel.G = 255;
   centerPixel.B = 0;
   this->FullImage->SetPixel(centerIndex, centerPixel);
-  WriteRGBImage("centerColoredGreen.png");
+  FilePrefix prefix("centerColoredGreen");
+  WriteRGBImage(prefix);
   }
 
   if(!centerPixel.Valid)

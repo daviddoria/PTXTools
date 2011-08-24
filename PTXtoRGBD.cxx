@@ -4,7 +4,7 @@ int main (int argc, char *argv[])
 {
   if(argc != 3)
     {
-    std::cout << "Required arguments: InputFilename(ptx) OutputFilename(mhd)" << std::endl;
+    std::cout << "Required arguments: InputFilename.ptx OutputFilename.mha" << std::endl;
     return EXIT_FAILURE;
     }
 

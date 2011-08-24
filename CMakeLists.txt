@@ -36,125 +36,168 @@ add_library(PTX PTXPixel.cxx PTXImage.cxx Helpers.cpp)
 set(PTXLibraries PTX ${ITK_LIBRARIES} ${VTK_LIBRARIES})
 
 #############
-# ADD_EXECUTABLE(CoordinateImages CoordinateImages.cxx)
-# TARGET_LINK_LIBRARIES(CoordinateImages ${PTXLibraries})
-# INSTALL( TARGETS CoordinateImages
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# 
-# ADD_EXECUTABLE(AppendRight AppendRight.cxx)
-# TARGET_LINK_LIBRARIES(AppendRight ${PTXLibraries})
-# INSTALL( TARGETS AppendRight
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# 
-# ADD_EXECUTABLE(CropPTX CropPTX.cxx)
-# TARGET_LINK_LIBRARIES(CropPTX ${PTXLibraries})
-# INSTALL( TARGETS CropPTX
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_CoordinateImages ON CACHE BOOL "Write images of the coordinates")
+if(PTX_CoordinateImages)
+  ADD_EXECUTABLE(ptxCoordinateImages CoordinateImages.cxx)
+  TARGET_LINK_LIBRARIES(ptxCoordinateImages ${PTXLibraries})
+  INSTALL( TARGETS ptxCoordinateImages RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(DerivativeImages DerivativeImages.cxx)
-# TARGET_LINK_LIBRARIES(DerivativeImages ${PTXLibraries})
-# INSTALL( TARGETS DerivativeImages
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_AppendRight ON CACHE BOOL "Append one ptx to the right of another")
+if(PTX_AppendRight)
+  ADD_EXECUTABLE(ptxAppendRight AppendRight.cxx)
+  TARGET_LINK_LIBRARIES(ptxAppendRight ${PTXLibraries})
+  INSTALL( TARGETS ptxAppendRight RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(LaplacianImages LaplacianImages.cxx)
-# TARGET_LINK_LIBRARIES(LaplacianImages ${PTXLibraries})
-# INSTALL( TARGETS LaplacianImages
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_CropPTX ON CACHE BOOL "Crop a ptx file")
+if(PTX_CropPTX)
+  ADD_EXECUTABLE(ptxCropPTX CropPTX.cxx)
+  TARGET_LINK_LIBRARIES(ptxCropPTX ${PTXLibraries})
+  INSTALL( TARGETS ptxCropPTX RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(ExtractHoleBoundaryPoints ExtractHoleBoundaryPoints.cxx)
-# TARGET_LINK_LIBRARIES(ExtractHoleBoundaryPoints ${PTXLibraries})
-# INSTALL( TARGETS ExtractHoleBoundaryPoints
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_DerivativeImages OFF CACHE BOOL "Write images of the derivatives")
+if(PTX_DerivativeImages)
+  ADD_EXECUTABLE(ptxDerivativeImages DerivativeImages.cxx)
+  TARGET_LINK_LIBRARIES(ptxDerivativeImages ${PTXLibraries})
+  INSTALL( TARGETS ptxDerivativeImages RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
+SET(PTX_LaplacianImages ON CACHE BOOL "Write images of the Laplacian")
+if(PTX_LaplacianImages)
+  ADD_EXECUTABLE(ptxLaplacianImages LaplacianImages.cxx)
+  TARGET_LINK_LIBRARIES(ptxLaplacianImages ${PTXLibraries})
+  INSTALL( TARGETS ptxLaplacianImages RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-ADD_EXECUTABLE(PTXtoRGB PTXtoRGB.cxx)
-TARGET_LINK_LIBRARIES(PTXtoRGB ${PTXLibraries})
-INSTALL( TARGETS PTXtoRGB
-  RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_ExtractHoleBoundaryPoints ON CACHE BOOL "Determine pixels on the boundaries of holes")
+if(PTX_ExtractHoleBoundaryPoints)
+  ADD_EXECUTABLE(ptxExtractHoleBoundaryPoints ExtractHoleBoundaryPoints.cxx)
+  TARGET_LINK_LIBRARIES(ptxExtractHoleBoundaryPoints ${PTXLibraries})
+  INSTALL( TARGETS ptxExtractHoleBoundaryPoints RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(PTXtoRGBD PTXtoRGBD.cxx)
-# TARGET_LINK_LIBRARIES(PTXtoRGBD ${PTXLibraries})
-# INSTALL( TARGETS PTXtoRGBD
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_PTXtoRGB ON CACHE BOOL "Extract the colors (RGB) from a ptx file")
+if(PTX_PTXtoRGB)
+  ADD_EXECUTABLE(ptxPTXtoRGB PTXtoRGB.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoRGB ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoRGB RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
+SET(PTX_PTXtoRGBD ON CACHE BOOL "Extract the colors and depths from a ptx file")
+if(PTX_PTXtoRGBD)
+  ADD_EXECUTABLE(ptxPTXtoRGBD PTXtoRGBD.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoRGBD ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoRGBD RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-ADD_EXECUTABLE(PTXtoPointCloud PTXtoPointCloud.cxx)
-TARGET_LINK_LIBRARIES(PTXtoPointCloud ${PTXLibraries})
-INSTALL( TARGETS PTXtoPointCloud
-  RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_PTXtoPointCloud ON CACHE BOOL "Extract the point coordinates")
+if(PTX_PTXtoPointCloud)
+  ADD_EXECUTABLE(ptxPTXtoPointCloud PTXtoPointCloud.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoPointCloud ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoPointCloud RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
+SET(PTX_PTXtoDepthImage ON CACHE BOOL "Write the ptx depth image")
+if(PTX_PTXtoDepthImage)
+  ADD_EXECUTABLE(ptxPTXtoDepthImage PTXtoDepthImage.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoDepthImage ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoDepthImage RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(PTXtoDepthImage PTXtoDepthImage.cxx)
-# TARGET_LINK_LIBRARIES(PTXtoDepthImage ${PTXLibraries})
-# INSTALL( TARGETS PTXtoDepthImage
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_PTXtoDepthThresholdMask ON CACHE BOOL "Create a mask from a depth threshold")
+if(PTX_PTXtoDepthThresholdMask)
+  ADD_EXECUTABLE(ptxPTXtoDepthThresholdMask PTXtoDepthThresholdMask.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoDepthThresholdMask ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoDepthThresholdMask RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
+SET(PTX_ReplaceDepthImage ON CACHE BOOL "Replace the depths of points in a ptx file")
+if(PTX_ReplaceDepthImage)
+  ADD_EXECUTABLE(ptxReplaceDepthImage ReplaceDepthImage.cxx)
+  TARGET_LINK_LIBRARIES(ptxReplaceDepthImage ${PTXLibraries})
+  INSTALL( TARGETS ptxReplaceDepthImage RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(PTXtoDepthThresholdMask PTXtoDepthThresholdMask.cxx)
-# TARGET_LINK_LIBRARIES(PTXtoDepthThresholdMask ${PTXLibraries})
-# INSTALL( TARGETS PTXtoDepthThresholdMask
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_ReplaceRGBD ON CACHE BOOL "Replace the depths and colors of points in a ptx file")
+if(PTX_ReplaceRGBD)
+  ADD_EXECUTABLE(ptxReplaceRGBD ReplaceRGBD.cxx)
+  TARGET_LINK_LIBRARIES(ptxReplaceRGBD ${PTXLibraries})
+  INSTALL( TARGETS ptxReplaceRGBD RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
+SET(PTX_ReplaceRGB ON CACHE BOOL "Replace the colors of points in a ptx file")
+if(PTX_ReplaceRGB)
+  ADD_EXECUTABLE(ptxReplaceRGB ReplaceRGB.cxx)
+  TARGET_LINK_LIBRARIES(ptxReplaceRGB ${PTXLibraries})
+  INSTALL( TARGETS ptxReplaceRGB RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(ReplaceDepthImage ReplaceDepthImage.cxx)
-# TARGET_LINK_LIBRARIES(ReplaceDepthImage ${PTXLibraries})
-# INSTALL( TARGETS ReplaceDepthImage
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_ReplaceXYZ ON CACHE BOOL "Replace the coordinates of points in a ptx file")
+if(PTX_ReplaceXYZ)
+  ADD_EXECUTABLE(ptxReplaceXYZ ReplaceXYZ.cxx)
+  TARGET_LINK_LIBRARIES(ptxReplaceXYZ ${PTXLibraries})
+  INSTALL( TARGETS ptxReplaceXYZ RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
+SET(PTX_CoordinateImages ON CACHE BOOL "Write images of the coordinates")
+if(PTX_CoordinateImages)
+  ADD_EXECUTABLE(ptxPTXtoEverything PTXtoEverything.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoEverything ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoEverything RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(ReplaceRGBD ReplaceRGBD.cxx)
-# TARGET_LINK_LIBRARIES(ReplaceRGBD ${PTXLibraries})
-# INSTALL( TARGETS ReplaceRGBD
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_PTXtoValidityMask ON CACHE BOOL "Write the validity mask")
+if(PTX_PTXtoValidityMask)
+  ADD_EXECUTABLE(ptxPTXtoValidityMask PTXtoValidityMask.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoValidityMask ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoValidityMask RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(ReplaceRGB ReplaceRGB.cxx)
-# TARGET_LINK_LIBRARIES(ReplaceRGB ${PTXLibraries})
-# INSTALL( TARGETS ReplaceRGB
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_WeightedLaplacian ON CACHE BOOL "Compute and write the weight Laplacian")
+if(PTX_WeightedLaplacian)
+  ADD_EXECUTABLE(ptxWeightedLaplacian WeightedLaplacian.cxx)
+  TARGET_LINK_LIBRARIES(ptxWeightedLaplacian ${PTXLibraries})
+  INSTALL( TARGETS ptxWeightedLaplacian RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(ReplaceXYZ ReplaceXYZ.cxx)
-# TARGET_LINK_LIBRARIES(ReplaceXYZ ${PTXLibraries})
-# INSTALL( TARGETS ReplaceXYZ
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# 
-# ADD_EXECUTABLE(PTXtoEverything PTXtoEverything.cxx)
-# TARGET_LINK_LIBRARIES(PTXtoEverything ${PTXLibraries})
-# INSTALL( TARGETS PTXtoEverything
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# 
-# 
-# ADD_EXECUTABLE(PTXtoValidityMask PTXtoValidityMask.cxx)
-# TARGET_LINK_LIBRARIES(PTXtoValidityMask ${PTXLibraries})
-# INSTALL( TARGETS PTXtoValidityMask
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_Downsample ON CACHE BOOL "Downsample a ptx file")
+if(PTX_Downsample)
+  ADD_EXECUTABLE(ptxDownsample Downsample.cxx)
+  TARGET_LINK_LIBRARIES(ptxDownsample ${PTXLibraries})
+  INSTALL( TARGETS ptxDownsample RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# 
-# ADD_EXECUTABLE(WeightedLaplacian WeightedLaplacian.cxx)
-# TARGET_LINK_LIBRARIES(WeightedLaplacian ${PTXLibraries})
-# INSTALL( TARGETS WeightedLaplacian
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# 
-# 
-# ADD_EXECUTABLE(Downsample Downsample.cxx)
-# TARGET_LINK_LIBRARIES(Downsample ${PTXLibraries})
-# INSTALL( TARGETS Downsample
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_ColorPTXFromImage ON CACHE BOOL "Remap the colors from an image to the ptx file")
+if(PTX_ColorPTXFromImage)
+  ADD_EXECUTABLE(ptxColorPTXFromImage ColorPTXFromImage.cpp)
+  TARGET_LINK_LIBRARIES(ptxColorPTXFromImage ${PTXLibraries})
+  INSTALL( TARGETS ptxColorPTXFromImage RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-ADD_EXECUTABLE(ColorPTXFromImage ColorPTXFromImage.cpp)
-TARGET_LINK_LIBRARIES(ColorPTXFromImage ${PTXLibraries})
-INSTALL( TARGETS ColorPTXFromImage RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_ExtractMaskedRegion ON CACHE BOOL "Extract a part of a ptx file")
+if(PTX_ExtractMaskedRegion)
+  ADD_EXECUTABLE(ptxExtractMaskedRegion ExtractMaskedRegion.cxx)
+  TARGET_LINK_LIBRARIES(ptxExtractMaskedRegion ${PTXLibraries})
+  INSTALL( TARGETS ptxExtractMaskedRegion RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
-# ADD_EXECUTABLE(ExtractMaskedRegion ExtractMaskedRegion.cxx)
-# TARGET_LINK_LIBRARIES(ExtractMaskedRegion ${PTXLibraries})
-# INSTALL( TARGETS ExtractMaskedRegion
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# 
-# 
-# ADD_EXECUTABLE(OrthogonalProjection OrthogonalProjection.cxx)
-# TARGET_LINK_LIBRARIES(OrthogonalProjection ${PTXLibraries})
-# set_target_properties(OrthogonalProjection PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
-# INSTALL( TARGETS OrthogonalProjection
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+SET(PTX_OrthogonalProjection ON CACHE BOOL "Orthogonally project the points in a ptx file")
+if(PTX_OrthogonalProjection)
+  ADD_EXECUTABLE(ptxOrthogonalProjection OrthogonalProjection.cxx)
+  TARGET_LINK_LIBRARIES(ptxOrthogonalProjection ${PTXLibraries})
+  set_target_properties(ptxOrthogonalProjection PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
+  INSTALL( TARGETS ptxOrthogonalProjection RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
+
+SET(PTX_PTXInfo ON CACHE BOOL "Orthogonally project the points in a ptx file")
+if(PTX_PTXInfo)
+  ADD_EXECUTABLE(ptxPTXInfo PTXInfo.cpp)
+  TARGET_LINK_LIBRARIES(ptxPTXInfo ${PTXLibraries})
+  set_target_properties(ptxPTXInfo PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
+  INSTALL( TARGETS ptxPTXInfo RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
 
 #############################################
 FIND_PACKAGE(Qt4 REQUIRED)

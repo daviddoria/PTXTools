@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "FilePrefix.h"
 
 int main (int argc, char *argv[])
 {
@@ -11,9 +12,11 @@ int main (int argc, char *argv[])
   std::string inputFilename = argv[1];
   std::string outputPrefix = argv[2];
 
+  FilePrefix prefix(outputPrefix);
+  
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
-  ptxImage.WritePointCloud(outputPrefix);
-
+  ptxImage.WritePointCloud(prefix);
+  
   return EXIT_SUCCESS;
 }

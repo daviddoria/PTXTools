@@ -11,7 +11,9 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 
+// Custom
 #include "PTXPixel.h"
+#include "FilePrefix.h"
 
 /** \class PTXImage
  *  \brief This class handles common operations (reading, writing, appending, etc) operations on Leica PTX files.
@@ -87,12 +89,14 @@ public:
   PTXImage Downsample(const unsigned int factor);
 
   // Write a FullImageType to a ptx file
-  void WritePTX(const std::string filename);
+  void WritePTX(const FilePrefix filename);
 
   // Write the projection plane and principal axis to a vtp file
   void WriteProjectionPlane(const std::string filename);
 
   void Crop(const itk::ImageRegion<2> region);
+
+  PTXPixel GetPTXPixel(const itk::Index<2> pixel);
 
   // Get center direction ("principal axis")
   typedef itk::CovariantVector<float, 3> VectorType;
@@ -103,30 +107,30 @@ public:
 
   // Create a 2D image of the points in the grid in which the points were acquired
   void CreateRGBImage(RGBImageType::Pointer image);
-  void WriteRGBImage(std::string filename);
+  void WriteRGBImage(FilePrefix prefix);
 
   // Create a colored point cloud
   void CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud);
-  void WritePointCloud(std::string outputFilePrefix);
+  void WritePointCloud(FilePrefix prefix);
 
   // Create an image of the intensities of the points in the grid in which they were acquired
   void CreateIntensityImage(FloatImageType::Pointer image);
-  void WriteIntensityImage(std::string filePrefix);
+  void WriteIntensityImage(FilePrefix filePrefix);
 
   // Create a 2D, 1 channel image of the depths of the points in the grid in which they were acquired
   void CreateDepthImage(FloatImageType::Pointer image);
-  void WriteDepthImage(std::string filePrefix);
+  void WriteDepthImage(FilePrefix filePrefix);
 
-  void WriteDepthLaplacian(const std::string filePrefix);
+  void WriteDepthLaplacian(const FilePrefix filePrefix);
   FloatImageType::Pointer GetDepthLaplacian();
   
   void CreateRGBDImage(RGBDImageType::Pointer image);
-  void WriteRGBDImage(std::string filePrefix);
+  void WriteRGBDImage(FilePrefix filePrefix);
 
   void CreateRGBDIImage(RGBDIImageType::Pointer image);
-  void WriteRGBDIImage(std::string filePrefix);
+  void WriteRGBDIImage(FilePrefix filePrefix);
   
-  void WriteEverything(std::string filePrefix);
+  void WriteEverything(FilePrefix filePrefix);
 
   // Actually read the PTX file
   void ReadFile(std::string filename);

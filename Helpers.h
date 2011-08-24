@@ -1,8 +1,10 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+// VTK
 #include "vtkSmartPointer.h"
 
+// ITK
 #include "itkImageRegionIterator.h"
 
 class vtkPolyData;
@@ -11,23 +13,13 @@ namespace Helpers
 {
   void OutputPolyData(vtkSmartPointer<vtkPolyData> points, std::string filename);
 
-  /** Copy the input to the output*/
   template<typename TImage>
-  void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
-  {
-    output->SetRegions(input->GetLargestPossibleRegion());
-    output->Allocate();
+  void SetAllPixels(typename TImage::Pointer image, typename TImage::PixelType pixel);
 
-    itk::ImageRegionConstIterator<TImage> inputIterator(input, input->GetLargestPossibleRegion());
-    itk::ImageRegionIterator<TImage> outputIterator(output, output->GetLargestPossibleRegion());
-
-    while(!inputIterator.IsAtEnd())
-      {
-      outputIterator.Set(inputIterator.Get());
-      ++inputIterator;
-      ++outputIterator;
-      }
-  }
+  template<typename TImage>
+  void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output);
 };
+
+#include "Helpers.txx"
 
 #endif
