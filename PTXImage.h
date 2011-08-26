@@ -158,7 +158,8 @@ public:
   void WriteDepthThresholdMask(std::string& filename, float depthThreshold);
 
   // Count invalid points
-  void CountInvalidPoints();
+  unsigned int CountInvalidPoints();
+  unsigned int CountValidPoints();
 
   // The main storage image.
   FullImageType::Pointer FullImage;

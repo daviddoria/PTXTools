@@ -93,7 +93,14 @@ void PTXImage::AppendPTXRight(PTXImage ptxImage)
   Helpers::DeepCopy<FullImageType>(tileImageFilter->GetOutput(), this->FullImage);
 }
 
-void PTXImage::CountInvalidPoints()
+unsigned int PTXImage::CountValidPoints()
+{
+  unsigned int totalPoints = this->FullImage->GetLargestPossibleRegion().GetSize()[0] *
+                                this->FullImage->GetLargestPossibleRegion().GetSize()[1];
+  return  totalPoints - CountInvalidPoints();
+}
+
+unsigned int PTXImage::CountInvalidPoints()
 {
   itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
@@ -110,7 +117,8 @@ void PTXImage::CountInvalidPoints()
     ++fullImageIterator;
     }
 
-  std::cout << "There are " << numberOfInvalidPoints << " invalid points." << std::endl;
+  //std::cout << "There are " << numberOfInvalidPoints << " invalid points." << std::endl;
+  return numberOfInvalidPoints;
 }
 
 void PTXImage::WriteXYZ(const std::string filePrefix)
@@ -829,6 +837,16 @@ void PTXImage::ReplaceDepth(itk::Image<float, 2>::Pointer depthImage)
 
 void PTXImage::ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer rgb)
 {
+  // Recolor valid points to match the input 'rgb'
+
+  if(rgb->GetLargestPossibleRegion() != this->FullImage->GetLargestPossibleRegion())
+    {
+    std::cerr << "Input image must be exactly the same size as the PTX file!" << std::endl;
+    std::cerr << "Input image is " << rgb->GetLargestPossibleRegion()
+              << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
+    return;
+    }
+    
   // Setup iterators
   itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<itk::Image<itk::CovariantVector<float, 3>, 2> > rgbIterator(rgb, rgb->GetLargestPossibleRegion());
@@ -837,22 +855,18 @@ void PTXImage::ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer
     {
     // Get the old point
     PTXPixel pixel = imageIterator.Get();
-
-    // Copy the color from the RGB image
-    pixel.R = rgbIterator.Get()[0];
-    pixel.G = rgbIterator.Get()[1];
-    pixel.B = rgbIterator.Get()[2];
-    imageIterator.Set(pixel);
-  
     if(pixel.Valid)
       {
-
+      // Copy the color from the RGB image
+      pixel.R = rgbIterator.Get()[0];
+      pixel.G = rgbIterator.Get()[1];
+      pixel.B = rgbIterator.Get()[2];
+      imageIterator.Set(pixel);
       }
 
     ++imageIterator;
-    ++rgbIterator;  
+    ++rgbIterator;
     }
-
 }
 
 void PTXImage::ReplaceRGB(RGBImageType::Pointer rgb)
@@ -1428,9 +1442,22 @@ void PTXImage::WritePTX(const FilePrefix filePrefix)
       pixelIndex[1] = phi;
 
       PTXPixel pixel = this->FullImage->GetPixel(pixelIndex);
-      fout << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << pixel.Intensity
-           << " " << static_cast<int>(pixel.R) << " " << static_cast<int>(pixel.G)
-           << " " << static_cast<int>(pixel.B) << std::endl;
+      if(pixel.Valid)
+        {
+        fout << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << pixel.Intensity
+            << " " << static_cast<int>(pixel.R) << " " << static_cast<int>(pixel.G)
+            << " " << static_cast<int>(pixel.B) << std::endl;
+        }
+      else
+        {
+        /*
+        std::cout << "Invalid pixel would have been written as: "
+                  << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << pixel.Intensity
+                  << " " << static_cast<int>(pixel.R) << " " << static_cast<int>(pixel.G)
+                  << " " << static_cast<int>(pixel.B) << std::endl;
+        */
+        fout << "0 0 0 0.5 0 0 0" << std::endl;
+        }
       }
     }
 

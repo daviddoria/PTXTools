@@ -17,6 +17,8 @@ int main (int argc, char *argv[])
 
   std::cout << "Width: " << ptxImage.GetWidth() << std::endl;
   std::cout << "Height: " << ptxImage.GetHeight() << std::endl;
+
+  std::cout << "Valid points: " << ptxImage.CountValidPoints() << std::endl;
   
   return EXIT_SUCCESS;
 }

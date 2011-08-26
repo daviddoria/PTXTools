@@ -47,6 +47,8 @@ int main(int argc, char *argv[])
   // Read the PTX file
   PTXImage ptxImage;
   ptxImage.ReadFile(ptxFileName);
+
+  std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   //FilePrefix prefix("test");
   //ptxImage.WritePTX(prefix);
   
@@ -92,39 +94,42 @@ int main(int argc, char *argv[])
   // Iterate over the scan points image and track where each projects in the 'projectedImage'
   while(!xyzImageIterator.IsAtEnd())
     {
-    // Get the value of the current pixel
-    PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
-
-    Eigen::Vector4d X;
-    X(0) = xyz[0];
-    X(1) = xyz[1];
-    X(2) = xyz[2];
-    X(3) = 1;
-
-    // Perform the projection
-    Eigen::Vector3d projectedHomog = P * X;
-
-    // Get the projected point in non-homogeneous coordinates
-    Eigen::Vector2d projected = projectedHomog.hnormalized();
-
-    //std::cout << "Projected " << p[0] << " " << p[1] << " " << p[2] << " to : " << projected << std::endl;
-
-    // Get the pixel that the point was projected to
-    itk::Index<2> projectedPixel;
-    projectedPixel[0] = round(projected(0));
-    projectedPixel[1] = round(projected(1));
-
-    if(!imageReader->GetOutput()->GetLargestPossibleRegion().IsInside(projectedPixel))
+    if(ptxImage.GetPTXPixel(xyzImageIterator.GetIndex()).Valid)
       {
-      // Do nothing
-      }
-    else
-      {
-      std::vector<itk::Index<2> > projectedSoFar = projectedImage->GetPixel(projectedPixel);
-      projectedSoFar.push_back(xyzImageIterator.GetIndex());
-      projectedImage->SetPixel(projectedPixel, projectedSoFar);
-      //std::cout << "pixel: " << projectedPixel << std::endl;
-      }
+      // Get the value of the current pixel
+      PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
+
+      Eigen::Vector4d X;
+      X(0) = xyz[0];
+      X(1) = xyz[1];
+      X(2) = xyz[2];
+      X(3) = 1;
+
+      // Perform the projection
+      Eigen::Vector3d projectedHomog = P * X;
+
+      // Get the projected point in non-homogeneous coordinates
+      Eigen::Vector2d projected = projectedHomog.hnormalized();
+
+      //std::cout << "Projected " << p[0] << " " << p[1] << " " << p[2] << " to : " << projected << std::endl;
+
+      // Get the pixel that the point was projected to
+      itk::Index<2> projectedPixel;
+      projectedPixel[0] = round(projected(0));
+      projectedPixel[1] = round(projected(1));
+
+      if(!imageReader->GetOutput()->GetLargestPossibleRegion().IsInside(projectedPixel))
+        {
+        // Do nothing
+        }
+      else
+        {
+        std::vector<itk::Index<2> > projectedSoFar = projectedImage->GetPixel(projectedPixel);
+        projectedSoFar.push_back(xyzImageIterator.GetIndex());
+        projectedImage->SetPixel(projectedPixel, projectedSoFar);
+        //std::cout << "pixel: " << projectedPixel << std::endl;
+        }
+      } // end if valid
 
     ++xyzImageIterator;
     }
@@ -180,7 +185,7 @@ int main(int argc, char *argv[])
           {
           minDepth = ptxPixel.GetDepth();
           }
-        }
+        } // end loop over points projected to this pixel
         
       // Color all points within a tolerance of the minimum depth
       PTXImage::RGBImageType::PixelType color;
@@ -189,12 +194,14 @@ int main(int argc, char *argv[])
         {
         itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
         PTXPixel ptxPixel = ptxImage.GetPTXPixel(currentPixel);
-
-        if(fabs(ptxPixel.GetDepth() - minDepth) < .1)
+        if(ptxPixel.Valid)
           {
-          colorImage->SetPixel(currentPixel, color);
-          }
-        }
+          if(fabs(ptxPixel.GetDepth() - minDepth) < .1)
+            {
+            colorImage->SetPixel(currentPixel, color);
+            } // end if in tolerance
+          } // end if valid
+        } // end for
 
       } // end else over > 0 projections
 
@@ -202,6 +209,8 @@ int main(int argc, char *argv[])
     } // end while over whole image
   
   ptxImage.ReplaceRGB(colorImage);
+
+  std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   
   //FilePrefix vtpPrefix("outputPointCloud");
   //ptxImage.WritePointCloud(vtpPrefix);
