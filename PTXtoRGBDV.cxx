@@ -4,7 +4,7 @@ int main (int argc, char *argv[])
 {
   if(argc != 3)
     {
-    std::cout << "Required arguments: InputFilename(ptx) OutputPrefix (output will be OutputPrefix_ValidityMask.png)" << std::endl;
+    std::cout << "Required arguments: InputFilename.ptx OutputPrefix (will automaticall append _RGBDV.mha)" << std::endl;
     return EXIT_FAILURE;
     }
 
@@ -13,7 +13,7 @@ int main (int argc, char *argv[])
 
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
-  ptxImage.WriteInvalidMask(outputPrefix);
+  ptxImage.WriteRGBDVImage(outputPrefix);
 
   return EXIT_SUCCESS;
 }

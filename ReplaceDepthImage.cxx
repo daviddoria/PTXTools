@@ -6,7 +6,7 @@ int main (int argc, char *argv[])
 {
   if(argc != 4)
     {
-    std::cout << "Required arguments: InputFilename(ptx) NewDepthImage(mhd) OutputFilename(vtp)" << std::endl;
+    std::cout << "Required arguments: InputFilename(ptx) NewDepthImage(mhd) OutputFilename(ptx)" << std::endl;
     return EXIT_FAILURE;
     }
 
@@ -25,7 +25,7 @@ int main (int argc, char *argv[])
 
   ptxImage.ReplaceDepth(reader->GetOutput());
 
-  ptxImage.WritePointCloud(outputFilename);
+  ptxImage.WritePTX(outputFilename);
 
   return EXIT_SUCCESS;
 }

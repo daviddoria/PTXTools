@@ -40,6 +40,9 @@ public:
 
   // A 4 channel image (R, G, B, Depth)
   typedef itk::Image<itk::CovariantVector<float, 4>, 2> RGBDImageType;
+  
+  // A 4 channel image (R, G, B, Depth, Valid)
+  typedef itk::Image<itk::CovariantVector<float, 5>, 2> RGBDVImageType;
 
   // A 5 channel image (R, G, B, Depth, Intensity)
   typedef itk::Image<itk::CovariantVector<float, 5>, 2> RGBDIImageType;
@@ -126,6 +129,9 @@ public:
   
   void CreateRGBDImage(RGBDImageType::Pointer image);
   void WriteRGBDImage(FilePrefix filePrefix);
+  
+  void CreateRGBDVImage(RGBDVImageType::Pointer image);
+  void WriteRGBDVImage(FilePrefix filePrefix);
 
   void CreateRGBDIImage(RGBDIImageType::Pointer image);
   void WriteRGBDIImage(FilePrefix filePrefix);
@@ -135,6 +141,9 @@ public:
   // Actually read the PTX file
   void ReadFile(std::string filename);
 
+  // This function allows the validity image to be modified externally and the new image applied to the grid
+  void ReplaceValidity(MaskImageType::Pointer validityImage);
+  
   // This function allows the depth map to be modified externally and the new map applied to the grid
   void ReplaceDepth(itk::Image<float, 2>::Pointer depthImage);
 
@@ -153,7 +162,8 @@ public:
 
   // Create a mask image where invalid pixels are non-zero
   void WriteInvalidMask(std::string& filename);
-
+  void CreateValidityImage(FloatImageType::Pointer image);
+  
   // Create a mask image of points below a certain depthThreshold
   void WriteDepthThresholdMask(std::string& filename, float depthThreshold);
 
@@ -198,15 +208,21 @@ public:
 
   void ComputeAverageDeltaPhi();
   void ComputeAverageDeltaTheta();
-  float AverageDeltaTheta;
-  float AverageDeltaPhi;
-
+  
   float DistanceBetweenPoints(PTXPixel a, PTXPixel b);
 
   PTXImage OrthogonalProjection(VectorType axis);
 
   itk::Index<2> FindValidTopCenterPixel();
   itk::Index<2> FindValidCenterPixel();
+
+  void SetDebug(bool);
+  
+private:
+  float AverageDeltaTheta;
+  float AverageDeltaPhi;
+
+  bool Debug;
 };
 
 

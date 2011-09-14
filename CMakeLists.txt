@@ -78,6 +78,7 @@ if(PTX_ExtractHoleBoundaryPoints)
   INSTALL( TARGETS ptxExtractHoleBoundaryPoints RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
+# PTX to Red, Green, Blue
 SET(PTX_PTXtoRGB ON CACHE BOOL "Extract the colors (RGB) from a ptx file")
 if(PTX_PTXtoRGB)
   ADD_EXECUTABLE(ptxPTXtoRGB PTXtoRGB.cxx)
@@ -85,11 +86,20 @@ if(PTX_PTXtoRGB)
   INSTALL( TARGETS ptxPTXtoRGB RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
+# PTX to Red, Green, Blue, Depth
 SET(PTX_PTXtoRGBD ON CACHE BOOL "Extract the colors and depths from a ptx file")
 if(PTX_PTXtoRGBD)
   ADD_EXECUTABLE(ptxPTXtoRGBD PTXtoRGBD.cxx)
   TARGET_LINK_LIBRARIES(ptxPTXtoRGBD ${PTXLibraries})
   INSTALL( TARGETS ptxPTXtoRGBD RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
+
+# PTX to Red, Green, Blue, Depth, Valid
+SET(PTX_PTXtoRGBDV ON CACHE BOOL "Extract the colors and depths from a ptx file")
+if(PTX_PTXtoRGBDV)
+  ADD_EXECUTABLE(ptxPTXtoRGBDV PTXtoRGBDV.cxx)
+  TARGET_LINK_LIBRARIES(ptxPTXtoRGBDV ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoRGBDV RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
 SET(PTX_PTXtoPointCloud ON CACHE BOOL "Extract the point coordinates")

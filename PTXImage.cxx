@@ -43,6 +43,13 @@ PTXImage::PTXImage()
 {
   // Create the main image
   this->FullImage = FullImageType::New();
+  
+  this->Debug = false;
+}
+
+void PTXImage::SetDebug(bool value)
+{
+  this->Debug = value;
 }
 
 PTXPixel PTXImage::GetPTXPixel(const itk::Index<2> pixel)
@@ -335,6 +342,37 @@ void PTXImage::WriteDepthThresholdMask(std::string& filename, float depthThresho
   writer->SetFileName(ss.str());
   writer->SetInput(mask);
   writer->Update();
+}
+
+void PTXImage::CreateValidityImage(FloatImageType::Pointer image)
+{
+  // Non-zero pixels in this image indicate valid pixels.
+  image->SetRegions(this->FullImage->GetLargestPossibleRegion());
+  image->Allocate();
+  image->FillBuffer(0);
+
+  // Setup iterators
+  itk::ImageRegionIterator<FloatImageType> validityIterator(image, image->GetLargestPossibleRegion());
+
+  itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+
+  while(!fullImageIterator.IsAtEnd())
+    {
+    PTXPixel fullPixel = fullImageIterator.Get();
+
+    if(fullPixel.Valid)
+      {
+      validityIterator.Set(1); // non-zero means "valid"
+      }
+    else
+      {
+      validityIterator.Set(0); // zero means "unknown/invalid"
+      }
+
+    ++fullImageIterator;
+    ++validityIterator;
+    }
+
 }
 
 void PTXImage::WriteInvalidMask(std::string& filename)
@@ -810,7 +848,10 @@ void PTXImage::ReplaceDepth(itk::Image<float, 2>::Pointer depthImage)
 
     // For testing only, compute the old depth
     double oldDepth = origin.EuclideanDistanceTo(oldPoint);
-    std::cout << "Old depth: " << oldDepth << " New depth: " << newDepthIterator.Get() << std::endl;
+    if(this->Debug)
+      {
+      std::cout << "Old depth: " << oldDepth << " New depth: " << newDepthIterator.Get() << std::endl;
+      }
 
     // Get the vector from the origin (scanner location) and the old point
     itk::Vector<float, 3> unitVector = oldPoint - origin;
@@ -821,7 +862,11 @@ void PTXImage::ReplaceDepth(itk::Image<float, 2>::Pointer depthImage)
     // Compute the new point from the vector and the new depth
     itk::Point<float, 3> newPoint = origin + unitVector * newDepthIterator.Get();
 
-    std::cout << "Old point: " << oldPoint << " New point: " << newPoint << std::endl;
+    if(this->Debug)
+      {
+      std::cout << "Old point: " << oldPoint << " New point: " << newPoint << std::endl;
+      }
+    
     // Save the new point in the PTXPixel
     pixel.X = newPoint[0];
     pixel.Y = newPoint[1];
@@ -866,6 +911,35 @@ void PTXImage::ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer
 
     ++imageIterator;
     ++rgbIterator;
+    }
+}
+
+
+void PTXImage::ReplaceValidity(MaskImageType::Pointer validityImage)
+{
+  if(validityImage->GetLargestPossibleRegion() != this->FullImage->GetLargestPossibleRegion())
+    {
+    std::cerr << "ReplaceValidity(): Input image must be exactly the same size as the PTX file!" << std::endl;
+    std::cerr << "Input image is " << validityImage->GetLargestPossibleRegion()
+              << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
+    return;
+    }
+    
+  // Setup iterators
+  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    // Get the old point
+    PTXPixel pixel = imageIterator.Get();
+    if(pixel.Valid)
+      {
+      // Copy the color from the RGB image
+      pixel.Valid = validityImage->GetPixel(imageIterator.GetIndex());
+      imageIterator.Set(pixel);
+      }
+
+    ++imageIterator;
     }
 }
 
@@ -1164,6 +1238,64 @@ void PTXImage::WriteRGBDImage(FilePrefix filePrefix)
   ss << filePrefix.prefix << "_RGBD.mha";
 
   typedef  itk::ImageFileWriter< RGBDImageType > WriterType;
+  WriterType::Pointer writer = WriterType::New();
+  writer->SetFileName(ss.str());
+  writer->SetInput(image);
+  writer->Update();
+}
+
+
+void PTXImage::CreateRGBDVImage(RGBDVImageType::Pointer image)
+{
+  // Create the 5 channels
+  FloatImageType::Pointer depthImage = FloatImageType::New();
+  CreateDepthImage(depthImage);
+
+  RGBImageType::Pointer rgbImage = RGBImageType::New();
+  CreateRGBImage(rgbImage);
+
+  FloatImageType::Pointer validityImage = FloatImageType::New();
+  CreateValidityImage(validityImage);
+    
+  // Setup the image
+  image->SetRegions(this->FullImage->GetLargestPossibleRegion());
+  image->Allocate();
+  image->FillBuffer(itk::NumericTraits<RGBDVImageType::PixelType>::Zero);
+
+  // Setup iterators
+  itk::ImageRegionIterator<RGBDVImageType> imageIterator(image, image->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<FloatImageType> depthImageIterator(depthImage, depthImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<FloatImageType> validityImageIterator(validityImage, validityImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<RGBImageType> rgbImageIterator(rgbImage, rgbImage->GetLargestPossibleRegion());
+
+  // Copy the images into their respective channels
+  while(!imageIterator.IsAtEnd())
+    {
+    RGBDVImageType::PixelType pixel;
+    pixel[0] = rgbImageIterator.Get()[0];
+    pixel[1] = rgbImageIterator.Get()[1];
+    pixel[2] = rgbImageIterator.Get()[2];
+    pixel[3] = depthImageIterator.Get();
+    pixel[4] = validityImageIterator.Get();
+
+    imageIterator.Set(pixel);
+
+    ++imageIterator;
+    ++depthImageIterator;
+    ++rgbImageIterator;
+    ++validityImageIterator;
+    }
+}
+
+void PTXImage::WriteRGBDVImage(FilePrefix filePrefix)
+{
+  RGBDVImageType::Pointer image = RGBDVImageType::New();
+  CreateRGBDVImage(image);
+
+  std::stringstream ss;
+  ss << filePrefix.prefix << "_RGBDV.mha";
+
+  typedef  itk::ImageFileWriter< RGBDVImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetFileName(ss.str());
   writer->SetInput(image);

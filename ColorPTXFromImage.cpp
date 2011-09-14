@@ -12,11 +12,11 @@
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkXMLPolyDataReader.h>
-#include <vtkXMLPolyDataWriter.h>
 
 // ITK
 #include "itkImage.h"
 #include "itkImageFileReader.h"
+#include "itkImageFileWriter.h"
 #include "itkImageRegionConstIterator.h"
 
 // Custom
@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
   
   PTXImage::XYZImageType::Pointer xyzImage = ptxImage.GetXYZImage();
   
+  // This is the output image. Start by making it entirely green, then we will fill in valid values.
   PTXImage::RGBImageType::Pointer colorImage = PTXImage::RGBImageType::New();
   colorImage->SetRegions(xyzImage->GetLargestPossibleRegion());
   colorImage->Allocate();
@@ -64,6 +65,13 @@ int main(int argc, char *argv[])
   green.SetBlue(0);
   
   colorImage->FillBuffer(green);
+  
+  // We also want to track which pixels were filled
+  PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
+  validityMask->SetRegions(xyzImage->GetLargestPossibleRegion());
+  validityMask->Allocate();
+  validityMask->FillBuffer(0);
+  
   //ptxImage.CreateRGBImage(colorImage);
 
   //std::cout << "colorImage: " << colorImage->GetLargestPossibleRegion() << std::endl;
@@ -199,6 +207,7 @@ int main(int argc, char *argv[])
           if(fabs(ptxPixel.GetDepth() - minDepth) < .1)
             {
             colorImage->SetPixel(currentPixel, color);
+	    validityMask->SetPixel(currentPixel, 255);
             } // end if in tolerance
           } // end if valid
         } // end for
@@ -207,6 +216,15 @@ int main(int argc, char *argv[])
 
     ++projectedImageIterator;
     } // end while over whole image
+  
+   
+  typedef  itk::ImageFileWriter< PTXImage::MaskImageType > MaskWriterType;
+  MaskWriterType::Pointer maskWriter = MaskWriterType::New();
+  maskWriter->SetFileName("ValidColorMask.png");
+  maskWriter->SetInput(validityMask);
+  maskWriter->Update();
+  
+  ptxImage.ReplaceValidity(validityMask);
   
   ptxImage.ReplaceRGB(colorImage);
 
