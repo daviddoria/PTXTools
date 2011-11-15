@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vtkSmartPointer.h>
 
 // Custom
+#include "ImageLayer.h"
 #include "PTXImage.h"
 
 class MainWindow : public QMainWindow, private Ui::MainWindow
@@ -57,6 +58,7 @@ public slots:
   void on_radRGB_clicked();
   void on_radDepth_clicked();
   void on_radIntensity_clicked();
+  void on_radValidity_clicked();
 
   // Use a QFileDialog to get a filename, then open the specified file as a greyscale or color image, depending on which type the user has specified through the file menu.
   void OpenFile();
@@ -67,20 +69,13 @@ protected:
   vtkSmartPointer<vtkInteractorStyleImage> InteractorStyleImage;
   vtkSmartPointer<vtkRenderer> LeftRenderer;
   
-  PTXImage::RGBImageType::Pointer ColorImage;
-  vtkSmartPointer<vtkImageData> ColorImageData;
-  vtkSmartPointer<vtkImageSlice> ColorImageSlice;
-  vtkSmartPointer<vtkImageSliceMapper> ColorImageSliceMapper;
+  ImageLayer<PTXImage::RGBImageType> ColorImageLayer;
   
-  PTXImage::FloatImageType::Pointer IntensityImage;
-  vtkSmartPointer<vtkImageData> IntensityImageData;
-  vtkSmartPointer<vtkImageSlice> IntensityImageSlice;
-  vtkSmartPointer<vtkImageSliceMapper> IntensityImageSliceMapper;
+  ImageLayer<PTXImage::FloatImageType> IntensityImageLayer;
   
-  PTXImage::FloatImageType::Pointer DepthImage;
-  vtkSmartPointer<vtkImageData> DepthImageData;
-  vtkSmartPointer<vtkImageSlice> DepthImageSlice;
-  vtkSmartPointer<vtkImageSliceMapper> DepthImageSliceMapper;
+  ImageLayer<PTXImage::FloatImageType> DepthImageLayer;
+  
+  ImageLayer<PTXImage::UnsignedCharImageType> ValidityImageLayer;
   
   // Things for the 3D window
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyleTrackballCamera;

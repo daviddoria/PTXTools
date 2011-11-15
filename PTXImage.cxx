@@ -345,7 +345,7 @@ void PTXImage::WriteDepthThresholdMask(const std::string& filename, const float 
   writer->Update();
 }
 
-void PTXImage::CreateValidityImage(FloatImageType::Pointer image) const
+void PTXImage::CreateValidityImage(MaskImageType::Pointer image) const
 {
   // Non-zero pixels in this image indicate valid pixels.
   image->SetRegions(this->FullImage->GetLargestPossibleRegion());
@@ -353,7 +353,7 @@ void PTXImage::CreateValidityImage(FloatImageType::Pointer image) const
   image->FillBuffer(0);
 
   // Setup iterators
-  itk::ImageRegionIterator<FloatImageType> validityIterator(image, image->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<MaskImageType> validityIterator(image, image->GetLargestPossibleRegion());
 
   itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
@@ -363,7 +363,7 @@ void PTXImage::CreateValidityImage(FloatImageType::Pointer image) const
 
     if(fullPixel.Valid)
       {
-      validityIterator.Set(1); // non-zero means "valid"
+      validityIterator.Set(255); // non-zero means "valid"
       }
     else
       {
@@ -1287,7 +1287,7 @@ void PTXImage::CreateRGBDVImage(RGBDVImageType::Pointer image) const
   RGBImageType::Pointer rgbImage = RGBImageType::New();
   CreateRGBImage(rgbImage);
 
-  FloatImageType::Pointer validityImage = FloatImageType::New();
+  MaskImageType::Pointer validityImage = MaskImageType::New();
   CreateValidityImage(validityImage);
     
   // Setup the image
@@ -1298,7 +1298,7 @@ void PTXImage::CreateRGBDVImage(RGBDVImageType::Pointer image) const
   // Setup iterators
   itk::ImageRegionIterator<RGBDVImageType> imageIterator(image, image->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<FloatImageType> depthImageIterator(depthImage, depthImage->GetLargestPossibleRegion());
-  itk::ImageRegionConstIterator<FloatImageType> validityImageIterator(validityImage, validityImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<MaskImageType> validityImageIterator(validityImage, validityImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBImageType> rgbImageIterator(rgbImage, rgbImage->GetLargestPossibleRegion());
 
   // Copy the images into their respective channels

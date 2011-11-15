@@ -82,33 +82,11 @@ MainWindow::MainWindow(QWidget *parent)
   this->qvtkWidgetRight->GetInteractor()->SetInteractorStyle(this->InteractorStyleTrackballCamera);
 
   // Things for the 2D window
-  this->ColorImage = PTXImage::RGBImageType::New();
-  this->ColorImageData = vtkSmartPointer<vtkImageData>::New();
-  this->ColorImageSlice = vtkSmartPointer<vtkImageSlice>::New();
-  this->ColorImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
-  this->ColorImageSliceMapper->SetInputConnection(this->ColorImageData->GetProducerPort());
-  this->ColorImageSlice->SetMapper(this->ColorImageSliceMapper);
-  this->ColorImageSlice->VisibilityOff();
-  this->LeftRenderer->AddViewProp(this->ColorImageSlice);
-    
-  this->IntensityImage = PTXImage::FloatImageType::New();
-  this->IntensityImageData = vtkSmartPointer<vtkImageData>::New();
-  this->IntensityImageSlice = vtkSmartPointer<vtkImageSlice>::New();
-  this->IntensityImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
-  this->IntensityImageSliceMapper->SetInputConnection(this->IntensityImageData->GetProducerPort());
-  this->IntensityImageSlice->SetMapper(this->IntensityImageSliceMapper);
-  this->IntensityImageSlice->VisibilityOff();
-  this->LeftRenderer->AddViewProp(this->IntensityImageSlice);
-  
-  this->DepthImage = PTXImage::FloatImageType::New();
-  this->DepthImageData = vtkSmartPointer<vtkImageData>::New();
-  this->DepthImageSlice = vtkSmartPointer<vtkImageSlice>::New();
-  this->DepthImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
-  this->DepthImageSliceMapper->SetInputConnection(this->DepthImageData->GetProducerPort());
-  this->DepthImageSlice->SetMapper(this->DepthImageSliceMapper);
-  this->DepthImageSlice->VisibilityOff();
-  this->LeftRenderer->AddViewProp(this->DepthImageSlice);
-  
+  this->LeftRenderer->AddViewProp(this->ColorImageLayer.ImageSlice);
+  this->LeftRenderer->AddViewProp(this->DepthImageLayer.ImageSlice);
+  this->LeftRenderer->AddViewProp(this->ValidityImageLayer.ImageSlice);
+  this->LeftRenderer->AddViewProp(this->IntensityImageLayer.ImageSlice);
+
   // Things for the 3D window
   this->PointsActor = vtkSmartPointer<vtkActor>::New();
   this->PointsPolyData = vtkSmartPointer<vtkPolyData>::New();
@@ -154,6 +132,11 @@ void MainWindow::on_radIntensity_clicked()
   Refresh();
 }
 
+void MainWindow::on_radValidity_clicked()
+{
+  Refresh();
+}
+
 #if 0
 void InnerWidget::actionFlip_Image_triggered()
 {
@@ -181,14 +164,17 @@ void MainWindow::OpenFile()
   this->PTX.ReadFile(filename.toStdString());
 
   // Convert the images into a VTK images for display.
-  this->PTX.CreateRGBImage(this->ColorImage);
-  Helpers::ITKRGBImageToVTKImage(this->ColorImage, this->ColorImageData);
+  this->PTX.CreateRGBImage(this->ColorImageLayer.Image);
+  Helpers::ITKRGBImageToVTKImage(this->ColorImageLayer.Image, this->ColorImageLayer.ImageData);
   
-  this->PTX.CreateDepthImage(this->DepthImage);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImage, this->DepthImageData);
+  this->PTX.CreateDepthImage(this->DepthImageLayer.Image);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image, this->DepthImageLayer.ImageData);
   
-  this->PTX.CreateIntensityImage(this->IntensityImage);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImage, this->IntensityImageData);
+  this->PTX.CreateIntensityImage(this->IntensityImageLayer.Image);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image, this->IntensityImageLayer.ImageData);
+  
+  this->PTX.CreateValidityImage(this->ValidityImageLayer.Image);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::UnsignedCharImageType>(this->ValidityImageLayer.Image, this->ValidityImageLayer.ImageData);
 
   this->PTX.CreatePointCloud(this->PointsPolyData);
   
@@ -200,9 +186,10 @@ void MainWindow::OpenFile()
 
 void MainWindow::Refresh()
 {
-  this->DepthImageSlice->SetVisibility(this->radDepth->isChecked());
-  this->IntensityImageSlice->SetVisibility(this->radIntensity->isChecked());
-  this->ColorImageSlice->SetVisibility(this->radRGB->isChecked());
+  this->DepthImageLayer.ImageSlice->SetVisibility(this->radDepth->isChecked());
+  this->IntensityImageLayer.ImageSlice->SetVisibility(this->radIntensity->isChecked());
+  this->ColorImageLayer.ImageSlice->SetVisibility(this->radRGB->isChecked());
+  this->ValidityImageLayer.ImageSlice->SetVisibility(this->radValidity->isChecked());
   
   this->LeftRenderer->Render();
   this->RightRenderer->Render();

@@ -44,80 +44,36 @@
        <widget class="QVTKWidget" name="qvtkWidgetRight" native="true"/>
       </item>
       <item row="2" column="0">
-       <widget class="QGroupBox" name="grpSelection">
-        <property name="styleSheet">
-         <string notr="true">QGroupBox#grpSelection { 
-     border: 2px solid gray; 
-     border-radius: 3px; 
- } 
-
-QGroupBox#grpSelection::title { 
-    background-color: transparent;
- } </string>
-        </property>
-        <property name="title">
-         <string>Image type</string>
-        </property>
-        <widget class="QRadioButton" name="radDepth">
-         <property name="geometry">
-          <rect>
-           <x>30</x>
-           <y>80</y>
-           <width>106</width>
-           <height>21</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Depth</string>
-         </property>
-        </widget>
-        <widget class="QRadioButton" name="radRGB">
-         <property name="geometry">
-          <rect>
-           <x>30</x>
-           <y>50</y>
-           <width>106</width>
-           <height>21</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>RGB</string>
-         </property>
-        </widget>
-        <widget class="QRadioButton" name="radIntensity">
-         <property name="geometry">
-          <rect>
-           <x>30</x>
-           <y>110</y>
-           <width>131</width>
-           <height>21</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Intensity</string>
-         </property>
-        </widget>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QGroupBox" name="groupBox">
-        <property name="styleSheet">
-         <string notr="true">QGroupBox#groupBox { 
-     border: 2px solid gray; 
-     border-radius: 3px; 
- } 
-
-QGroupBox#groupBox::title { 
-    background-color: transparent;
- } </string>
-        </property>
-        <property name="title">
-         <string/>
-        </property>
-        <property name="flat">
-         <bool>false</bool>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QRadioButton" name="radRGB">
+          <property name="text">
+           <string>RGB</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radDepth">
+          <property name="text">
+           <string>Depth</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radIntensity">
+          <property name="text">
+           <string>Intensity</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radValidity">
+          <property name="text">
+           <string>Validity</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
