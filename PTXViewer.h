@@ -42,11 +42,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ImageLayer.h"
 #include "PTXImage.h"
 
-class MainWindow : public QMainWindow, private Ui::MainWindow
+class PTXViewerGUI : public QMainWindow, private Ui::PTXViewerGUI
 {
 Q_OBJECT
 public:
-  MainWindow(QWidget *parent = 0);
+  PTXViewerGUI(QWidget *parent = 0);
 
 public slots:
   // Menu items

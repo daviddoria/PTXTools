@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Helpers.h"
 
 template <typename TImage>
-void MainWindow::SaveImage(const typename TImage::Pointer image)
+void PTXViewerGUI::SaveImage(const typename TImage::Pointer image)
 {
   QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
 
