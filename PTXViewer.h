@@ -31,6 +31,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // VTK
 #include <vtkActor.h>
 #include <vtkImageActor.h>
+#include <vtkImageData.h>
+#include <vtkImageSlice.h>
+#include <vtkImageSliceMapper.h>
 #include <vtkInteractorStyleImage.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkSmartPointer.h>
@@ -58,34 +61,42 @@ public slots:
   // Use a QFileDialog to get a filename, then open the specified file as a greyscale or color image, depending on which type the user has specified through the file menu.
   void OpenFile();
   
-  void DisplayRGB();
-  void DisplayDepth();
-  void DisplayIntensity();
-  
 protected:
 
-  // Our scribble interactor style
+  // Things for the 2D window
   vtkSmartPointer<vtkInteractorStyleImage> InteractorStyleImage;
-  vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyleTrackballCamera;
-
-  // The input and output image actors
-  vtkSmartPointer<vtkImageActor> ImageActor;
-  vtkSmartPointer<vtkActor> Actor;
-
-  // The renderers
   vtkSmartPointer<vtkRenderer> LeftRenderer;
+  
+  PTXImage::RGBImageType::Pointer ColorImage;
+  vtkSmartPointer<vtkImageData> ColorImageData;
+  vtkSmartPointer<vtkImageSlice> ColorImageSlice;
+  vtkSmartPointer<vtkImageSliceMapper> ColorImageSliceMapper;
+  
+  PTXImage::FloatImageType::Pointer IntensityImage;
+  vtkSmartPointer<vtkImageData> IntensityImageData;
+  vtkSmartPointer<vtkImageSlice> IntensityImageSlice;
+  vtkSmartPointer<vtkImageSliceMapper> IntensityImageSliceMapper;
+  
+  PTXImage::FloatImageType::Pointer DepthImage;
+  vtkSmartPointer<vtkImageData> DepthImageData;
+  vtkSmartPointer<vtkImageSlice> DepthImageSlice;
+  vtkSmartPointer<vtkImageSliceMapper> DepthImageSliceMapper;
+  
+  // Things for the 3D window
+  vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyleTrackballCamera;
   vtkSmartPointer<vtkRenderer> RightRenderer;
-
+  vtkSmartPointer<vtkImageActor> PointsActor;
+  
   // Refresh both renderers and render windows
   void Refresh();
-
+  
   // Allows the background color to be changed
   double BackgroundColor[3];
 
   // Allows the image to be flipped so that it is "right side up"
   double CameraUp[3];
 
-  // Store the image when it is opened.
+  // Store the PTX file when it is opened.
   PTXImage PTX;
 };
 

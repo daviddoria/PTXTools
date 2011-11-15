@@ -70,10 +70,6 @@ MainWindow::MainWindow(QWidget *parent)
   this->CameraUp[1] = 1;
   this->CameraUp[2] = 0;
 
-  // Instantiations
-  this->ImageActor = vtkSmartPointer<vtkImageActor>::New();
-  this->Actor = vtkSmartPointer<vtkActor>::New();
-
   // Add renderers - we flip the image by changing the camera view up because of the conflicting conventions used by ITK and VTK
   this->LeftRenderer = vtkSmartPointer<vtkRenderer>::New();
   this->LeftRenderer->GradientBackgroundOn();
@@ -93,9 +89,40 @@ MainWindow::MainWindow(QWidget *parent)
   this->InteractorStyleImage = vtkSmartPointer<vtkInteractorStyleImage>::New();
   this->qvtkWidgetLeft->GetInteractor()->SetInteractorStyle(this->InteractorStyleImage);
   
-  this->InteractorStyleTrackballCamera = vtkSmartPointer<vtkInteractorStyleImage>::New();
+  this->InteractorStyleTrackballCamera = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
   this->qvtkWidgetRight->GetInteractor()->SetInteractorStyle(this->InteractorStyleTrackballCamera);
 
+  // Things for the 2D window
+  this->ColorImage = PTXImage::RGBImageType::New();
+  this->ColorImageData = vtkSmartPointer<vtkImageData>::New();
+  this->ColorImageSlice = vtkSmartPointer<vtkImageSlice>::New();
+  this->ColorImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
+  this->ColorImageSliceMapper->SetInputConnection(this->ColorImageData->GetProducerPort());
+  this->ColorImageSlice->SetMapper(this->ColorImageSliceMapper);
+  this->ColorImageSlice->VisibilityOff();
+  this->LeftRenderer->AddViewProp(this->ColorImageSlice);
+    
+  this->IntensityImage = PTXImage::FloatImageType::New();
+  this->IntensityImageData = vtkSmartPointer<vtkImageData>::New();
+  this->IntensityImageSlice = vtkSmartPointer<vtkImageSlice>::New();
+  this->IntensityImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
+  this->IntensityImageSliceMapper->SetInputConnection(this->IntensityImageData->GetProducerPort());
+  this->IntensityImageSlice->SetMapper(this->IntensityImageSliceMapper);
+  this->IntensityImageSlice->VisibilityOff();
+  this->LeftRenderer->AddViewProp(this->IntensityImageSlice);
+  
+  this->DepthImage = PTXImage::FloatImageType::New();
+  this->DepthImageData = vtkSmartPointer<vtkImageData>::New();
+  this->DepthImageSlice = vtkSmartPointer<vtkImageSlice>::New();
+  this->DepthImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
+  this->DepthImageSliceMapper->SetInputConnection(this->DepthImageData->GetProducerPort());
+  this->DepthImageSlice->SetMapper(this->DepthImageSliceMapper);
+  this->DepthImageSlice->VisibilityOff();
+  this->LeftRenderer->AddViewProp(this->DepthImageSlice);
+  
+  // Things for the 3D window
+  this->PointsActor = vtkSmartPointer<vtkImageActor>::New();
+  
   // Default GUI settings
   this->radRGB->setChecked(true);
 }
@@ -153,17 +180,17 @@ void MainWindow::StopProgressSlot()
 
 void MainWindow::on_radRGB_clicked()
 {
-  DisplayRGB();
+  Refresh();
 }
 
 void MainWindow::on_radDepth_clicked()
 {
-  DisplayDepth();
+  Refresh();
 }
 
 void MainWindow::on_radIntensity_clicked()
 {
-  DisplayIntensity();
+  Refresh();
 }
 
 #if 0
@@ -192,71 +219,16 @@ void MainWindow::OpenFile()
   // Read file
   this->PTX.ReadFile(filename.toStdString());
 
-  DisplayRGB();
-  
-}
-
-void MainWindow::DisplayRGB()
-{
-  // Convert the ITK image to a VTK image and display it
-  vtkSmartPointer<vtkImageData> VTKImage =
-    vtkSmartPointer<vtkImageData>::New();
-  Helpers::ITKImagetoVTKImage(reader->GetOutput(), VTKImage);
-
-  this->LeftRenderer->RemoveAllViewProps();
-
-  this->OriginalImageActor->SetInput(VTKImage);
-  this->GraphCutStyle->InitializeTracer(this->OriginalImageActor);
-
-  this->LeftRenderer->ResetCamera();
-  this->Refresh();
-
-}
-
-
-void MainWindow::DisplayDepth()
-{
-  // Convert the ITK image to a VTK image and display it
-  vtkSmartPointer<vtkImageData> VTKImage =
-    vtkSmartPointer<vtkImageData>::New();
-  Helpers::ITKImagetoVTKImage(reader->GetOutput(), VTKImage);
-
-  this->LeftRenderer->RemoveAllViewProps();
-
-  this->OriginalImageActor->SetInput(VTKImage);
-  this->GraphCutStyle->InitializeTracer(this->OriginalImageActor);
-
-  this->LeftRenderer->ResetCamera();
-  this->Refresh();
-
-}
-
-
-void MainWindow::DisplayIntensity()
-{
-  // Convert the ITK image to a VTK image and display it
-  vtkSmartPointer<vtkImageData> VTKImage =
-    vtkSmartPointer<vtkImageData>::New();
-  Helpers::ITKImagetoVTKImage(reader->GetOutput(), VTKImage);
-
-  this->LeftRenderer->RemoveAllViewProps();
-
-  this->OriginalImageActor->SetInput(VTKImage);
-  this->GraphCutStyle->InitializeTracer(this->OriginalImageActor);
-
-  this->LeftRenderer->ResetCamera();
-  this->Refresh();
-
-}
-
-// this should have different behavior for 1D float (depth and intensity) and 3D unsigned char (rgb) images
-void MainWindow::DisplayImage(itk::VectorImage<float, 2>)
-{
+  Refresh();
   
 }
 
 void MainWindow::Refresh()
 {
+  this->DepthImageSlice->SetVisibility(this->radDepth->isChecked());
+  this->IntensityImageSlice->SetVisibility(this->radIntensity->isChecked());
+  this->ColorImageSlice->SetVisibility(this->radRGB->isChecked());
+  
   this->LeftRenderer->Render();
   this->RightRenderer->Render();
   this->qvtkWidgetRight->GetRenderWindow()->Render();

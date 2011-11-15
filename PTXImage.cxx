@@ -414,7 +414,7 @@ void PTXImage::WriteInvalidMask(std::string& filename)
   writer->Update();
 }
 
-void PTXImage::ReadFile(std::string filename)
+void PTXImage::ReadFile(const std::string& filename)
 {
   // Attempt to open the file
   std::ifstream infile;

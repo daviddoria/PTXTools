@@ -139,7 +139,7 @@ public:
   void WriteEverything(FilePrefix filePrefix);
 
   // Actually read the PTX file
-  void ReadFile(std::string filename);
+  void ReadFile(const std::string& filename);
 
   // This function allows the validity image to be modified externally and the new image applied to the grid
   void ReplaceValidity(MaskImageType::Pointer validityImage);

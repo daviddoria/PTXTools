@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-PROJECT(PTXReader)
+PROJECT(PTXTools)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 ######### Libraries #########3
@@ -13,10 +13,13 @@ FIND_PACKAGE(VTK REQUIRED)
 INCLUDE(${VTK_USE_FILE})
 
 #Eigen
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
+#set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
 FIND_PACKAGE(Eigen3 REQUIRED)
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+
+# Need to set EIGEN3_INCLUDE_DIR in this project CMake settings.
 
 # Setup install
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
@@ -28,11 +31,8 @@ SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 #   message("Compiled in Debug mode")
 # endif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
-#set(SourceFiles PTXPixel.cxx PTXImage.cxx)
-
 # Create the main library that will be used in all of the exectuables
 add_library(PTX PTXPixel.cxx PTXImage.cxx Helpers.cpp)
-#set(PTXLibraries PTX ${ITK_LIBRARIES} vtkHybrid vtkIO)
 set(PTXLibraries PTX ${ITK_LIBRARIES} ${VTK_LIBRARIES})
 
 #############
@@ -210,15 +210,17 @@ if(PTX_PTXInfo)
 endif()
 
 #############################################
-FIND_PACKAGE(Qt4 REQUIRED)
-INCLUDE(${QT_USE_FILE})
+SET(PTX_PTXViewer ON CACHE BOOL "An interactive ptx file viewer.")
+if(PTX_PTXViewer)
+  FIND_PACKAGE(Qt4 REQUIRED)
+  INCLUDE(${QT_USE_FILE})
 
-QT4_WRAP_UI(UISrcs PTXViewer.ui)
-QT4_WRAP_CPP(MOCSrcs PTXViewer.h)
+  QT4_WRAP_UI(UISrcs PTXViewer.ui)
+  QT4_WRAP_CPP(MOCSrcs PTXViewer.h)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-# ADD_EXECUTABLE(PTXViewer PTXViewerDriver.cpp PTXViewer.cpp ${MOCSrcs} ${UISrcs})
-# TARGET_LINK_LIBRARIES(PTXViewer ${PTXLibraries} QVTK ${QT_LIBRARIES})
-# INSTALL( TARGETS PTXViewer
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
+  ADD_EXECUTABLE(PTXViewer PTXViewerDriver.cpp PTXViewer.cpp ${MOCSrcs} ${UISrcs})
+  TARGET_LINK_LIBRARIES(PTXViewer ${PTXLibraries} QVTK ${QT_LIBRARIES})
+  INSTALL( TARGETS PTXViewer RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
