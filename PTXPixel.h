@@ -28,19 +28,19 @@ struct PTXPixel
   float Y;
   float Z;
   
-  float GetCoordinate(unsigned int coordinate);
+  float GetCoordinate(const unsigned int coordinate) const;
 
   // Output operator for PTXPixel
   friend std::ostream& operator<<(std::ostream& output,  const PTXPixel &pixel);
 
   // Compute the "left/right" angle of the point
-  float GetTheta();
+  float GetTheta() const;
 
   // Compute the "up/down" angle of the point
-  float GetPhi();
+  float GetPhi() const;
 
   // Compute depth (assuming scanner is at (0,0,0) )
-  float GetDepth();
+  float GetDepth() const;
 
   bool operator==(const PTXPixel &pixel) const;
   bool operator!=(const PTXPixel &pixel) const;

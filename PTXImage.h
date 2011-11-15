@@ -26,14 +26,16 @@ public:
   typedef itk::Image<PTXPixel, 2> FullImageType;
 
   // A normal RGB image
-  //typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> RGBImageType;
   typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
+  typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> RGBVectorImageType;
 
   // A binary image
   typedef itk::Image<unsigned char, 2> MaskImageType;
+  typedef itk::Image<unsigned char, 2> UnsignedCharImageType;
 
   // A scalar float image
   typedef itk::Image<float, 2> FloatImageType;
+  typedef itk::Image<float, 2> DepthImageType;
   
   // An image to hold X,Y,and Z coordinate channels.
   typedef itk::Image<itk::CovariantVector<float, 3>, 2> XYZImageType;
@@ -51,170 +53,170 @@ public:
   PTXImage();
 
   // Add/append a ptx file to the right of this one.
-  void AppendPTXRight(PTXImage);
+  void AppendPTXRight(const PTXImage&);
   
   // Coordinate images
-  FloatImageType::Pointer GetCoordinateImage(unsigned int dimension);
+  FloatImageType::Pointer GetCoordinateImage(const unsigned int dimension) const;
   
-  void WriteXYZ(const std::string filePrefix);
-  XYZImageType::Pointer GetXYZImage();
+  void WriteXYZ(const std::string& filePrefix) const;
+  XYZImageType::Pointer GetXYZImage() const;
   
-  void WriteX(const std::string filePrefix);
-  FloatImageType::Pointer GetXImage();
+  void WriteX(const std::string& filePrefix) const;
+  FloatImageType::Pointer GetXImage() const;
   
-  void WriteY(const std::string filePrefix);
-  FloatImageType::Pointer GetYImage();
+  void WriteY(const std::string& filePrefix) const;
+  FloatImageType::Pointer GetYImage() const;
   
-  void WriteZ(const std::string filePrefix);
-  FloatImageType::Pointer GetZImage();
+  void WriteZ(const std::string& filePrefix) const;
+  FloatImageType::Pointer GetZImage() const;
   
-  void WriteFloatImage(FloatImageType::Pointer image, const std::string filename);
+  void WriteFloatImage(const FloatImageType::Pointer image, const std::string& filename) const;
   
   // Derivatives
-  FloatImageType::Pointer GetLaplacian(unsigned int dimension);
+  FloatImageType::Pointer GetLaplacian(const unsigned int dimension) const;
   
-  void WriteXYZLaplacian(const std::string filePrefix);
-  XYZImageType::Pointer GetXYZLaplacian();
+  void WriteXYZLaplacian(const std::string& filePrefix) const;
+  XYZImageType::Pointer GetXYZLaplacian() const;
   
-  void WriteXLaplacian(const std::string filePrefix);
-  FloatImageType::Pointer GetXLaplacian();
+  void WriteXLaplacian(const std::string& filePrefix) const;
+  FloatImageType::Pointer GetXLaplacian() const;
   
-  void WriteYLaplacian(const std::string filePrefix);
-  FloatImageType::Pointer GetYLaplacian();
+  void WriteYLaplacian(const std::string& filePrefix) const;
+  FloatImageType::Pointer GetYLaplacian() const;
   
-  void WriteZLaplacian(const std::string filePrefix);
-  FloatImageType::Pointer GetZLaplacian();
+  void WriteZLaplacian(const std::string& filePrefix) const;
+  FloatImageType::Pointer GetZLaplacian() const;
 
   // Set the size of the PTXImage (this is done automatically if you use ReadFile)
-  void SetSize(itk::ImageRegion<2>);
+  void SetSize(const itk::ImageRegion<2>&);
   
   // Downsample the ptx image by a factor of 'factor'
-  PTXImage Downsample(const unsigned int factor);
+  PTXImage Downsample(const unsigned int factor) const;
 
   // Write a FullImageType to a ptx file
-  void WritePTX(const FilePrefix filename);
+  void WritePTX(const FilePrefix& filename) const;
 
   // Write the projection plane and principal axis to a vtp file
-  void WriteProjectionPlane(const std::string filename);
+  void WriteProjectionPlane(const std::string& filename) const;
 
-  void Crop(const itk::ImageRegion<2> region);
+  void Crop(const itk::ImageRegion<2>& region);
 
-  PTXPixel GetPTXPixel(const itk::Index<2> pixel);
+  PTXPixel GetPTXPixel(const itk::Index<2>& pixel) const;
 
   // Get center direction ("principal axis")
   typedef itk::CovariantVector<float, 3> VectorType;
-  VectorType GetPrincipalAxis();
+  VectorType GetPrincipalAxis() const;
 
   // Compute the Laplacian of the depth image where pixels are weighted by their distance to the center of the kernel.
-  void ComputeWeightedDepthLaplacian(const std::string filename);
+  void ComputeWeightedDepthLaplacian(const std::string& filename) const;
 
   // Create a 2D image of the points in the grid in which the points were acquired
-  void CreateRGBImage(RGBImageType::Pointer image);
-  void WriteRGBImage(FilePrefix prefix);
+  void CreateRGBImage(RGBImageType::Pointer image) const;
+  void WriteRGBImage(const FilePrefix& prefix) const;
 
   // Create a colored point cloud
-  void CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud);
-  void WritePointCloud(FilePrefix prefix);
+  void CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const;
+  void WritePointCloud(const FilePrefix& prefix) const;
 
   // Create an image of the intensities of the points in the grid in which they were acquired
-  void CreateIntensityImage(FloatImageType::Pointer image);
-  void WriteIntensityImage(FilePrefix filePrefix);
+  void CreateIntensityImage(FloatImageType::Pointer image) const;
+  void WriteIntensityImage(const FilePrefix& filePrefix) const;
 
   // Create a 2D, 1 channel image of the depths of the points in the grid in which they were acquired
-  void CreateDepthImage(FloatImageType::Pointer image);
-  void WriteDepthImage(FilePrefix filePrefix);
+  void CreateDepthImage(FloatImageType::Pointer image) const;
+  void WriteDepthImage(const FilePrefix& filePrefix) const;
 
-  void WriteDepthLaplacian(const FilePrefix filePrefix);
-  FloatImageType::Pointer GetDepthLaplacian();
+  void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
+  FloatImageType::Pointer GetDepthLaplacian() const;
   
-  void CreateRGBDImage(RGBDImageType::Pointer image);
-  void WriteRGBDImage(FilePrefix filePrefix);
+  void CreateRGBDImage(RGBDImageType::Pointer image) const;
+  void WriteRGBDImage(const FilePrefix& filePrefix) const;
   
-  void CreateRGBDVImage(RGBDVImageType::Pointer image);
-  void WriteRGBDVImage(FilePrefix filePrefix);
+  void CreateRGBDVImage(RGBDVImageType::Pointer image) const;
+  void WriteRGBDVImage(const FilePrefix& filePrefix) const;
 
-  void CreateRGBDIImage(RGBDIImageType::Pointer image);
-  void WriteRGBDIImage(FilePrefix filePrefix);
+  void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
+  void WriteRGBDIImage(const FilePrefix& filePrefix) const;
   
-  void WriteEverything(FilePrefix filePrefix);
+  void WriteEverything(const FilePrefix& filePrefix) const;
 
   // Actually read the PTX file
   void ReadFile(const std::string& filename);
 
   // This function allows the validity image to be modified externally and the new image applied to the grid
-  void ReplaceValidity(MaskImageType::Pointer validityImage);
+  void ReplaceValidity(const MaskImageType::Pointer validityImage);
   
   // This function allows the depth map to be modified externally and the new map applied to the grid
-  void ReplaceDepth(itk::Image<float, 2>::Pointer depthImage);
+  void ReplaceDepth(const FloatImageType::Pointer depthImage);
 
   // This function allows the color and depth to be modified externally and the new map applied to the grid
-  void ReplaceRGBD(itk::Image<itk::CovariantVector<float, 4>, 2>::Pointer rgbd);
+  void ReplaceRGBD(const RGBDImageType::Pointer rgbd);
   
   // This function allows the color to be modified
-  void ReplaceRGB(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer rgb);
-  void ReplaceRGB(itk::Image<itk::RGBPixel<unsigned char>, 2>::Pointer rgb);
+  void ReplaceRGB(const RGBVectorImageType::Pointer rgb);
+  void ReplaceRGB(const RGBImageType::Pointer rgb);
   
   // This function allows the color to be modified
-  void ReplaceXYZ(itk::Image<itk::CovariantVector<float, 3>, 2>::Pointer xyz);
+  void ReplaceXYZ(const XYZImageType::Pointer xyz);
 
   // Blank the PTX image in areas where mask is non-zero
-  void ApplyMask(itk::Image<unsigned char, 2>::Pointer mask);
+  void ApplyMask(const MaskImageType::Pointer mask);
 
   // Create a mask image where invalid pixels are non-zero
-  void WriteInvalidMask(std::string& filename);
-  void CreateValidityImage(FloatImageType::Pointer image);
+  void WriteInvalidMask(const std::string& filename) const;
+  void CreateValidityImage(FloatImageType::Pointer image) const;
   
   // Create a mask image of points below a certain depthThreshold
-  void WriteDepthThresholdMask(std::string& filename, float depthThreshold);
+  void WriteDepthThresholdMask(const std::string& filename, const float depthThreshold) const;
 
   // Count invalid points
-  unsigned int CountInvalidPoints();
-  unsigned int CountValidPoints();
+  unsigned int CountInvalidPoints() const;
+  unsigned int CountValidPoints() const;
 
   // The main storage image.
   FullImageType::Pointer FullImage;
 
   // Access the main data.
-  FullImageType::Pointer GetFullImage();
+  FullImageType::Pointer GetFullImage() const;
 
   // Get the size of the main data.
-  itk::Size<2> GetSize();
+  itk::Size<2> GetSize() const;
 
   // Get the height of the main data.
-  unsigned int GetHeight();
+  unsigned int GetHeight() const;
 
   // Get the width of the main data.
-  unsigned int GetWidth();
+  unsigned int GetWidth() const;
   
   // Set a specific pixel to a specified value.
-  void SetPixel(itk::Index<2>, PTXPixel&);
+  void SetPixel(const itk::Index<2>&, const PTXPixel&);
 
   // Find the nearest pixel which is not marked as invalid.
-  itk::Index<2> FindNearestValidPixel(itk::Index<2> pixel, itk::Offset<2> offset);
+  itk::Index<2> FindNearestValidPixel(const itk::Index<2>& pixel, const itk::Offset<2>& offset) const;
 
   // Get the theta (side to side) angle of a pixel
-  float ApproximateTheta(itk::Index<2> pixel);
+  float ApproximateTheta(const itk::Index<2>& pixel) const;
 
   // Get the phi (up and down) angle of a pixel
-  float ApproximatePhi(itk::Index<2> pixel);
+  float ApproximatePhi(const itk::Index<2>& pixel) const;
   
-  itk::Point<float, 3> ApproximateOldPoint(itk::Index<2> pixel);
+  itk::Point<float, 3> ApproximateOldPoint(const itk::Index<2>& pixel) const;
 
   // Get the phi (up and down) angle of a pixel
-  float GetPhi(itk::Index<2> index);
+  float GetPhi(const itk::Index<2>& index) const;
 
   // Get the theta (side to side) angle of a pixel
-  float GetTheta(itk::Index<2> index);
+  float GetTheta(const itk::Index<2>& index) const;
 
   void ComputeAverageDeltaPhi();
   void ComputeAverageDeltaTheta();
   
-  float DistanceBetweenPoints(PTXPixel a, PTXPixel b);
+  float DistanceBetweenPoints(const PTXPixel& a, const PTXPixel& b) const;
 
-  PTXImage OrthogonalProjection(VectorType axis);
+  PTXImage OrthogonalProjection(const VectorType& axis) const;
 
-  itk::Index<2> FindValidTopCenterPixel();
-  itk::Index<2> FindValidCenterPixel();
+  itk::Index<2> FindValidTopCenterPixel() const;
+  itk::Index<2> FindValidCenterPixel() const;
 
   void SetDebug(bool);
   

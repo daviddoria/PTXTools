@@ -9,7 +9,7 @@ PTXPixel::PTXPixel() : Valid(false), X(0), Y(0), Z(0)
 
 }
 
-float PTXPixel::GetCoordinate(unsigned int coordinate)
+float PTXPixel::GetCoordinate(const unsigned int coordinate) const
 {
   if(coordinate == 0)
     {
@@ -30,19 +30,19 @@ float PTXPixel::GetCoordinate(unsigned int coordinate)
     }
 }
 
-float PTXPixel::GetTheta()
+float PTXPixel::GetTheta() const
 {
   // Compute the "left/right" angle
   return atan(X/Y);
 }
 
-float PTXPixel::GetPhi()
+float PTXPixel::GetPhi() const
 {
   // Compute the "up/down" angle
   return atan(Z/sqrt(X*X + Y*Y));
 }
 
-float PTXPixel::GetDepth()
+float PTXPixel::GetDepth() const
 {
   if(!this->Valid)
     {
