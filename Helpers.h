@@ -48,6 +48,6 @@ namespace Helpers
 
 };
 
-#include "Helpers.txx"
+#include "Helpers.hxx"
 
 #endif
