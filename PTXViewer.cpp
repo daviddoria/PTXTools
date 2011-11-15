@@ -107,6 +107,7 @@ void MainWindow::on_actionFlipImage_activated()
   this->Refresh();
 }
 
+// File menu
 void MainWindow::on_actionQuit_activated()
 {
   exit(-1);
@@ -117,6 +118,7 @@ void MainWindow::on_actionOpenImage_activated()
   OpenFile();
 }
 
+// Image display radio buttons.
 void MainWindow::on_radRGB_clicked()
 {
   Refresh();
@@ -136,6 +138,43 @@ void MainWindow::on_radValidity_clicked()
 {
   Refresh();
 }
+
+// Export menu
+void MainWindow::on_actionExportRGBImage_activated()
+{
+  SaveImage<PTXImage::RGBImageType>(this->ColorImageLayer.Image);
+}
+
+void MainWindow::on_actionExportRGBDImage_activated()
+{
+  PTXImage::RGBDImageType::Pointer rgbdImage = PTXImage::RGBDImageType::New();
+  this->PTX.CreateRGBDImage(rgbdImage);
+  SaveImage<PTXImage::RGBDImageType>(rgbdImage);
+}
+
+void MainWindow::on_actionExportRGBDVImage_activated()
+{
+  PTXImage::RGBDVImageType::Pointer rgbdvImage = PTXImage::RGBDVImageType::New();
+  this->PTX.CreateRGBDVImage(rgbdvImage);
+  SaveImage<PTXImage::RGBDVImageType>(rgbdvImage);
+}
+
+void MainWindow::on_actionExportIntensityImage_activated()
+{
+  SaveImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image);
+}
+
+void MainWindow::on_actionExportDepthImage_activated()
+{
+  SaveImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image);
+}
+
+void MainWindow::on_actionExportValidityImage_activated()
+{
+  SaveImage<PTXImage::MaskImageType>(this->ValidityImageLayer.Image);
+}
+
+  
 
 #if 0
 void InnerWidget::actionFlip_Image_triggered()

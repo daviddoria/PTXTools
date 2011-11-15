@@ -50,11 +50,20 @@ public:
 
 public slots:
   // Menu items
+  // File menu
   void on_actionOpenImage_activated();
   void on_actionQuit_activated();
   void on_actionFlipImage_activated();
+  
+  // Export menu
+  void on_actionExportRGBImage_activated();
+  void on_actionExportRGBDImage_activated();
+  void on_actionExportRGBDVImage_activated();
+  void on_actionExportIntensityImage_activated();
+  void on_actionExportDepthImage_activated();
+  void on_actionExportValidityImage_activated();
 
-  // Buttons, radio buttons, and sliders
+  // Image display radio buttons.
   void on_radRGB_clicked();
   void on_radDepth_clicked();
   void on_radIntensity_clicked();
@@ -95,6 +104,11 @@ protected:
 
   // Store the PTX file when it is opened.
   PTXImage PTX;
+  
+  template <typename TImage>
+  void SaveImage(const typename TImage::Pointer image);
 };
+
+#include "PTXViewer.hxx"
 
 #endif

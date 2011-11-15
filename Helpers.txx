@@ -17,12 +17,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // ITK
 #include "itkRescaleIntensityImageFilter.h"
+#include "itkImageFileWriter.h"
 
 // VTK
 #include <vtkImageData.h>
 
 namespace Helpers
 {
+
+template<typename T>
+void WriteImage(const typename T::Pointer image, const std::string& filename)
+{
+  // This is a convenience function so that images can be written in 1 line instead of 4.
+  typename itk::ImageFileWriter<T>::Pointer writer = itk::ImageFileWriter<T>::New();
+  writer->SetFileName(filename);
+  writer->SetInput(image);
+  writer->Update();
+}
 
 /** Copy the input to the output*/
 template<typename TImage>

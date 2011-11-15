@@ -43,7 +43,8 @@ namespace Helpers
   template <typename TImage>
   void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkImageData* outputImage);
   
-  
+  template<typename T>
+  void WriteImage(const typename T::Pointer image, const std::string& filename);
 
 };
 

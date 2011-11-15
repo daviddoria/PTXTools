@@ -101,8 +101,20 @@
     </property>
     <addaction name="actionFlipImage"/>
    </widget>
+   <widget class="QMenu" name="menuExport">
+    <property name="title">
+     <string>Export</string>
+    </property>
+    <addaction name="actionExportRGBImage"/>
+    <addaction name="actionExportDepthImage"/>
+    <addaction name="actionExportValidityImage"/>
+    <addaction name="actionExportRGBDImage"/>
+    <addaction name="actionExportRGBDVImage"/>
+    <addaction name="actionExportIntensityImage"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuExport"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpenImage">
@@ -128,6 +140,36 @@
   <action name="actionFlipImage">
    <property name="text">
     <string>Flip Image</string>
+   </property>
+  </action>
+  <action name="actionExportRGBImage">
+   <property name="text">
+    <string>RGB Image</string>
+   </property>
+  </action>
+  <action name="actionExportDepthImage">
+   <property name="text">
+    <string>Depth Image</string>
+   </property>
+  </action>
+  <action name="actionExportValidityImage">
+   <property name="text">
+    <string>Validity Image</string>
+   </property>
+  </action>
+  <action name="actionExportRGBDImage">
+   <property name="text">
+    <string>RGBD Image</string>
+   </property>
+  </action>
+  <action name="actionExportRGBDVImage">
+   <property name="text">
+    <string>RGBDV Image</string>
+   </property>
+  </action>
+  <action name="actionExportIntensityImage">
+   <property name="text">
+    <string>Intensity Image</string>
    </property>
   </action>
  </widget>
