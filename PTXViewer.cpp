@@ -146,38 +146,6 @@ void MainWindow::actionOpenImage_triggered()
   OpenFile();
 }
 
-/*
-// Display segmented image with transparent background pixels
-void MainWindow::StopProgressSlot()
-{
-  // When the ProgressThread emits the StopProgressSignal, we need to display the result of the segmentation
-
-  // Convert the segmentation mask to a binary VTK image
-  vtkSmartPointer<vtkImageData> VTKSegmentMask =
-    vtkSmartPointer<vtkImageData>::New();
-  Helpers::ITKImagetoVTKImage(this->GraphCut.GetSegmentMask(), VTKSegmentMask);
-
-  // Convert the image into a VTK image for display
-  vtkSmartPointer<vtkImageData> VTKImage =
-    vtkSmartPointer<vtkImageData>::New();
-  Helpers::ITKImagetoVTKImage(this->GraphCut.GetMaskedOutput(), VTKImage);
-
-  vtkSmartPointer<vtkImageData> VTKMaskedImage =
-    vtkSmartPointer<vtkImageData>::New();
-  Helpers::MaskImage(VTKImage, VTKSegmentMask, VTKMaskedImage);
-
-  // Remove the old output, set the new output and refresh everything
-  //this->ResultActor = vtkSmartPointer<vtkImageActor>::New();
-  this->ResultActor->SetInput(VTKMaskedImage);
-  this->RightRenderer->RemoveAllViewProps();
-  this->RightRenderer->AddActor(ResultActor);
-  this->RightRenderer->ResetCamera();
-  this->Refresh();
-
-  this->progressBar->hide();
-}
-*/
-
 void MainWindow::on_radRGB_clicked()
 {
   Refresh();
@@ -219,8 +187,17 @@ void MainWindow::OpenFile()
   // Read file
   this->PTX.ReadFile(filename.toStdString());
 
-  Refresh();
+  // Convert the images into a VTK images for display.
+  this->PTX.CreateRGBImage(this->ColorImage);
+  Helpers::ITKRGBImageToVTKImage(this->ColorImage, this->ColorImageData);
   
+  this->PTX.CreateDepthImage(this->DepthImage);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImage, this->DepthImageData);
+  
+  this->PTX.CreateIntensityImage(this->IntensityImage);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImage, this->IntensityImageData);
+
+  Refresh();
 }
 
 void MainWindow::Refresh()
