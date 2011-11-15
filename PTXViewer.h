@@ -49,9 +49,9 @@ public:
 
 public slots:
   // Menu items
-  void actionOpenImage_triggered();
-  void actionQuit_triggered();
-  void actionFlipImage_triggered();
+  void on_actionOpenImage_activated();
+  void on_actionQuit_activated();
+  void on_actionFlipImage_activated();
 
   // Buttons, radio buttons, and sliders
   void on_radRGB_clicked();
@@ -85,7 +85,9 @@ protected:
   // Things for the 3D window
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyleTrackballCamera;
   vtkSmartPointer<vtkRenderer> RightRenderer;
-  vtkSmartPointer<vtkImageActor> PointsActor;
+  vtkSmartPointer<vtkPolyData> PointsPolyData;
+  vtkSmartPointer<vtkPolyDataMapper> PointsPolyDataMapper;
+  vtkSmartPointer<vtkActor> PointsActor;
   
   // Refresh both renderers and render windows
   void Refresh();

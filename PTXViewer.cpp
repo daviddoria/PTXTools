@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vtkImageData.h>
 #include <vtkInteractorStyleImage.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkSmartPointer.h>
@@ -49,18 +50,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
   // Setup the GUI and connect all of the signals and slots
   setupUi(this);
-  
-  // Menu items
-  // File menu
-  connect( this->actionOpenImage, SIGNAL( triggered() ), this, SLOT(actionOpenImage_triggered()) );
-  connect( this->actionQuit, SIGNAL( triggered() ), this, SLOT(actionQuit_triggered()));
-
-  // Edit menu
-  connect( this->actionFlipImage, SIGNAL( triggered() ), this, SLOT(actionFlipImage_triggered()));
-  
-  connect( this->radRGB, SIGNAL( clicked() ), this, SLOT(radRGB_clicked()) );
-  connect( this->radDepth, SIGNAL( clicked() ), this, SLOT(radDepth_clicked()) );
-  connect( this->radIntensity, SIGNAL( clicked() ), this, SLOT(radIntensity_clicked()) );
 
   this->BackgroundColor[0] = 0;
   this->BackgroundColor[1] = 0;
@@ -121,13 +110,18 @@ MainWindow::MainWindow(QWidget *parent)
   this->LeftRenderer->AddViewProp(this->DepthImageSlice);
   
   // Things for the 3D window
-  this->PointsActor = vtkSmartPointer<vtkImageActor>::New();
+  this->PointsActor = vtkSmartPointer<vtkActor>::New();
+  this->PointsPolyData = vtkSmartPointer<vtkPolyData>::New();
+  this->PointsPolyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  this->PointsPolyDataMapper->SetInputConnection(this->PointsPolyData->GetProducerPort());
+  this->PointsActor->SetMapper(this->PointsPolyDataMapper);
+  this->RightRenderer->AddViewProp(this->PointsActor);
   
   // Default GUI settings
   this->radRGB->setChecked(true);
 }
 
-void MainWindow::actionFlipImage_triggered()
+void MainWindow::on_actionFlipImage_activated()
 {
   this->CameraUp[1] *= -1;
   this->LeftRenderer->GetActiveCamera()->SetViewUp(this->CameraUp);
@@ -135,14 +129,13 @@ void MainWindow::actionFlipImage_triggered()
   this->Refresh();
 }
 
-void MainWindow::actionQuit_triggered()
+void MainWindow::on_actionQuit_activated()
 {
   exit(-1);
 }
 
-void MainWindow::actionOpenImage_triggered()
+void MainWindow::on_actionOpenImage_activated()
 {
-  std::cout << "actionOpenImage_triggered()" << std::endl;
   OpenFile();
 }
 
@@ -197,7 +190,12 @@ void MainWindow::OpenFile()
   this->PTX.CreateIntensityImage(this->IntensityImage);
   Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImage, this->IntensityImageData);
 
+  this->PTX.CreatePointCloud(this->PointsPolyData);
+  
   Refresh();
+  
+  this->LeftRenderer->ResetCamera();
+  this->RightRenderer->ResetCamera();
 }
 
 void MainWindow::Refresh()
