@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "PTXViewer.h"
+#include "PTXViewerWidget.h"
 
 #include "Helpers.h"
 
@@ -46,7 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
-PTXViewerGUI::PTXViewerGUI(QWidget *parent)
+PTXViewerWidget::PTXViewerWidget(QWidget *parent)
 {
   // Setup the GUI and connect all of the signals and slots
   setupUi(this);
@@ -99,7 +99,7 @@ PTXViewerGUI::PTXViewerGUI(QWidget *parent)
   this->radRGB->setChecked(true);
 }
 
-void PTXViewerGUI::on_actionFlipImage_activated()
+void PTXViewerWidget::on_actionFlipImage_activated()
 {
   this->CameraUp[1] *= -1;
   this->LeftRenderer->GetActiveCamera()->SetViewUp(this->CameraUp);
@@ -108,68 +108,68 @@ void PTXViewerGUI::on_actionFlipImage_activated()
 }
 
 // File menu
-void PTXViewerGUI::on_actionQuit_activated()
+void PTXViewerWidget::on_actionQuit_activated()
 {
   exit(-1);
 }
 
-void PTXViewerGUI::on_actionOpenImage_activated()
+void PTXViewerWidget::on_actionOpenImage_activated()
 {
   OpenFile();
 }
 
 // Image display radio buttons.
-void PTXViewerGUI::on_radRGB_clicked()
+void PTXViewerWidget::on_radRGB_clicked()
 {
   Refresh();
 }
 
-void PTXViewerGUI::on_radDepth_clicked()
+void PTXViewerWidget::on_radDepth_clicked()
 {
   Refresh();
 }
 
-void PTXViewerGUI::on_radIntensity_clicked()
+void PTXViewerWidget::on_radIntensity_clicked()
 {
   Refresh();
 }
 
-void PTXViewerGUI::on_radValidity_clicked()
+void PTXViewerWidget::on_radValidity_clicked()
 {
   Refresh();
 }
 
 // Export menu
-void PTXViewerGUI::on_actionExportRGBImage_activated()
+void PTXViewerWidget::on_actionExportRGBImage_activated()
 {
   SaveImage<PTXImage::RGBImageType>(this->ColorImageLayer.Image);
 }
 
-void PTXViewerGUI::on_actionExportRGBDImage_activated()
+void PTXViewerWidget::on_actionExportRGBDImage_activated()
 {
   PTXImage::RGBDImageType::Pointer rgbdImage = PTXImage::RGBDImageType::New();
   this->PTX.CreateRGBDImage(rgbdImage);
   SaveImage<PTXImage::RGBDImageType>(rgbdImage);
 }
 
-void PTXViewerGUI::on_actionExportRGBDVImage_activated()
+void PTXViewerWidget::on_actionExportRGBDVImage_activated()
 {
   PTXImage::RGBDVImageType::Pointer rgbdvImage = PTXImage::RGBDVImageType::New();
   this->PTX.CreateRGBDVImage(rgbdvImage);
   SaveImage<PTXImage::RGBDVImageType>(rgbdvImage);
 }
 
-void PTXViewerGUI::on_actionExportIntensityImage_activated()
+void PTXViewerWidget::on_actionExportIntensityImage_activated()
 {
   SaveImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image);
 }
 
-void PTXViewerGUI::on_actionExportDepthImage_activated()
+void PTXViewerWidget::on_actionExportDepthImage_activated()
 {
   SaveImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image);
 }
 
-void PTXViewerGUI::on_actionExportValidityImage_activated()
+void PTXViewerWidget::on_actionExportValidityImage_activated()
 {
   SaveImage<PTXImage::MaskImageType>(this->ValidityImageLayer.Image);
 }
@@ -184,7 +184,7 @@ void InnerWidget::actionFlip_Image_triggered()
 }
 #endif
 
-void PTXViewerGUI::OpenFile()
+void PTXViewerWidget::OpenFile()
 {
   std::cout << "OpenFile()" << std::endl;
   
@@ -221,7 +221,7 @@ void PTXViewerGUI::OpenFile()
   this->RightRenderer->ResetCamera();
 }
 
-void PTXViewerGUI::Refresh()
+void PTXViewerWidget::Refresh()
 {
   this->DepthImageLayer.ImageSlice->SetVisibility(this->radDepth->isChecked());
   this->IntensityImageLayer.ImageSlice->SetVisibility(this->radIntensity->isChecked());

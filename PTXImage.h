@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // VTK
 #include <vtkSmartPointer.h>
-#include <vtkPolyData.h>
+class vtkPolyData;
 
 // Custom
 #include "PTXPixel.h"
@@ -243,6 +243,5 @@ private:
 
   bool Debug;
 };
-
 
 #endif

@@ -38,7 +38,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include </media/portable/Projects/src/CriminisiInpainting/Mask.h>
+#include </media/portable/Projects/src/PatchBasedInpainting/Mask.h>
 
 PTXImage::PTXImage()
 {
@@ -601,13 +601,15 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
   colors->SetNumberOfComponents(3);
   colors->SetName("Colors");
 
-//   vtkSmartPointer<vtkFloatArray> depthArray = vtkSmartPointer<vtkFloatArray>::New();
-//   depthArray->SetNumberOfComponents(1);
-//   depthArray->SetName("Depths");
-// 
-//   vtkSmartPointer<vtkIntArray> originalPixelArray = vtkSmartPointer<vtkIntArray>::New();
-//   originalPixelArray->SetNumberOfComponents(2);
-//   originalPixelArray->SetName("OriginalPixel");
+  vtkSmartPointer<vtkFloatArray> depthArray = vtkSmartPointer<vtkFloatArray>::New();
+  depthArray->SetNumberOfComponents(1);
+  depthArray->SetName("Depths");
+
+  // This array is used if you do any point set processing - it allows you to map the points pack
+  // to their position in the PTX grid.
+  vtkSmartPointer<vtkIntArray> originalPixelArray = vtkSmartPointer<vtkIntArray>::New();
+  originalPixelArray->SetNumberOfComponents(2);
+  originalPixelArray->SetName("OriginalPixel");
 
   vtkSmartPointer<vtkFloatArray> intensities = vtkSmartPointer<vtkFloatArray>::New();
   intensities->SetNumberOfComponents(1);
@@ -629,15 +631,13 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
       colors->InsertNextTupleValue(rgb);
       points->InsertNextPoint(pixel.X, pixel.Y, pixel.Z);
       intensities->InsertNextValue(pixel.Intensity);
-      //depthArray->InsertNextValue(pixel.GetDepth());
+      depthArray->InsertNextValue(pixel.GetDepth());
 
-      /*
       int originalPixel[2];
       originalPixel[0] = imageIterator.GetIndex()[0];
       originalPixel[1] = imageIterator.GetIndex()[1];
 
       originalPixelArray->InsertNextTupleValue(originalPixel);
-      */
       }
 
     ++imageIterator;
@@ -647,8 +647,8 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
   vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
   polydata->SetPoints(points);
   polydata->GetPointData()->SetScalars(colors);
-  //polydata->GetPointData()->AddArray(depthArray);
-  //polydata->GetPointData()->AddArray(originalPixelArray);
+  polydata->GetPointData()->AddArray(depthArray);
+  polydata->GetPointData()->AddArray(originalPixelArray);
   polydata->GetPointData()->AddArray(intensities);
 
   // Create a vertex at each point

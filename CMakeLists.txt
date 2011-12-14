@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(PTXTools)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 ######### Libraries #########3
 #ITK
 FIND_PACKAGE(ITK REQUIRED)
@@ -212,15 +214,5 @@ endif()
 #############################################
 SET(PTX_PTXViewer ON CACHE BOOL "An interactive ptx file viewer.")
 if(PTX_PTXViewer)
-  FIND_PACKAGE(Qt4 REQUIRED)
-  INCLUDE(${QT_USE_FILE})
-
-  QT4_WRAP_UI(UISrcs PTXViewer.ui)
-  QT4_WRAP_CPP(MOCSrcs PTXViewer.h)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-
-  ADD_EXECUTABLE(PTXViewer PTXViewerDriver.cpp PTXViewer.cpp ${MOCSrcs} ${UISrcs})
-  TARGET_LINK_LIBRARIES(PTXViewer ${PTXLibraries} QVTK ${QT_LIBRARIES})
-  INSTALL( TARGETS PTXViewer RUNTIME DESTINATION ${INSTALL_DIR} )
+  add_subdirectory(GUI)
 endif()

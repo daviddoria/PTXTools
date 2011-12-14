@@ -19,14 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QApplication>
 
-#include "PTXViewer.h"
+#include "PTXViewerWidget.h"
 
 int main(int argc, char** argv)
 {
   QApplication app(argc, argv);
 
-  PTXViewerGUI form;
-  form.show();
+  PTXViewerWidget ptxViewerWidget;
+  ptxViewerWidget.show();
 
   return app.exec();
 }

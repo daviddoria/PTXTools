@@ -22,11 +22,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * mode during long computations.
 */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef PTXViewerWidget_H
+#define PTXViewerWidget_H
 
 // Qt
-#include "ui_PTXViewer.h"
+#include "ui_PTXViewerWidget.h"
 
 // VTK
 #include <vtkActor.h>
@@ -42,11 +42,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ImageLayer.h"
 #include "PTXImage.h"
 
-class PTXViewerGUI : public QMainWindow, private Ui::PTXViewerGUI
+class PTXViewerWidget : public QMainWindow, private Ui::PTXViewerWidget
 {
 Q_OBJECT
 public:
-  PTXViewerGUI(QWidget *parent = 0);
+  PTXViewerWidget(QWidget *parent = 0);
 
 public slots:
   // Menu items
@@ -109,6 +109,6 @@ protected:
   void SaveImage(const typename TImage::Pointer image);
 };
 
-#include "PTXViewer.hxx"
+#include "PTXViewerWidget.hxx"
 
 #endif
