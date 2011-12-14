@@ -656,6 +656,14 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
   vertexGlyphFilter->AddInput(polydata);
   vertexGlyphFilter->Update();
 
+  // Add the ptx image size to the field data
+  vtkSmartPointer<vtkIntArray> imageSizeArray = vtkSmartPointer<vtkIntArray>::New();
+  int imageSize[2] = {this->GetSize()[0], this->GetSize()[1]};
+  imageSizeArray->SetNumberOfComponents(2);
+  imageSizeArray->SetName("ImageSize");
+  imageSizeArray->InsertNextTupleValue(imageSize);
+  polydata->GetFieldData()->AddArray(imageSizeArray);
+  
   pointCloud->ShallowCopy(vertexGlyphFilter->GetOutput());
 }
 
