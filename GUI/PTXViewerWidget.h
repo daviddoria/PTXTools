@@ -62,6 +62,7 @@ public slots:
   void on_actionExportIntensityImage_activated();
   void on_actionExportDepthImage_activated();
   void on_actionExportValidityImage_activated();
+  void on_actionExportPointCloud_activated();
 
   // Image display radio buttons.
   void on_radRGB_clicked();

@@ -111,6 +111,7 @@
     <addaction name="actionExportRGBDImage"/>
     <addaction name="actionExportRGBDVImage"/>
     <addaction name="actionExportIntensityImage"/>
+    <addaction name="actionExportPointCloud"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -170,6 +171,11 @@
   <action name="actionExportIntensityImage">
    <property name="text">
     <string>Intensity Image</string>
+   </property>
+  </action>
+  <action name="actionExportPointCloud">
+   <property name="text">
+    <string>Point Cloud</string>
    </property>
   </action>
  </widget>

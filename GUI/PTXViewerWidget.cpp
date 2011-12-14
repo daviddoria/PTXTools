@@ -174,6 +174,20 @@ void PTXViewerWidget::on_actionExportValidityImage_activated()
   SaveImage<PTXImage::MaskImageType>(this->ValidityImageLayer.Image);
 }
 
+void PTXViewerWidget::on_actionExportPointCloud_activated()
+{
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", "", "VTP Files (*.vtp)");
+
+  //DebugMessage<std::string>("Got filename: ", fileName.toStdString());
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+    
+  this->PTX.WritePointCloud(fileName.toStdString());
+}
+
 #if 0
 void InnerWidget::actionFlip_Image_triggered()
 {

@@ -134,6 +134,7 @@ public:
   // Create a colored point cloud
   void CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const;
   void WritePointCloud(const FilePrefix& prefix) const;
+  void WritePointCloud(const std::string& fileName) const;
 
   // Create an image of the intensities of the points in the grid in which they were acquired
   void CreateIntensityImage(FloatImageType::Pointer image) const;

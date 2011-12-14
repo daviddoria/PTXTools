@@ -659,19 +659,24 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
   pointCloud->ShallowCopy(vertexGlyphFilter->GetOutput());
 }
 
+void PTXImage::WritePointCloud(const std::string& fileName) const
+{
+  vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
+  CreatePointCloud(pointCloud);
+
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  writer->SetFileName(fileName.c_str());
+  writer->SetInputConnection(pointCloud->GetProducerPort());
+  writer->Write();
+}
+
 void PTXImage::WritePointCloud(const FilePrefix& filePrefix) const
 {
   // This a convenience function which simply calls CreatePointCloud and then writes the result to a file
   std::stringstream ss;
   ss << filePrefix.prefix << ".vtp";
 
-  vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
-  CreatePointCloud(pointCloud);
-
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName(ss.str().c_str());
-  writer->SetInputConnection(pointCloud->GetProducerPort());
-  writer->Write();
+  WritePointCloud(ss.str());
 }
 
 void PTXImage::CreateDepthImage(FloatImageType::Pointer image) const

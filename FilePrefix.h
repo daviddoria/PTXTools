@@ -5,7 +5,7 @@
 
 struct FilePrefix
 {
-  FilePrefix(std::string filePrefix)
+  FilePrefix(const std::string& filePrefix)
   {
     // Strip any existing extension
     std::string filename(filePrefix);
