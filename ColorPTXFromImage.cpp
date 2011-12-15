@@ -51,27 +51,27 @@ int main(int argc, char *argv[])
   std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   //FilePrefix prefix("test");
   //ptxImage.WritePTX(prefix);
-  
+
   PTXImage::XYZImageType::Pointer xyzImage = ptxImage.GetXYZImage();
-  
+
   // This is the output image. Start by making it entirely green, then we will fill in valid values.
   PTXImage::RGBImageType::Pointer colorImage = PTXImage::RGBImageType::New();
   colorImage->SetRegions(xyzImage->GetLargestPossibleRegion());
   colorImage->Allocate();
-  
+
   PTXImage::RGBImageType::PixelType green;
   green.SetRed(0);
   green.SetGreen(255);
   green.SetBlue(0);
-  
+
   colorImage->FillBuffer(green);
-  
+
   // We also want to track which pixels were filled
   PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
   validityMask->SetRegions(xyzImage->GetLargestPossibleRegion());
   validityMask->Allocate();
   validityMask->FillBuffer(0);
-  
+
   //ptxImage.CreateRGBImage(colorImage);
 
   //std::cout << "colorImage: " << colorImage->GetLargestPossibleRegion() << std::endl;
@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
   std::vector<itk::Index<2> > emptyVector;
   //projectedImage->FillBuffer(emptyVector);
   Helpers::SetAllPixels<PixelImageType>(projectedImage, emptyVector);
-  
+
   itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage, xyzImage->GetLargestPossibleRegion());
-  
+
   unsigned int badPoints = 0;
 
   // Iterate over the scan points image and track where each projects in the 'projectedImage'
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
           minDepth = ptxPixel.GetDepth();
           }
         } // end loop over points projected to this pixel
-        
+
       // Color all points within a tolerance of the minimum depth
       PTXImage::RGBImageType::PixelType color;
       color = imageReader->GetOutput()->GetPixel(projectedImageIterator.GetIndex());
@@ -216,23 +216,23 @@ int main(int argc, char *argv[])
 
     ++projectedImageIterator;
     } // end while over whole image
-  
-   
+
+
   typedef  itk::ImageFileWriter< PTXImage::MaskImageType > MaskWriterType;
   MaskWriterType::Pointer maskWriter = MaskWriterType::New();
   maskWriter->SetFileName("ValidColorMask.png");
   maskWriter->SetInput(validityMask);
   maskWriter->Update();
-  
+
   ptxImage.ReplaceValidity(validityMask);
-  
+
   ptxImage.ReplaceRGB(colorImage);
 
   std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
-  
+
   //FilePrefix vtpPrefix("outputPointCloud");
   //ptxImage.WritePointCloud(vtpPrefix);
-  
+
   FilePrefix ptxPrefix(outputFileName);
   ptxImage.WritePTX(ptxPrefix);
 

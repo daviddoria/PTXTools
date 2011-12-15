@@ -15,16 +15,16 @@ int main (int argc, char *argv[])
 
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
-  
+
   //PTXImage::VectorType projectionAxis = ptxImage.GetPrincipalAxis();
   PTXImage::VectorType projectionAxis;
   projectionAxis[0] = .0036;
   projectionAxis[1] = -.0026;
   projectionAxis[2] = .9999;
-  
+
   PTXImage orthoPTX = ptxImage.OrthogonalProjection(projectionAxis);
-    
+
   orthoPTX.WriteEverything(outputPrefix);
-  
+
   return EXIT_SUCCESS;
 }

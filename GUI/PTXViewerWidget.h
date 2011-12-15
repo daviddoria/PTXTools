@@ -54,7 +54,7 @@ public slots:
   void on_actionOpenImage_activated();
   void on_actionQuit_activated();
   void on_actionFlipImage_activated();
-  
+
   // Export menu
   void on_actionExportRGBImage_activated();
   void on_actionExportRGBDImage_activated();
@@ -72,31 +72,31 @@ public slots:
 
   // Use a QFileDialog to get a filename, then open the specified file as a greyscale or color image, depending on which type the user has specified through the file menu.
   void OpenFile();
-  
+
 protected:
 
   // Things for the 2D window
   vtkSmartPointer<vtkInteractorStyleImage> InteractorStyleImage;
   vtkSmartPointer<vtkRenderer> LeftRenderer;
-  
+
   ImageLayer<PTXImage::RGBImageType> ColorImageLayer;
-  
+
   ImageLayer<PTXImage::FloatImageType> IntensityImageLayer;
-  
+
   ImageLayer<PTXImage::FloatImageType> DepthImageLayer;
-  
+
   ImageLayer<PTXImage::UnsignedCharImageType> ValidityImageLayer;
-  
+
   // Things for the 3D window
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyleTrackballCamera;
   vtkSmartPointer<vtkRenderer> RightRenderer;
   vtkSmartPointer<vtkPolyData> PointsPolyData;
   vtkSmartPointer<vtkPolyDataMapper> PointsPolyDataMapper;
   vtkSmartPointer<vtkActor> PointsActor;
-  
+
   // Refresh both renderers and render windows
   void Refresh();
-  
+
   // Allows the background color to be changed
   double BackgroundColor[3];
 
@@ -105,7 +105,7 @@ protected:
 
   // Store the PTX file when it is opened.
   PTXImage PTX;
-  
+
   template <typename TImage>
   void SaveImage(const typename TImage::Pointer image);
 };

@@ -25,6 +25,6 @@ int main (int argc, char *argv[])
 
   std::cout << "Writing output..." << std::endl;
   ptxImage.WritePTX(outputFileName);
-  
+
   return EXIT_SUCCESS;
 }

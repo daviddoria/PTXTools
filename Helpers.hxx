@@ -71,7 +71,7 @@ void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkIma
 {
   //std::cout << "ITKScalarImagetoVTKImage()" << std::endl;
   typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
-  
+
   // Rescale and cast for display
   typedef itk::RescaleIntensityImageFilter<TImage, UnsignedCharScalarImageType> RescaleFilterType;
   typename RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
@@ -101,7 +101,7 @@ void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkIma
 
     ++imageIterator;
     }
-    
+
   outputImage->Modified();
 }
 

@@ -25,5 +25,5 @@ ImageLayer<TImage>::ImageLayer()
   this->ImageSliceMapper->SetInputConnection(this->ImageData->GetProducerPort());
   this->ImageSlice->SetMapper(this->ImageSliceMapper);
   this->ImageSlice->VisibilityOff();
-  
+
 }

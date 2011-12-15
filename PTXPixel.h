@@ -27,7 +27,7 @@ struct PTXPixel
   float X;
   float Y;
   float Z;
-  
+
   float GetCoordinate(const unsigned int coordinate) const;
 
   // Output operator for PTXPixel
@@ -62,7 +62,7 @@ public:
     PTXPixel temp;
     return temp;
   }
-  
+
   static unsigned int GetLength(Self)
   {
     return 1;

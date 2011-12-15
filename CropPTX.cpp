@@ -40,7 +40,7 @@ int main (int argc, char *argv[])
   std::cout << "start Y: " << startY << std::endl;
   std::cout << "size X: " << sizeX << std::endl;
   std::cout << "size Y: " << sizeY << std::endl;
-  
+
   itk::Index<2> start;
   start[0] = startX;
   start[1] = startY;

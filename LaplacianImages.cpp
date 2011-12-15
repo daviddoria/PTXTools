@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
 
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
-  
+
   ptxImage.WriteXLaplacian(outputPrefix);
   ptxImage.WriteYLaplacian(outputPrefix);
   ptxImage.WriteZLaplacian(outputPrefix);

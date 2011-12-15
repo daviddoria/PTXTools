@@ -72,7 +72,7 @@ void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>::Po
 
     ++imageIterator;
     }
-    
+
   outputImage->Modified();
 }
 

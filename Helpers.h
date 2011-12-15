@@ -32,17 +32,17 @@ namespace Helpers
   ///// Non-templated functions /////
   void OutputPolyData(vtkSmartPointer<vtkPolyData> points, std::string filename);
   void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>::Pointer image, vtkImageData* outputImage);
-  
+
   ///// Templated functions /////
   template<typename TImage>
   void SetAllPixels(typename TImage::Pointer image, typename TImage::PixelType pixel);
 
   template<typename TImage>
   void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output);
-  
+
   template <typename TImage>
   void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkImageData* outputImage);
-  
+
   template<typename T>
   void WriteImage(const typename T::Pointer image, const std::string& filename);
 

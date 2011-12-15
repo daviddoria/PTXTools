@@ -17,12 +17,11 @@ int main (int argc, char *argv[])
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
 
-  typedef itk::Image<itk::CovariantVector<float, 3>, 2> ImageType;
-  typedef itk::ImageFileReader<ImageType> ImageReaderType;
+  typedef itk::ImageFileReader<PTXImage::RGBVectorImageType> ImageReaderType;
   ImageReaderType::Pointer reader = ImageReaderType::New();
   reader->SetFileName(newDepthImageFilename);
   reader->Update();
-  
+
   if(reader->GetOutput()->GetLargestPossibleRegion().GetSize() != ptxImage.GetSize())
     {
     std::cerr << "RGB image must be the same size as PTX image!" << std::endl;

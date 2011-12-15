@@ -13,10 +13,10 @@ int main (int argc, char *argv[])
   std::string outputPrefix = argv[2];
 
   FilePrefix prefix(outputPrefix);
-  
+
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
   ptxImage.WritePointCloud(prefix);
-  
+
   return EXIT_SUCCESS;
 }

@@ -40,23 +40,23 @@ int main(int argc, char *argv[])
   typedef itk::VectorImage<float, 2> FloatVectorImageType;
   FloatVectorImageType::Pointer normalsImage = FloatVectorImageType::New();
   normalsImage->SetNumberOfComponentsPerPixel(3);
-  
+
   vtkIntArray* imageSizeArray = vtkIntArray::SafeDownCast ( reader->GetOutput()->GetFieldData()->GetArray ( "ImageSize" ) );
   int imageSize[2];
   imageSizeArray->GetTupleValue(0, imageSize);
   itk::Index<2> corner;
   corner.Fill(0);
-  
+
   itk::Size<2> size;
   size[0] = imageSize[0];
   size[1] = imageSize[1];
-  
+
   itk::ImageRegion<2> region(corner,size);
   normalsImage->SetRegions(region);
   normalsImage->Allocate();
-  
+
   vtkIntArray* originalPixelArray = vtkIntArray::SafeDownCast ( reader->GetOutput()->GetPointData()->GetArray ( "OriginalPixel" ) );
-  
+
   if(!originalPixelArray)
     {
     std::cerr << "VTP file does not contain OriginalPixel array!" << std::endl;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     }
 
   vtkFloatArray* normalsArray = vtkFloatArray::SafeDownCast ( reader->GetOutput()->GetPointData()->GetNormals() );
-  
+
   if(!normalsArray)
     {
     std::cerr << "VTP file does not contain point normals!" << std::endl;
@@ -78,20 +78,20 @@ int main(int argc, char *argv[])
     itk::Index<2> index;
     index[0] = originalPixel[0];
     index[1] = originalPixel[1];
-  
+
     FloatVectorImageType::PixelType pixel;
     pixel.SetSize(3);
-  
+
     float normal[3];
     normalsArray->GetTupleValue(pointId, normal);
-    
+
     pixel[0] = normal[0];
     pixel[1] = normal[1];
     pixel[2] = normal[2];
-    
+
     normalsImage->SetPixel(index, pixel);
     }
-  
+
   typedef itk::ImageFileWriter<FloatVectorImageType> WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetFileName(outputFileName);

@@ -22,7 +22,7 @@ template <typename TImage>
 struct ImageLayer
 {
   ImageLayer();
-  
+
   typename TImage::Pointer Image;
   vtkSmartPointer<vtkImageData> ImageData;
   vtkSmartPointer<vtkImageSlice> ImageSlice;

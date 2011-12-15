@@ -23,10 +23,10 @@ struct FilePrefix
 	// No extension found
 	prefix = filePrefix;
     }
-    
-    std::cout << "Changed prefix from " << filePrefix << " to " << prefix << std::endl; 
+
+    std::cout << "Changed prefix from " << filePrefix << " to " << prefix << std::endl;
   }
-  
+
   std::string prefix;
 };
 

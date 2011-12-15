@@ -10,7 +10,7 @@ int main (int argc, char *argv[])
     std::cout << "Required arguments: InputFilename(ptx) MaskFilename(png) OutputFilePrefix" << std::endl;
     return EXIT_FAILURE;
     }
-  
+
   std::string inputFilename = argv[1];
   std::string maskFilename = argv[2];
   std::string outputFilePrefix = argv[3];
@@ -19,7 +19,7 @@ int main (int argc, char *argv[])
   ReaderType::Pointer maskReader = ReaderType::New();
   maskReader->SetFileName(maskFilename);
   maskReader->Update();
-  
+
   PTXImage ptxImage;
   ptxImage.ReadFile(inputFilename);
   ptxImage.ApplyMask(maskReader->GetOutput());

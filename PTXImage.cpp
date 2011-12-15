@@ -44,7 +44,7 @@ PTXImage::PTXImage()
 {
   // Create the main image
   this->FullImage = FullImageType::New();
-  
+
   this->Debug = false;
 }
 
@@ -55,7 +55,7 @@ void PTXImage::SetDebug(bool value)
 
 PTXPixel PTXImage::GetPTXPixel(const itk::Index<2>& pixel) const
 {
-  
+
   if(this->FullImage->GetLargestPossibleRegion().IsInside(pixel))
     {
     return this->FullImage->GetPixel(pixel);
@@ -93,7 +93,7 @@ void PTXImage::AppendPTXRight(const PTXImage& ptxImage)
 
   PTXPixel fillerValue;
   tileImageFilter->SetDefaultPixelValue( fillerValue );
-  
+
   tileImageFilter->SetInput(0, this->FullImage);
   tileImageFilter->SetInput(1, ptxImage.GetFullImage());
   tileImageFilter->Update();
@@ -144,14 +144,14 @@ PTXImage::XYZImageType::Pointer PTXImage::GetXYZImage() const
 {
   typedef itk::Compose3DCovariantVectorImageFilter<FloatImageType,
                               XYZImageType> ComposeCovariantVectorImageFilterType;
- 
+
   ComposeCovariantVectorImageFilterType::Pointer composeFilter = ComposeCovariantVectorImageFilterType::New();
- 
+
   composeFilter->SetInput1(GetCoordinateImage(0));
   composeFilter->SetInput2(GetCoordinateImage(1));
   composeFilter->SetInput3(GetCoordinateImage(2));
   composeFilter->Update();
-  
+
   return composeFilter->GetOutput();
 }
 
@@ -170,33 +170,33 @@ PTXImage::XYZImageType::Pointer PTXImage::GetXYZLaplacian() const
 {
   typedef itk::Compose3DCovariantVectorImageFilter<FloatImageType,
                               XYZImageType> ComposeCovariantVectorImageFilterType;
- 
+
   ComposeCovariantVectorImageFilterType::Pointer composeFilter = ComposeCovariantVectorImageFilterType::New();
- 
+
   composeFilter->SetInput1(GetLaplacian(0));
   composeFilter->SetInput2(GetLaplacian(1));
   composeFilter->SetInput3(GetLaplacian(2));
   composeFilter->Update();
-  
+
   return composeFilter->GetOutput();
 }
 
 PTXImage::FloatImageType::Pointer PTXImage::GetCoordinateImage(const unsigned int dimension) const
 {
   itk::ImageRegionConstIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
- 
+
   FloatImageType::Pointer image = FloatImageType::New();
   image->SetRegions(this->FullImage->GetLargestPossibleRegion());
   image->Allocate();
   image->FillBuffer(0);
-  
+
   while(!imageIterator.IsAtEnd())
     {
     PTXPixel pixel = imageIterator.Get();
     image->SetPixel(imageIterator.GetIndex(), pixel.GetCoordinate(dimension));
     ++imageIterator;
     }
-    
+
   return image;
 }
 
@@ -244,29 +244,29 @@ PTXImage::FloatImageType::Pointer PTXImage::GetZImage() const
 {
   return GetCoordinateImage(2);
 }
-  
+
 PTXImage::FloatImageType::Pointer PTXImage::GetLaplacian(const unsigned int dimension) const
 {
 #if 0
   typedef itk::DerivativeImageFilter<FloatImageType, FloatImageType >  DerivativeFilterType;
- 
+
   // Create and setup a derivative filter
   DerivativeFilterType::Pointer derivativeFilter = DerivativeFilterType::New();
   derivativeFilter->SetInput( GetCoordinateImage(dimension) );
   derivativeFilter->SetDirection(dimension);
   derivativeFilter->Update();
-  
+
   return derivativeFilter->GetOutput();
-  
+
 #endif
 
   typedef itk::LaplacianRecursiveGaussianImageFilter<
     FloatImageType, FloatImageType >  LaplacianFilterType;
- 
+
   LaplacianFilterType::Pointer laplacianFilter = LaplacianFilterType::New();
   laplacianFilter->SetInput( GetCoordinateImage(dimension) );
   laplacianFilter->Update();
-  
+
   return laplacianFilter->GetOutput();
 }
 
@@ -567,11 +567,11 @@ void PTXImage::CreateRGBImage(RGBImageType::Pointer image) const
 void PTXImage::WriteEverything(const FilePrefix& filePrefix) const
 {
   WritePTX(filePrefix);
-  
+
   WriteRGBImage(filePrefix);
-  
+
   WriteDepthImage(filePrefix);
-  
+
   WritePointCloud(filePrefix);
 
 }
@@ -663,7 +663,7 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
   imageSizeArray->SetName("ImageSize");
   imageSizeArray->InsertNextTupleValue(imageSize);
   polydata->GetFieldData()->AddArray(imageSizeArray);
-  
+
   pointCloud->ShallowCopy(vertexGlyphFilter->GetOutput());
 }
 
@@ -761,7 +761,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetDepthLaplacian() const
 {
   FloatImageType::Pointer depthImage = FloatImageType::New();
   CreateDepthImage(depthImage);
-  
+
   typedef itk::LaplacianRecursiveGaussianImageFilter<
     FloatImageType, FloatImageType >  LaplacianFilterType;
   LaplacianFilterType::Pointer laplacianFilter = LaplacianFilterType::New();
@@ -877,7 +877,7 @@ void PTXImage::ReplaceDepth(const FloatImageType::Pointer depthImage)
       {
       std::cout << "Old point: " << oldPoint << " New point: " << newPoint << std::endl;
       }
-    
+
     // Save the new point in the PTXPixel
     pixel.X = newPoint[0];
     pixel.Y = newPoint[1];
@@ -902,7 +902,7 @@ void PTXImage::ReplaceRGB(const RGBVectorImageType::Pointer rgb)
               << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
     return;
     }
-    
+
   // Setup iterators
   itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBVectorImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
@@ -937,7 +937,7 @@ void PTXImage::ReplaceRGB(const RGBImageType::Pointer rgb)
               << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
     return;
     }
-    
+
   // Setup iterators
   itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
@@ -970,7 +970,7 @@ void PTXImage::ReplaceValidity(const MaskImageType::Pointer validityImage)
               << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
     return;
     }
-    
+
   // Setup iterators
   itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
@@ -994,27 +994,27 @@ void PTXImage::ReplaceValidity(const MaskImageType::Pointer validityImage)
 //   // Setup iterators
 //   itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 //   itk::ImageRegionConstIterator<RGBImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
-// 
+//
 //   while(!fullImageIterator.IsAtEnd())
 //     {
 //     // Get the old point
 //     PTXPixel pixel = fullImageIterator.Get();
-// 
+//
 //     // Copy the color from the RGB image
 //     pixel.R = rgbIterator.Get().GetRed();
 //     pixel.G = rgbIterator.Get().GetGreen();
 //     pixel.B = rgbIterator.Get().GetBlue();
 //     fullImageIterator.Set(pixel);
-// 
+//
 //     if(pixel.Valid)
 //       {
-// 
+//
 //       }
-// 
+//
 //     ++fullImageIterator;
 //     ++rgbIterator;
 //     }
-// 
+//
 // }
 
 
@@ -1025,7 +1025,7 @@ void PTXImage::ReplaceXYZ(const XYZImageType::Pointer xyz)
   itk::ImageRegionConstIterator<XYZImageType> xyzIterator(xyz, xyz->GetLargestPossibleRegion());
 
   unsigned int newPoints = 0; // These points were previously invalid. This is just record keeping for fun.
-  
+
   while(!imageIterator.IsAtEnd())
     {
     // Get the old point
@@ -1036,18 +1036,18 @@ void PTXImage::ReplaceXYZ(const XYZImageType::Pointer xyz)
     pixel.Y = xyzIterator.Get()[1];
     pixel.Z = xyzIterator.Get()[2];
     imageIterator.Set(pixel);
-  
+
     if(pixel.Valid)
       {
       newPoints++;
       }
 
     ++imageIterator;
-    ++xyzIterator;  
+    ++xyzIterator;
     }
 
   std::cout << "There were " << newPoints << " new points (previously invalid)" << std::endl;
-  
+
 }
 
 void PTXImage::ReplaceRGBD(RGBDImageType::Pointer rgbd)
@@ -1302,7 +1302,7 @@ void PTXImage::CreateRGBDVImage(RGBDVImageType::Pointer image) const
 
   MaskImageType::Pointer validityImage = MaskImageType::New();
   CreateValidityImage(validityImage);
-    
+
   // Setup the image
   image->SetRegions(this->FullImage->GetLargestPossibleRegion());
   image->Allocate();
@@ -1525,7 +1525,7 @@ itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, const 
   // This function finds the nearest valid pixel along a row or column (specified by 'offset') of an image.
   itk::Index<2> currentPixel = pixel;
   itk::Offset<2> offset = inputOffset; // We will need to modify this internally, so we need to create a new object so the input can be const.
-  
+
   //itk::Size<2> size = this->FullImage->GetLargestPossibleRegion().GetSize();
 
   // Step forward
@@ -1600,7 +1600,7 @@ void PTXImage::WritePTX(const FilePrefix& filePrefix) const
   std::cout << "Writing " << ss.str().c_str() << " PTX with: " << std::endl;
   std::cout << "Theta points: " << numberOfThetaPoints << std::endl;
   std::cout << "Phi points: " << numberOfPhiPoints << std::endl;
-  
+
   fout << numberOfThetaPoints << std::endl;
   fout << numberOfPhiPoints << std::endl;
   fout << "0 0 0" << std::endl
@@ -1857,7 +1857,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   */
 
   // Project the points onto the plane
-  
+
   vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
   CreatePointCloud(pointCloud);
 
@@ -1899,7 +1899,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   topCenterPixel.G = 0;
   topCenterPixel.B = 0;
   this->FullImage->SetPixel(topCenterIndex, topCenterPixel);
-  
+
   FilePrefix prefix("topCenterColoredRed");
   WriteRGBImage(prefix);
   }
@@ -1938,7 +1938,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
 
   // Get center pixel
   itk::Index<2> centerIndex = FindValidCenterPixel();
-  
+
   //centerIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
   //centerIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] / 2;
 
@@ -1984,7 +1984,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   transformFilter->Update();
 
   Helpers::OutputPolyData(vtkPolyData::SafeDownCast(transformFilter->GetOutput()), "transformedProjectedPoints.vtp");
-  
+
   // Compute the corner of the image
   double bounds[6];
   transformFilter->GetOutput()->GetBounds(bounds);
@@ -2006,7 +2006,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   // Create an image into which to project the points
   PTXImage orthoPTX;
   orthoPTX.SetSize(this->FullImage->GetLargestPossibleRegion());
-  
+
   double newBounds[6];
   shiftTransformFilter->GetOutput()->GetBounds(newBounds);
 
@@ -2040,7 +2040,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
     itk::Index<2> originalPixelIndex;
     originalPixelIndex[0] = originalPixel[0];
     originalPixelIndex[1] = originalPixel[1];
-    
+
     // Create the new PTX point
     PTXPixel newPixel;
     newPixel.Valid = true;
@@ -2053,7 +2053,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
     newPixel.X = FullImage->GetPixel(originalPixelIndex).X;
     newPixel.Y = FullImage->GetPixel(originalPixelIndex).Y;
     newPixel.Z = FullImage->GetPixel(originalPixelIndex).Z;
-    
+
     // Ensure the projected point is the closest to the camera to be projected into this bin
     if(depthImage->GetPixel(index) < FullImage->GetPixel(originalPixelIndex).GetDepth())
       {
@@ -2072,7 +2072,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
       depthImage->SetPixel(index, FullImage->GetPixel(originalPixelIndex).GetDepth());
       }
     }
-  
+
   return orthoPTX;
 }
 
@@ -2142,7 +2142,7 @@ itk::Index<2> PTXImage::FindValidCenterPixel() const
   itk::Offset<2> offset;
   offset[0] = 1;
   offset[1] = 0;
-  
+
   if(this->FullImage->GetPixel(centerIndex + offset).Valid)
     {
     return centerIndex + offset;
@@ -2150,7 +2150,7 @@ itk::Index<2> PTXImage::FindValidCenterPixel() const
 
   offset[0] = -1;
   offset[1] = 0;
-  
+
   if(this->FullImage->GetPixel(centerIndex + offset).Valid)
     {
     return centerIndex + offset;
@@ -2162,7 +2162,7 @@ itk::Index<2> PTXImage::FindValidCenterPixel() const
     {
     return centerIndex + offset;
     }
-    
+
   offset[0] = 0;
   offset[1] = -1;
   if(this->FullImage->GetPixel(centerIndex + offset).Valid)

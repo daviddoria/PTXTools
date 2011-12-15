@@ -77,7 +77,7 @@ PTXViewerWidget::PTXViewerWidget(QWidget *parent)
   // Setup interactor styles
   this->InteractorStyleImage = vtkSmartPointer<vtkInteractorStyleImage>::New();
   this->qvtkWidgetLeft->GetInteractor()->SetInteractorStyle(this->InteractorStyleImage);
-  
+
   this->InteractorStyleTrackballCamera = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
   this->qvtkWidgetRight->GetInteractor()->SetInteractorStyle(this->InteractorStyleTrackballCamera);
 
@@ -94,7 +94,7 @@ PTXViewerWidget::PTXViewerWidget(QWidget *parent)
   this->PointsPolyDataMapper->SetInputConnection(this->PointsPolyData->GetProducerPort());
   this->PointsActor->SetMapper(this->PointsPolyDataMapper);
   this->RightRenderer->AddViewProp(this->PointsActor);
-  
+
   // Default GUI settings
   this->radRGB->setChecked(true);
 }
@@ -184,7 +184,7 @@ void PTXViewerWidget::on_actionExportPointCloud_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
-    
+
   this->PTX.WritePointCloud(fileName.toStdString());
 }
 
@@ -201,10 +201,9 @@ void InnerWidget::actionFlip_Image_triggered()
 void PTXViewerWidget::OpenFile()
 {
   std::cout << "OpenFile()" << std::endl;
-  
+
   // Get a filename to open
-  QString filename = QFileDialog::getOpenFileName(this,
-     "Open PTX File", ".", "Image Files (*.ptx)");
+  QString filename = QFileDialog::getOpenFileName(this, "Open PTX File", "", "PTX Files (*.ptx)");
 
   if(filename.isEmpty())
     {
@@ -217,20 +216,20 @@ void PTXViewerWidget::OpenFile()
   // Convert the images into a VTK images for display.
   this->PTX.CreateRGBImage(this->ColorImageLayer.Image);
   Helpers::ITKRGBImageToVTKImage(this->ColorImageLayer.Image, this->ColorImageLayer.ImageData);
-  
+
   this->PTX.CreateDepthImage(this->DepthImageLayer.Image);
   Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image, this->DepthImageLayer.ImageData);
-  
+
   this->PTX.CreateIntensityImage(this->IntensityImageLayer.Image);
   Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image, this->IntensityImageLayer.ImageData);
-  
+
   this->PTX.CreateValidityImage(this->ValidityImageLayer.Image);
   Helpers::ITKScalarImageToScaledVTKImage<PTXImage::UnsignedCharImageType>(this->ValidityImageLayer.Image, this->ValidityImageLayer.ImageData);
 
   this->PTX.CreatePointCloud(this->PointsPolyData);
-  
+
   Refresh();
-  
+
   this->LeftRenderer->ResetCamera();
   this->RightRenderer->ResetCamera();
 }
@@ -241,7 +240,7 @@ void PTXViewerWidget::Refresh()
   this->IntensityImageLayer.ImageSlice->SetVisibility(this->radIntensity->isChecked());
   this->ColorImageLayer.ImageSlice->SetVisibility(this->radRGB->isChecked());
   this->ValidityImageLayer.ImageSlice->SetVisibility(this->radValidity->isChecked());
-  
+
   this->LeftRenderer->Render();
   this->RightRenderer->Render();
   this->qvtkWidgetRight->GetRenderWindow()->Render();
