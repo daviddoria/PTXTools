@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 int main (int argc, char *argv[])
 {
@@ -12,8 +13,7 @@ int main (int argc, char *argv[])
 
   std::cout << "Input filename: " << inputFileName << std::endl;
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFileName);
+  PTXImage ptxImage = PTXReader::Read(inputFileName);
 
   std::cout << "Width: " << ptxImage.GetWidth() << std::endl;
   std::cout << "Height: " << ptxImage.GetHeight() << std::endl;

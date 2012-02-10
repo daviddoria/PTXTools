@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 #include "itkImageFileReader.h"
 
@@ -14,8 +15,7 @@ int main (int argc, char *argv[])
   std::string newDepthImageFilename = argv[2];
   std::string outputFilename = argv[3];
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
 
   typedef itk::ImageFileReader<PTXImage::RGBVectorImageType> ImageReaderType;
   ImageReaderType::Pointer reader = ImageReaderType::New();

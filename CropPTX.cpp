@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 int main (int argc, char *argv[])
 {
@@ -54,8 +55,7 @@ int main (int argc, char *argv[])
   std::cout << "Crop region: " << region << std::endl;
 
   std::cout << "Reading PTX..." << std::endl;
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFileName);
+  PTXImage ptxImage = PTXReader::Read(inputFileName);
 
   std::cout << "Cropping..." << std::endl;
   ptxImage.Crop(region);

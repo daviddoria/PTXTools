@@ -1,7 +1,11 @@
+// Custom
 #include "PTXImage.h"
+#include "PTXReader.h"
 
+// ITK
 #include "itkImageFileWriter.h"
 
+// STL
 #include <sstream>
 
 int main (int argc, char *argv[])
@@ -15,8 +19,7 @@ int main (int argc, char *argv[])
   std::string inputFilename = argv[1];
   std::string outputPrefix = argv[2];
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
 
   // RGB
   ptxImage.WriteRGBImage(outputPrefix);

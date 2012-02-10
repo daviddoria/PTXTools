@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 int main (int argc, char *argv[])
 {
@@ -16,8 +17,7 @@ int main (int argc, char *argv[])
   float depthThreshold;
   ss >> depthThreshold;
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
 
   ptxImage.WriteDepthThresholdMask(outputFilename, depthThreshold);
 

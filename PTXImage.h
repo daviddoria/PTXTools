@@ -38,6 +38,7 @@ class vtkPolyData;
 class PTXImage
 {
 public:
+  friend class PTXReader;
 
   // The image which contains complete information about each point
   typedef itk::Image<PTXPixel, 2> FullImageType;
@@ -157,9 +158,6 @@ public:
   void WriteRGBDIImage(const FilePrefix& filePrefix) const;
 
   void WriteEverything(const FilePrefix& filePrefix) const;
-
-  // Actually read the PTX file
-  void ReadFile(const std::string& filename);
 
   // This function allows the validity image to be modified externally and the new image applied to the grid
   void ReplaceValidity(const MaskImageType::Pointer validityImage);

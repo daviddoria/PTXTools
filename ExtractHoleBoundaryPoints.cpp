@@ -1,13 +1,17 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
+// ITK
 #include "itkImageFileReader.h"
 #include "itkImageRegionConstIterator.h"
 
-#include "vtkPoints.h"
-#include "vtkPolyData.h"
-#include "vtkXMLPolyDataWriter.h"
+// VTK
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkXMLPolyDataWriter.h>
 #include <vtkVertexGlyphFilter.h>
 
+// STL
 #include <string>
 
 // This program takes a binary image. It extracts the points from the PTX image which correspond to non-zero pixels in the binary image.
@@ -38,11 +42,9 @@ int main (int argc, char *argv[])
   maskReader->SetFileName(maskFileName);
   maskReader->Update();
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(ptxFileName);
+  PTXImage ptxImage = PTXReader::Read(ptxFileName);
 
-  vtkSmartPointer<vtkPoints> points =
-    vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
   itk::ImageRegionConstIterator<MaskImageType> imageIterator(maskReader->GetOutput(), maskReader->GetOutput()->GetLargestPossibleRegion());
 

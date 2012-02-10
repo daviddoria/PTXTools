@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 int main (int argc, char *argv[])
 {
@@ -24,8 +25,7 @@ int main (int argc, char *argv[])
   std::cout << "Factor: " << factor << std::endl;
   std::cout << "Output: " << outputFilename << std::endl;
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
   PTXImage downsampled = ptxImage.Downsample(factor);
 
   downsampled.WritePTX(outputFilename);

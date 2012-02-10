@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 #include "itkImage.h"
 #include "itkImageFileReader.h"
@@ -20,8 +21,7 @@ int main (int argc, char *argv[])
   maskReader->SetFileName(maskFilename);
   maskReader->Update();
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
   ptxImage.ApplyMask(maskReader->GetOutput());
 
   ptxImage.WriteRGBImage(outputFilePrefix);

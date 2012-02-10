@@ -22,6 +22,7 @@
 // Custom
 #include "Helpers.h"
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 Eigen::MatrixXd ReadP(const std::string& filename);
 
@@ -45,8 +46,7 @@ int main(int argc, char *argv[])
   std::cout << "outputFileName : " << outputFileName << std::endl;
 
   // Read the PTX file
-  PTXImage ptxImage;
-  ptxImage.ReadFile(ptxFileName);
+  PTXImage ptxImage = PTXReader::Read(ptxFileName);
 
   std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   //FilePrefix prefix("test");

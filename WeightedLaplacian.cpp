@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 int main (int argc, char *argv[])
 {
@@ -11,8 +12,7 @@ int main (int argc, char *argv[])
   std::string inputFilename = argv[1];
   std::string outputFilename = argv[2];
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
   ptxImage.ComputeWeightedDepthLaplacian(outputFilename);
 
   return EXIT_SUCCESS;

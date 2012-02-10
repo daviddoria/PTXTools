@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 #include "itkImageFileWriter.h"
 
@@ -13,8 +14,7 @@ int main (int argc, char *argv[])
   std::string inputFilename = argv[1];
   std::string outputPrefix = argv[2];
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
 
   ptxImage.WriteXLaplacian(outputPrefix);
   ptxImage.WriteYLaplacian(outputPrefix);

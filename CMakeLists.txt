@@ -35,7 +35,7 @@ SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 # endif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
 # Create the main library that will be used in all of the exectuables
-add_library(PTX PTXPixel.cpp PTXImage.cpp Helpers.cpp)
+add_library(PTX PTXPixel.cpp PTXImage.cpp PTXReader.cpp Helpers.cpp)
 set(PTXLibraries PTX ${ITK_LIBRARIES} ${VTK_LIBRARIES})
 
 #############

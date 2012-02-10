@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 #include "FilePrefix.h"
 
 int main (int argc, char *argv[])
@@ -14,8 +15,7 @@ int main (int argc, char *argv[])
 
   FilePrefix prefix(outputPrefix);
 
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
   ptxImage.WritePointCloud(prefix);
 
   return EXIT_SUCCESS;

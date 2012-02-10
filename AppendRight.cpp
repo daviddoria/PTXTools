@@ -1,4 +1,5 @@
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 int main (int argc, char *argv[])
 {
@@ -13,12 +14,10 @@ int main (int argc, char *argv[])
   std::string outputFileName = argv[3];
 
   std::cout << "Reading first image..." << std::endl;
-  PTXImage ptxImage;
-  ptxImage.ReadFile(inputFilename);
+  PTXImage ptxImage = PTXReader::Read(inputFilename);
 
   std::cout << "Reading second image..." << std::endl;
-  PTXImage ptxImageToAppend;
-  ptxImageToAppend.ReadFile(inputToAppendFilename);
+  PTXImage ptxImageToAppend = PTXReader::Read(inputToAppendFilename);
 
   std::cout << "Appending images..." << std::endl;
   ptxImage.AppendPTXRight(ptxImageToAppend);

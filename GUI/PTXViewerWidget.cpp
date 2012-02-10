@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "PTXViewerWidget.h"
 
 #include "Helpers.h"
+#include "PTXReader.h"
 
 // ITK
 #include <itkCastImageFilter.h>
@@ -46,6 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QMessageBox>
 #include <QTimer>
 
+// STL
 #include <iostream>
 
 void PTXViewerWidget::SharedConstructor()
@@ -252,7 +254,7 @@ void InnerWidget::actionFlip_Image_triggered()
 void PTXViewerWidget::OpenFile(const std::string& fileName)
 {
   // Read file
-  this->PTX.ReadFile(fileName);
+  this->PTX = PTXReader::Read(fileName);
 
   Display();
 }
