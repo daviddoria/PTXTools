@@ -30,9 +30,11 @@
 #include <vtkLineSource.h>
 #include <vtkPlane.h>
 #include <vtkMath.h>
+#include <vtkStructuredGrid.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataWriter.h>
+#include <vtkXMLStructuredGridWriter.h>
 
 // STL
 #include <fstream>
@@ -200,7 +202,7 @@ PTXImage::FloatImageType::Pointer PTXImage::GetCoordinateImage(const unsigned in
   return image;
 }
 
-void PTXImage::WriteFloatImage(FloatImageType::Pointer image, const std::string& filename) const
+void PTXImage::WriteFloatImage(const FloatImageType* const image, const std::string& filename) const
 {
   typedef itk::ImageFileWriter< FloatImageType > FloatWriterType;
   FloatWriterType::Pointer writer = FloatWriterType::New();
@@ -568,6 +570,85 @@ void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
   pointCloud->ShallowCopy(vertexGlyphFilter->GetOutput());
 }
 
+
+void PTXImage::CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structuredGrid) const
+{
+  int dimensions[3] = {this->GetWidth(), this->GetHeight(), 1};
+  structuredGrid->SetDimensions(dimensions);
+
+  unsigned int totalPoints = this->GetWidth() * this->GetHeight();
+
+  // Create point and color arrays
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+  points->SetNumberOfPoints(totalPoints);
+
+  vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
+  colors->SetNumberOfComponents(3);
+  colors->SetNumberOfTuples(totalPoints);
+  colors->SetName("Colors");
+
+  vtkSmartPointer<vtkFloatArray> depthArray = vtkSmartPointer<vtkFloatArray>::New();
+  depthArray->SetNumberOfComponents(1);
+  depthArray->SetNumberOfTuples(totalPoints);
+  depthArray->SetName("Depths");
+
+  vtkSmartPointer<vtkFloatArray> intensities = vtkSmartPointer<vtkFloatArray>::New();
+  intensities->SetNumberOfComponents(1);
+  intensities->SetNumberOfTuples(totalPoints);
+  intensities->SetName("Intensity");
+
+  // Iterate through the full image extracting the coordinate and color information and adding them to their respective arrays
+  itk::ImageRegionConstIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    int queryPoint[3] = {imageIterator.GetIndex()[0], imageIterator.GetIndex()[1], 0};
+    vtkIdType pointId = vtkStructuredData::ComputePointId(dimensions, queryPoint);
+
+    PTXPixel pixel = imageIterator.Get();
+
+    if(pixel.Valid)
+      {
+      unsigned char rgb[3];
+      rgb[0] = pixel.R;
+      rgb[1] = pixel.G;
+      rgb[2] = pixel.B;
+      colors->InsertNextTupleValue(rgb);
+
+      points->InsertNextPoint(pixel.X, pixel.Y, pixel.Z);
+
+      intensities->InsertNextValue(pixel.Intensity);
+
+      depthArray->InsertNextValue(pixel.GetDepth());
+      }
+    else
+      {
+      unsigned char rgb[3] = {0,0,0};
+      colors->InsertNextTupleValue(rgb);
+
+      points->InsertNextPoint(0,0,0);
+
+      intensities->InsertNextValue(0);
+
+      depthArray->InsertNextValue(0);
+
+      structuredGrid->BlankPoint(pointId);
+      }
+    ++imageIterator;
+    }
+
+  // Combine the coordinates and colors into a vtkStructuredGrid
+  structuredGrid->SetPoints(points);
+  structuredGrid->GetPointData()->SetScalars(colors);
+  structuredGrid->GetPointData()->AddArray(depthArray);
+  structuredGrid->GetPointData()->AddArray(intensities);
+
+  // Create a vertex at each point
+//   vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
+//   vertexGlyphFilter->AddInput(polydata);
+//   vertexGlyphFilter->Update();
+}
+
 void PTXImage::WritePointCloud(const std::string& fileName) const
 {
   vtkSmartPointer<vtkPolyData> pointCloud = vtkSmartPointer<vtkPolyData>::New();
@@ -577,6 +658,19 @@ void PTXImage::WritePointCloud(const std::string& fileName) const
   writer->SetFileName(fileName.c_str());
   writer->SetInputConnection(pointCloud->GetProducerPort());
   writer->Write();
+}
+
+void PTXImage::WriteStructuredGrid(const std::string& fileName) const
+{
+  vtkSmartPointer<vtkStructuredGrid> structuredGrid =
+    vtkSmartPointer<vtkStructuredGrid>::New();
+  CreateStructuredGrid(structuredGrid);
+
+  vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
+  writer->SetFileName(fileName.c_str());
+  writer->SetInputConnection(structuredGrid->GetProducerPort());
+  writer->Write();
+  
 }
 
 void PTXImage::WritePointCloud(const FilePrefix& filePrefix) const

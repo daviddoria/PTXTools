@@ -227,9 +227,9 @@ void PTXViewerWidget::on_actionExportValidityImage_activated()
   SaveImage<PTXImage::MaskImageType>(this->ValidityImageLayer.Image);
 }
 
-void PTXViewerWidget::on_actionExportPointCloud_activated()
+void PTXViewerWidget::on_actionExportUnorganizedPointCloud_activated()
 {
-  QString fileName = QFileDialog::getSaveFileName(this, "Save File", "", "VTP Files (*.vtp)");
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", "", "VTK PolyData Files (*.vtp)");
 
   //DebugMessage<std::string>("Got filename: ", fileName.toStdString());
   if(fileName.toStdString().empty())
@@ -239,6 +239,20 @@ void PTXViewerWidget::on_actionExportPointCloud_activated()
     }
 
   this->PTX.WritePointCloud(fileName.toStdString());
+}
+
+void PTXViewerWidget::on_actionExportOrganizedPointCloud_activated()
+{
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", "", "VTK Structured Grid Files (*.vts)");
+
+  //DebugMessage<std::string>("Got filename: ", fileName.toStdString());
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  this->PTX.WriteStructuredGrid(fileName.toStdString());
 }
 
 #if 0

@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // VTK
 #include <vtkSmartPointer.h>
 class vtkPolyData;
+class vtkStructuredGrid;
 
 // Custom
 #include "PTXPixel.h"
@@ -88,7 +89,7 @@ public:
   void WriteZ(const std::string& filePrefix) const;
   FloatImageType::Pointer GetZImage() const;
 
-  void WriteFloatImage(const FloatImageType::Pointer image, const std::string& filename) const;
+  void WriteFloatImage(const FloatImageType* const image, const std::string& filename) const;
 
   // Derivatives
   FloatImageType::Pointer GetLaplacian(const unsigned int dimension) const;
@@ -136,6 +137,9 @@ public:
   void CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const;
   void WritePointCloud(const FilePrefix& prefix) const;
   void WritePointCloud(const std::string& fileName) const;
+  
+  void CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structuredGrid) const;
+  void WriteStructuredGrid(const std::string& fileName) const;
 
   // Create an image of the intensities of the points in the grid in which they were acquired
   void CreateIntensityImage(FloatImageType::Pointer image) const;

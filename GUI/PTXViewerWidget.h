@@ -65,7 +65,8 @@ public slots:
   void on_actionExportIntensityImage_activated();
   void on_actionExportDepthImage_activated();
   void on_actionExportValidityImage_activated();
-  void on_actionExportPointCloud_activated();
+  void on_actionExportUnorganizedPointCloud_activated();
+  void on_actionExportOrganizedPointCloud_activated();
   void on_actionDownsample_activated();
 
   // Image display radio buttons.

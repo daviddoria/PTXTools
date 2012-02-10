@@ -120,7 +120,8 @@
     <addaction name="actionExportRGBDImage"/>
     <addaction name="actionExportRGBDVImage"/>
     <addaction name="actionExportIntensityImage"/>
-    <addaction name="actionExportPointCloud"/>
+    <addaction name="actionExportUnorganizedPointCloud"/>
+    <addaction name="actionExportOrganizedPointCloud"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -182,9 +183,9 @@
     <string>Intensity Image</string>
    </property>
   </action>
-  <action name="actionExportPointCloud">
+  <action name="actionExportUnorganizedPointCloud">
    <property name="text">
-    <string>Point Cloud</string>
+    <string>Unorganized Point Cloud (vtp)</string>
    </property>
   </action>
   <action name="actionDownsample">
@@ -195,6 +196,11 @@
   <action name="actionSavePTX">
    <property name="text">
     <string>Save PTX</string>
+   </property>
+  </action>
+  <action name="actionExportOrganizedPointCloud">
+   <property name="text">
+    <string>Organized Point Cloud (vts)</string>
    </property>
   </action>
  </widget>
