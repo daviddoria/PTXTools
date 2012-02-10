@@ -15,11 +15,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "itkImage.h"
+
 template <typename TImage>
 ImageLayer<TImage>::ImageLayer()
 {
   this->Image = TImage::New();
+  itk::Index<2> corner;
+  corner.Fill(0);
+  itk::Size<2> size;
+  size.Fill(0);
+  itk::ImageRegion<2> region(corner,size);
+  this->Image->SetRegions(region);
+  this->Image->Allocate();
+  
   this->ImageData = vtkSmartPointer<vtkImageData>::New();
+  this->ImageData->SetDimensions(0,0,0);
+  this->ImageData->AllocateScalars();
+
   this->ImageSlice = vtkSmartPointer<vtkImageSlice>::New();
   this->ImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
   this->ImageSliceMapper->SetInputConnection(this->ImageData->GetProducerPort());

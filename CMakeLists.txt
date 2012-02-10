@@ -18,10 +18,11 @@ INCLUDE(${VTK_USE_FILE})
 #set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
-FIND_PACKAGE(Eigen3 REQUIRED)
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+# FIND_PACKAGE(Eigen3 REQUIRED)
+# INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
-# Need to set EIGEN3_INCLUDE_DIR in this project CMake settings.
+# Need to set EIGEN3_INCLUDE_DIR in this project CMake settings (or do the below:)
+include_directories(/media/portable/src/Eigen)
 
 # Setup install
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )

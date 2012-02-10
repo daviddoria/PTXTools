@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2010 David Doria, daviddoria@gmail.com
+Copyright (C) 2011 David Doria, daviddoria@gmail.com
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,28 +15,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Instantiate and display the GUI
+#ifndef PTXREADER_H
+#define PTXREADER_H
 
-#include <QApplication>
+// Custom
+#include "PTXImage.h"
 
-#include "PTXViewerWidget.h"
-
-int main(int argc, char** argv)
+class PTXReader
 {
-  QApplication app(argc, argv);
+};
 
-  PTXViewerWidget* ptxViewerWidget;
-  if(argc == 2)
-    {
-    std::cout << "Using constructor with: " << argv[1] << std::endl;
-    ptxViewerWidget = new PTXViewerWidget(argv[1]);
-    }
-  else
-    {
-    ptxViewerWidget = new PTXViewerWidget;
-    }
-
-  ptxViewerWidget->show();
-
-  return app.exec();
-}
+#endif

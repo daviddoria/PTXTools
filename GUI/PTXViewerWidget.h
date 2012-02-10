@@ -47,11 +47,14 @@ class PTXViewerWidget : public QMainWindow, private Ui::PTXViewerWidget
 Q_OBJECT
 public:
   PTXViewerWidget(QWidget *parent = 0);
-
+  PTXViewerWidget(const std::string& fileName);
+  void SharedConstructor();
+  
 public slots:
   // Menu items
   // File menu
-  void on_actionOpenImage_activated();
+  void on_actionOpenPTX_activated();
+  void on_actionSavePTX_activated();
   void on_actionQuit_activated();
   void on_actionFlipImage_activated();
 
@@ -63,17 +66,25 @@ public slots:
   void on_actionExportDepthImage_activated();
   void on_actionExportValidityImage_activated();
   void on_actionExportPointCloud_activated();
+  void on_actionDownsample_activated();
 
   // Image display radio buttons.
   void on_radRGB_clicked();
   void on_radDepth_clicked();
   void on_radIntensity_clicked();
   void on_radValidity_clicked();
+  
+  void slot_initialize();
 
-  // Use a QFileDialog to get a filename, then open the specified file as a greyscale or color image, depending on which type the user has specified through the file menu.
-  void OpenFile();
+  void OpenFile(const std::string& fileName);
 
 protected:
+  
+  //void showEvent ( QShowEvent * event );
+  void polishEvent ( QShowEvent * event );
+  bool event(QEvent *event);
+  
+  void Display();
 
   // Things for the 2D window
   vtkSmartPointer<vtkInteractorStyleImage> InteractorStyleImage;
@@ -108,6 +119,9 @@ protected:
 
   template <typename TImage>
   void SaveImage(const typename TImage::Pointer image);
+  
+  bool AutoOpen;
+  std::string FileName;
 };
 
 #include "PTXViewerWidget.hxx"

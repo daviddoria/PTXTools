@@ -99,7 +99,8 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpenImage"/>
+    <addaction name="actionOpenPTX"/>
+    <addaction name="actionSavePTX"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -107,6 +108,7 @@
      <string>Edit</string>
     </property>
     <addaction name="actionFlipImage"/>
+    <addaction name="actionDownsample"/>
    </widget>
    <widget class="QMenu" name="menuExport">
     <property name="title">
@@ -125,9 +127,9 @@
    <addaction name="menuExport"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionOpenImage">
+  <action name="actionOpenPTX">
    <property name="text">
-    <string>Open Image</string>
+    <string>Open PTX</string>
    </property>
   </action>
   <action name="actionOpen_Grayscale_Image">
@@ -183,6 +185,16 @@
   <action name="actionExportPointCloud">
    <property name="text">
     <string>Point Cloud</string>
+   </property>
+  </action>
+  <action name="actionDownsample">
+   <property name="text">
+    <string>Downsample</string>
+   </property>
+  </action>
+  <action name="actionSavePTX">
+   <property name="text">
+    <string>Save PTX</string>
    </property>
   </action>
  </widget>

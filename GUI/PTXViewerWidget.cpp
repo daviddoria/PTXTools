@@ -41,12 +41,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Qt
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QTimer>
 
 #include <iostream>
 
-PTXViewerWidget::PTXViewerWidget(QWidget *parent)
+void PTXViewerWidget::SharedConstructor()
 {
   // Setup the GUI and connect all of the signals and slots
   setupUi(this);
@@ -59,6 +61,11 @@ PTXViewerWidget::PTXViewerWidget(QWidget *parent)
   this->CameraUp[1] = 1;
   this->CameraUp[2] = 0;
 
+  // Marquee mode
+  this->progressBar->setMinimum(0);
+  this->progressBar->setMaximum(0);
+  this->progressBar->hide();
+  
   // Add renderers - we flip the image by changing the camera view up because of the conflicting conventions used by ITK and VTK
   this->LeftRenderer = vtkSmartPointer<vtkRenderer>::New();
   this->LeftRenderer->GradientBackgroundOn();
@@ -99,6 +106,27 @@ PTXViewerWidget::PTXViewerWidget(QWidget *parent)
   this->radRGB->setChecked(true);
 }
 
+PTXViewerWidget::PTXViewerWidget(const std::string& fileName) : QMainWindow(NULL)
+{
+  this->AutoOpen = true;
+  this->FileName = fileName;
+  SharedConstructor();
+  //QTimer::singleShot(100, this, SLOT(slot_initialize()));
+  QTimer::singleShot(1, this, SLOT(slot_initialize()));
+  
+  // Segfault in vtkRenderer if this is done here?
+//   if(this->AutoOpen)
+//     {
+//     OpenFile(this->FileName);
+//     }
+}
+
+PTXViewerWidget::PTXViewerWidget(QWidget *parent) : QMainWindow(parent)
+{
+  this->AutoOpen = false;
+  SharedConstructor();
+}
+
 void PTXViewerWidget::on_actionFlipImage_activated()
 {
   this->CameraUp[1] *= -1;
@@ -113,9 +141,32 @@ void PTXViewerWidget::on_actionQuit_activated()
   exit(-1);
 }
 
-void PTXViewerWidget::on_actionOpenImage_activated()
+void PTXViewerWidget::on_actionOpenPTX_activated()
 {
-  OpenFile();
+  std::cout << "OpenFile()" << std::endl;
+
+  // Get a filename to open
+  QString filename = QFileDialog::getOpenFileName(this, "Open PTX File", "", "PTX Files (*.ptx)");
+
+  if(filename.isEmpty())
+    {
+    return;
+    }
+
+  OpenFile(filename.toStdString());
+}
+
+void PTXViewerWidget::on_actionSavePTX_activated()
+{
+  // Get a filename
+  QString filename = QFileDialog::getSaveFileName(this, "Save PTX File", "", "PTX Files (*.ptx)");
+
+  if(filename.isEmpty())
+    {
+    return;
+    }
+
+  this->PTX.WritePTX(filename.toStdString());
 }
 
 // Image display radio buttons.
@@ -198,21 +249,16 @@ void InnerWidget::actionFlip_Image_triggered()
 }
 #endif
 
-void PTXViewerWidget::OpenFile()
+void PTXViewerWidget::OpenFile(const std::string& fileName)
 {
-  std::cout << "OpenFile()" << std::endl;
-
-  // Get a filename to open
-  QString filename = QFileDialog::getOpenFileName(this, "Open PTX File", "", "PTX Files (*.ptx)");
-
-  if(filename.isEmpty())
-    {
-    return;
-    }
-
   // Read file
-  this->PTX.ReadFile(filename.toStdString());
+  this->PTX.ReadFile(fileName);
 
+  Display();
+}
+
+void PTXViewerWidget::Display()
+{
   // Convert the images into a VTK images for display.
   this->PTX.CreateRGBImage(this->ColorImageLayer.Image);
   Helpers::ITKRGBImageToVTKImage(this->ColorImageLayer.Image, this->ColorImageLayer.ImageData);
@@ -228,6 +274,7 @@ void PTXViewerWidget::OpenFile()
 
   this->PTX.CreatePointCloud(this->PointsPolyData);
 
+  this->statusBar()->showMessage("Loaded PTX: " +  QString::number(this->PTX.GetWidth()) + " x " + QString::number(this->PTX.GetHeight()));
   Refresh();
 
   this->LeftRenderer->ResetCamera();
@@ -236,6 +283,10 @@ void PTXViewerWidget::OpenFile()
 
 void PTXViewerWidget::Refresh()
 {
+  std::cout << "this->radDepth->isChecked() " << this->radDepth->isChecked() << std::endl;
+  std::cout << "this->DepthImageLayer.ImageSlice " << this->DepthImageLayer.ImageSlice << std::endl;
+  std::cout << "this->DepthImageLayer.ImageSlice.HasTranslucentPolygonalGeometry() " << this->DepthImageLayer.ImageSlice->HasTranslucentPolygonalGeometry() << std::endl;
+  
   this->DepthImageLayer.ImageSlice->SetVisibility(this->radDepth->isChecked());
   this->IntensityImageLayer.ImageSlice->SetVisibility(this->radIntensity->isChecked());
   this->ColorImageLayer.ImageSlice->SetVisibility(this->radRGB->isChecked());
@@ -247,4 +298,41 @@ void PTXViewerWidget::Refresh()
   this->qvtkWidgetLeft->GetRenderWindow()->Render();
   this->qvtkWidgetRight->GetInteractor()->Render();
   this->qvtkWidgetLeft->GetInteractor()->Render();
+}
+
+void PTXViewerWidget::on_actionDownsample_activated()
+{
+  int downsampleFactor = QInputDialog::getInt(this, "Downsample factor", "Downsample factor:");
+  this->PTX = this->PTX.Downsample(downsampleFactor);
+  Display();
+  this->statusBar()->showMessage("Downsampled to: " +  QString::number(this->PTX.GetWidth()) + " x " + QString::number(this->PTX.GetHeight()));
+}
+
+void PTXViewerWidget::polishEvent ( QShowEvent * event )
+{
+  std::cout << "polishEvent." << std::endl;
+  if(this->AutoOpen)
+    {
+    OpenFile(this->FileName);
+    }
+}
+
+bool PTXViewerWidget::event(QEvent *event)
+{
+   int returnValue = QWidget::event(event);
+ 
+   if (event->type() == QEvent::Polish)
+    {
+
+    }
+ 
+   return returnValue;
+}
+
+void PTXViewerWidget::slot_initialize()
+{
+  if(this->AutoOpen)
+    {
+    OpenFile(this->FileName);
+    }
 }

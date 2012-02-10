@@ -15,28 +15,4 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Instantiate and display the GUI
-
-#include <QApplication>
-
-#include "PTXViewerWidget.h"
-
-int main(int argc, char** argv)
-{
-  QApplication app(argc, argv);
-
-  PTXViewerWidget* ptxViewerWidget;
-  if(argc == 2)
-    {
-    std::cout << "Using constructor with: " << argv[1] << std::endl;
-    ptxViewerWidget = new PTXViewerWidget(argv[1]);
-    }
-  else
-    {
-    ptxViewerWidget = new PTXViewerWidget;
-    }
-
-  ptxViewerWidget->show();
-
-  return app.exec();
-}
+#include "PTXReader.h"

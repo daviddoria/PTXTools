@@ -38,7 +38,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include </media/portable/Projects/src/PatchBasedInpainting/Mask.h>
+#include <Mask.h>
 
 PTXImage::PTXImage()
 {
