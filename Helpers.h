@@ -38,13 +38,13 @@ namespace Helpers
   void SetAllPixels(typename TImage::Pointer image, typename TImage::PixelType pixel);
 
   template<typename TImage>
-  void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output);
+  void DeepCopy(const TImage* const input, TImage* const output);
 
   template <typename TImage>
   void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkImageData* outputImage);
 
-  template<typename T>
-  void WriteImage(const typename T::Pointer image, const std::string& filename);
+  template<typename TImage>
+  void WriteImage(const TImage* const image, const std::string& filename);
 
 };
 

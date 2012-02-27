@@ -25,11 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace Helpers
 {
 
-template<typename T>
-void WriteImage(const typename T::Pointer image, const std::string& filename)
+template<typename TImage>
+void WriteImage(const TImage* const image, const std::string& filename)
 {
   // This is a convenience function so that images can be written in 1 line instead of 4.
-  typename itk::ImageFileWriter<T>::Pointer writer = itk::ImageFileWriter<T>::New();
+  typename itk::ImageFileWriter<TImage>::Pointer writer = itk::ImageFileWriter<TImage>::New();
   writer->SetFileName(filename);
   writer->SetInput(image);
   writer->Update();
@@ -37,7 +37,7 @@ void WriteImage(const typename T::Pointer image, const std::string& filename)
 
 /** Copy the input to the output*/
 template<typename TImage>
-void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
+void DeepCopy(const TImage* const input, TImage* const output)
 {
   output->SetRegions(input->GetLargestPossibleRegion());
   output->Allocate();

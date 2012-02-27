@@ -195,36 +195,36 @@ void PTXViewerWidget::on_radValidity_clicked()
 // Export menu
 void PTXViewerWidget::on_actionExportRGBImage_activated()
 {
-  SaveImage<PTXImage::RGBImageType>(this->ColorImageLayer.Image);
+  SaveImage(this->ColorImageLayer.Image.GetPointer());
 }
 
 void PTXViewerWidget::on_actionExportRGBDImage_activated()
 {
   PTXImage::RGBDImageType::Pointer rgbdImage = PTXImage::RGBDImageType::New();
   this->PTX.CreateRGBDImage(rgbdImage);
-  SaveImage<PTXImage::RGBDImageType>(rgbdImage);
+  SaveImage(rgbdImage.GetPointer());
 }
 
 void PTXViewerWidget::on_actionExportRGBDVImage_activated()
 {
   PTXImage::RGBDVImageType::Pointer rgbdvImage = PTXImage::RGBDVImageType::New();
   this->PTX.CreateRGBDVImage(rgbdvImage);
-  SaveImage<PTXImage::RGBDVImageType>(rgbdvImage);
+  SaveImage(rgbdvImage.GetPointer());
 }
 
 void PTXViewerWidget::on_actionExportIntensityImage_activated()
 {
-  SaveImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image);
+  SaveImage(this->IntensityImageLayer.Image.GetPointer());
 }
 
 void PTXViewerWidget::on_actionExportDepthImage_activated()
 {
-  SaveImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image);
+  SaveImage(this->DepthImageLayer.Image.GetPointer());
 }
 
 void PTXViewerWidget::on_actionExportValidityImage_activated()
 {
-  SaveImage<PTXImage::MaskImageType>(this->ValidityImageLayer.Image);
+  SaveImage(this->ValidityImageLayer.Image.GetPointer());
 }
 
 void PTXViewerWidget::on_actionExportUnorganizedPointCloud_activated()
@@ -299,9 +299,9 @@ void PTXViewerWidget::Display()
 
 void PTXViewerWidget::Refresh()
 {
-  std::cout << "this->radDepth->isChecked() " << this->radDepth->isChecked() << std::endl;
-  std::cout << "this->DepthImageLayer.ImageSlice " << this->DepthImageLayer.ImageSlice << std::endl;
-  std::cout << "this->DepthImageLayer.ImageSlice.HasTranslucentPolygonalGeometry() " << this->DepthImageLayer.ImageSlice->HasTranslucentPolygonalGeometry() << std::endl;
+//   std::cout << "this->radDepth->isChecked() " << this->radDepth->isChecked() << std::endl;
+//   std::cout << "this->DepthImageLayer.ImageSlice " << this->DepthImageLayer.ImageSlice << std::endl;
+//   std::cout << "this->DepthImageLayer.ImageSlice.HasTranslucentPolygonalGeometry() " << this->DepthImageLayer.ImageSlice->HasTranslucentPolygonalGeometry() << std::endl;
   
   this->DepthImageLayer.ImageSlice->SetVisibility(this->radDepth->isChecked());
   this->IntensityImageLayer.ImageSlice->SetVisibility(this->radIntensity->isChecked());

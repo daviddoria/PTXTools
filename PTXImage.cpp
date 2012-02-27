@@ -613,24 +613,24 @@ void PTXImage::CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structure
       rgb[0] = pixel.R;
       rgb[1] = pixel.G;
       rgb[2] = pixel.B;
-      colors->InsertNextTupleValue(rgb);
+      colors->SetTupleValue(pointId, rgb);
 
-      points->InsertNextPoint(pixel.X, pixel.Y, pixel.Z);
+      points->SetPoint(pointId, pixel.X, pixel.Y, pixel.Z);
 
-      intensities->InsertNextValue(pixel.Intensity);
+      intensities->SetValue(pointId, pixel.Intensity);
 
-      depthArray->InsertNextValue(pixel.GetDepth());
+      depthArray->SetValue(pointId, pixel.GetDepth());
       }
     else
       {
       unsigned char rgb[3] = {0,0,0};
-      colors->InsertNextTupleValue(rgb);
+      colors->SetTupleValue(pointId, rgb);
 
-      points->InsertNextPoint(0,0,0);
+      points->SetPoint(pointId, 0,0,0);
 
-      intensities->InsertNextValue(0);
+      intensities->SetValue(pointId, 0);
 
-      depthArray->InsertNextValue(0);
+      depthArray->SetValue(pointId, 0);
 
       structuredGrid->BlankPoint(pointId);
       }

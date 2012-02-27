@@ -119,7 +119,7 @@ protected:
   PTXImage PTX;
 
   template <typename TImage>
-  void SaveImage(const typename TImage::Pointer image);
+  void SaveImage(const TImage* const image);
   
   bool AutoOpen;
   std::string FileName;

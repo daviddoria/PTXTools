@@ -20,9 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Helpers.h"
 
 template <typename TImage>
-void PTXViewerWidget::SaveImage(const typename TImage::Pointer image)
+void PTXViewerWidget::SaveImage(const TImage* const image)
 {
-  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+  //QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.mha)");
 
   //DebugMessage<std::string>("Got filename: ", fileName.toStdString());
   if(fileName.toStdString().empty())
@@ -31,6 +32,6 @@ void PTXViewerWidget::SaveImage(const typename TImage::Pointer image)
     return;
     }
 
-  Helpers::WriteImage<TImage>(image, fileName.toStdString());
+  Helpers::WriteImage(image, fileName.toStdString());
 
 }
