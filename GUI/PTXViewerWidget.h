@@ -41,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Custom
 #include "ImageLayer.h"
 #include "PTXImage.h"
+#include "PointSelectionStyle3D.h"
 
 class PTXViewerWidget : public QMainWindow, private Ui::PTXViewerWidget
 {
@@ -56,8 +57,18 @@ public slots:
   void on_actionOpenPTX_activated();
   void on_actionSavePTX_activated();
   void on_actionQuit_activated();
-  void on_actionFlipImage_activated();
 
+  // Edit menu
+  void on_actionReplaceDepthImage_activated();
+  void on_actionReplaceColorImage_activated();
+  void on_actionReplaceValidityImage_activated();
+  void on_actionReplaceValidityImageInverted_activated();
+  void on_actionDownsample_activated();
+  void on_actionSetAllPointsToValid_activated();
+
+  // View menu
+  void on_actionFlipImage_activated();
+  
   // Export menu
   void on_actionExportRGBImage_activated();
   void on_actionExportRGBDImage_activated();
@@ -67,7 +78,6 @@ public slots:
   void on_actionExportValidityImage_activated();
   void on_actionExportUnorganizedPointCloud_activated();
   void on_actionExportOrganizedPointCloud_activated();
-  void on_actionDownsample_activated();
 
   // Image display radio buttons.
   void on_radRGB_clicked();
@@ -87,6 +97,8 @@ protected:
   
   void Display();
 
+  void ResetCamera();
+
   // Things for the 2D window
   vtkSmartPointer<vtkInteractorStyleImage> InteractorStyleImage;
   vtkSmartPointer<vtkRenderer> LeftRenderer;
@@ -100,7 +112,8 @@ protected:
   ImageLayer<PTXImage::UnsignedCharImageType> ValidityImageLayer;
 
   // Things for the 3D window
-  vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyleTrackballCamera;
+  //vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyle3D;
+  vtkSmartPointer<PointSelectionStyle3D> InteractorStyle3D;
   vtkSmartPointer<vtkRenderer> RightRenderer;
   vtkSmartPointer<vtkPolyData> PointsPolyData;
   vtkSmartPointer<vtkPolyDataMapper> PointsPolyDataMapper;

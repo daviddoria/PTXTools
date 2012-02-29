@@ -134,7 +134,7 @@ public:
   void WriteRGBImage(const FilePrefix& prefix) const;
 
   // Create a colored point cloud
-  void CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const;
+  void CreatePointCloud(vtkPolyData* const pointCloud) const;
   void WritePointCloud(const FilePrefix& prefix) const;
   void WritePointCloud(const std::string& fileName) const;
   
@@ -163,28 +163,31 @@ public:
 
   void WriteEverything(const FilePrefix& filePrefix) const;
 
-  // This function allows the validity image to be modified externally and the new image applied to the grid
-  void ReplaceValidity(const MaskImageType::Pointer validityImage);
+  /** This function allows the validity image to be modified externally and the new image applied to the grid */
+  void ReplaceValidity(const MaskImageType* const validityImage);
+
+  /** Interpret all points as being valid */
+  void SetAllPointsToValid();
 
   // This function allows the depth map to be modified externally and the new map applied to the grid
-  void ReplaceDepth(const FloatImageType::Pointer depthImage);
+  void ReplaceDepth(const FloatImageType* const depthImage);
 
   // This function allows the color and depth to be modified externally and the new map applied to the grid
-  void ReplaceRGBD(const RGBDImageType::Pointer rgbd);
+  void ReplaceRGBD(const RGBDImageType* const rgbd);
 
   // This function allows the color to be modified
-  void ReplaceRGB(const RGBVectorImageType::Pointer rgb);
-  void ReplaceRGB(const RGBImageType::Pointer rgb);
+  void ReplaceRGB(const RGBVectorImageType* const rgb);
+  void ReplaceRGB(const RGBImageType* const rgb);
 
   // This function allows the color to be modified
-  void ReplaceXYZ(const XYZImageType::Pointer xyz);
+  void ReplaceXYZ(const XYZImageType* const xyz);
 
   // Blank the PTX image in areas where mask is non-zero
-  void ApplyMask(const MaskImageType::Pointer mask);
+  void ApplyMask(const MaskImageType* const mask);
 
   // Create a mask image where invalid pixels are non-zero
   void WriteInvalidMask(const std::string& filename) const;
-  void CreateValidityImage(MaskImageType::Pointer image) const;
+  void CreateValidityImage(MaskImageType* const image) const;
 
   // Create a mask image of points below a certain depthThreshold
   void WriteDepthThresholdMask(const std::string& filename, const float depthThreshold) const;

@@ -6,6 +6,7 @@ QT4_WRAP_CPP(MOCSrcs PTXViewerWidget.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-ADD_EXECUTABLE(PTXViewer PTXViewer.cpp PTXViewerWidget.cpp ${MOCSrcs} ${UISrcs})
+ADD_EXECUTABLE(PTXViewer PTXViewer.cpp PTXViewerWidget.cpp PointSelectionStyle3D.cpp
+${MOCSrcs} ${UISrcs})
 TARGET_LINK_LIBRARIES(PTXViewer ${PTXLibraries} QVTK ${QT_LIBRARIES})
 INSTALL( TARGETS PTXViewer RUNTIME DESTINATION ${INSTALL_DIR} )

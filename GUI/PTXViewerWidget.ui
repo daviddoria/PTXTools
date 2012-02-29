@@ -107,8 +107,12 @@
     <property name="title">
      <string>Edit</string>
     </property>
-    <addaction name="actionFlipImage"/>
     <addaction name="actionDownsample"/>
+    <addaction name="actionReplaceDepthImage"/>
+    <addaction name="actionReplaceColorImage"/>
+    <addaction name="actionReplaceValidityImage"/>
+    <addaction name="actionReplaceValidityImageInverted"/>
+    <addaction name="actionSetAllPointsToValid"/>
    </widget>
    <widget class="QMenu" name="menuExport">
     <property name="title">
@@ -123,8 +127,15 @@
     <addaction name="actionExportUnorganizedPointCloud"/>
     <addaction name="actionExportOrganizedPointCloud"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionFlipImage"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
    <addaction name="menuExport"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -201,6 +212,31 @@
   <action name="actionExportOrganizedPointCloud">
    <property name="text">
     <string>Organized Point Cloud (vts)</string>
+   </property>
+  </action>
+  <action name="actionReplaceDepthImage">
+   <property name="text">
+    <string>Replace depth image</string>
+   </property>
+  </action>
+  <action name="actionReplaceColorImage">
+   <property name="text">
+    <string>Replace color image</string>
+   </property>
+  </action>
+  <action name="actionSetAllPointsToValid">
+   <property name="text">
+    <string>Set all points to valid</string>
+   </property>
+  </action>
+  <action name="actionReplaceValidityImage">
+   <property name="text">
+    <string>Replace validity image</string>
+   </property>
+  </action>
+  <action name="actionReplaceValidityImageInverted">
+   <property name="text">
+    <string>Replace validity image inverted</string>
    </property>
   </action>
  </widget>

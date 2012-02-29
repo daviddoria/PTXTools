@@ -25,9 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <itkCovariantVector.h>
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
-#include <itkImageRegionConstIteratorWithIndex.h>
-#include <itkLineIterator.h>
-#include <itkNthElementImageAdaptor.h>
 
 // VTK
 #include <vtkCamera.h>
@@ -87,9 +84,6 @@ void PTXViewerWidget::SharedConstructor()
   this->InteractorStyleImage = vtkSmartPointer<vtkInteractorStyleImage>::New();
   this->qvtkWidgetLeft->GetInteractor()->SetInteractorStyle(this->InteractorStyleImage);
 
-  this->InteractorStyleTrackballCamera = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-  this->qvtkWidgetRight->GetInteractor()->SetInteractorStyle(this->InteractorStyleTrackballCamera);
-
   // Things for the 2D window
   this->LeftRenderer->AddViewProp(this->ColorImageLayer.ImageSlice);
   this->LeftRenderer->AddViewProp(this->DepthImageLayer.ImageSlice);
@@ -104,6 +98,13 @@ void PTXViewerWidget::SharedConstructor()
   this->PointsActor->SetMapper(this->PointsPolyDataMapper);
   this->RightRenderer->AddViewProp(this->PointsActor);
 
+  // Setup 3D interaction
+    //this->InteractorStyle3D = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+  this->InteractorStyle3D = vtkSmartPointer<PointSelectionStyle3D>::New();
+  this->InteractorStyle3D->SetCurrentRenderer(this->RightRenderer);
+  this->InteractorStyle3D->SetData(this->PointsPolyData);
+
+  this->qvtkWidgetRight->GetInteractor()->SetInteractorStyle(this->InteractorStyle3D);
   // Default GUI settings
   this->radRGB->setChecked(true);
 }
@@ -271,6 +272,7 @@ void PTXViewerWidget::OpenFile(const std::string& fileName)
   this->PTX = PTXReader::Read(fileName);
 
   Display();
+  ResetCamera();
 }
 
 void PTXViewerWidget::Display()
@@ -293,6 +295,10 @@ void PTXViewerWidget::Display()
   this->statusBar()->showMessage("Loaded PTX: " +  QString::number(this->PTX.GetWidth()) + " x " + QString::number(this->PTX.GetHeight()));
   Refresh();
 
+}
+
+void PTXViewerWidget::ResetCamera()
+{
   this->LeftRenderer->ResetCamera();
   this->RightRenderer->ResetCamera();
 }
@@ -314,6 +320,113 @@ void PTXViewerWidget::Refresh()
   this->qvtkWidgetLeft->GetRenderWindow()->Render();
   this->qvtkWidgetRight->GetInteractor()->Render();
   this->qvtkWidgetLeft->GetInteractor()->Render();
+}
+
+void PTXViewerWidget::on_actionSetAllPointsToValid_activated()
+{
+  this->PTX.SetAllPointsToValid();
+  Display();
+}
+
+void PTXViewerWidget::on_actionReplaceValidityImage_activated()
+{
+  QString fileName = QFileDialog::getOpenFileName(this, "Open Mask Image", "", "Image Files (*.mha)");
+
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  typedef itk::ImageFileReader<PTXImage::UnsignedCharImageType> ReaderType;
+  ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(fileName.toStdString());
+  reader->Update();
+
+  this->PTX.ReplaceValidity(reader->GetOutput());
+  Display();
+
+  this->statusBar()->showMessage("Replaced validity image.");
+}
+
+void PTXViewerWidget::on_actionReplaceValidityImageInverted_activated()
+{
+  QString fileName = QFileDialog::getOpenFileName(this, "Open Mask Image", "", "Image Files (*.mha)");
+
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  typedef itk::ImageFileReader<PTXImage::UnsignedCharImageType> ReaderType;
+  ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(fileName.toStdString());
+  reader->Update();
+
+  // Invert
+  itk::ImageRegionIterator<PTXImage::UnsignedCharImageType> imageIterator(reader->GetOutput(), reader->GetOutput()->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    if(imageIterator.Get())
+      {
+      imageIterator.Set(0);
+      }
+    else
+      {
+      imageIterator.Set(255);
+      }
+
+    ++imageIterator;
+    }
+
+  this->PTX.ReplaceValidity(reader->GetOutput());
+  Display();
+
+  this->statusBar()->showMessage("Replaced validity image inverted.");
+}
+
+void PTXViewerWidget::on_actionReplaceColorImage_activated()
+{
+  QString fileName = QFileDialog::getOpenFileName(this, "Open Color Image", "", "Image Files (*.mha)");
+
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  typedef itk::ImageFileReader<PTXImage::RGBImageType> ReaderType;
+  ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(fileName.toStdString());
+  reader->Update();
+
+  this->PTX.ReplaceRGB(reader->GetOutput());
+  Display();
+
+  this->statusBar()->showMessage("Replaced color image.");
+}
+
+void PTXViewerWidget::on_actionReplaceDepthImage_activated()
+{
+  QString fileName = QFileDialog::getOpenFileName(this, "Open Depth Image", "", "Image Files (*.mha)");
+
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  typedef itk::ImageFileReader<PTXImage::FloatImageType> ReaderType;
+  ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(fileName.toStdString());
+  reader->Update();
+  
+  this->PTX.ReplaceDepth(reader->GetOutput());
+  Display();
+  
+  this->statusBar()->showMessage("Replaced depth image.");
 }
 
 void PTXViewerWidget::on_actionDownsample_activated()

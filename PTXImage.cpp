@@ -347,7 +347,7 @@ void PTXImage::WriteDepthThresholdMask(const std::string& filename, const float 
   writer->Update();
 }
 
-void PTXImage::CreateValidityImage(MaskImageType::Pointer image) const
+void PTXImage::CreateValidityImage(MaskImageType* const image) const
 {
   // Non-zero pixels in this image indicate valid pixels.
   image->SetRegions(this->FullImage->GetLargestPossibleRegion());
@@ -495,7 +495,7 @@ void PTXImage::WriteRGBImage(const FilePrefix& filePrefix) const
   writer->Update();
 }
 
-void PTXImage::CreatePointCloud(vtkSmartPointer<vtkPolyData> pointCloud) const
+void PTXImage::CreatePointCloud(vtkPolyData* const pointCloud) const
 {
   // Create point and color arrays
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
@@ -830,7 +830,7 @@ void PTXImage::WriteIntensityImage(const FilePrefix& filePrefix) const
 
 }
 
-void PTXImage::ReplaceDepth(const FloatImageType::Pointer depthImage)
+void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
 {
   // This function allows the depth map to be modified externally and the new map applied to the grid
 
@@ -886,7 +886,7 @@ void PTXImage::ReplaceDepth(const FloatImageType::Pointer depthImage)
 
 }
 
-void PTXImage::ReplaceRGB(const RGBVectorImageType::Pointer rgb)
+void PTXImage::ReplaceRGB(const RGBVectorImageType* const rgb)
 {
   // Recolor valid points to match the input 'rgb'
 
@@ -921,7 +921,7 @@ void PTXImage::ReplaceRGB(const RGBVectorImageType::Pointer rgb)
 }
 
 
-void PTXImage::ReplaceRGB(const RGBImageType::Pointer rgb)
+void PTXImage::ReplaceRGB(const RGBImageType* const rgb)
 {
   // Recolor valid points to match the input 'rgb'
 
@@ -955,8 +955,21 @@ void PTXImage::ReplaceRGB(const RGBImageType::Pointer rgb)
     }
 }
 
+void PTXImage::SetAllPointsToValid()
+{
+  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
-void PTXImage::ReplaceValidity(const MaskImageType::Pointer validityImage)
+  while(!imageIterator.IsAtEnd())
+    {
+    // Get the old point
+    PTXPixel pixel = imageIterator.Get();
+    pixel.Valid = true;
+    imageIterator.Set(pixel);
+    ++imageIterator;
+    }
+}
+
+void PTXImage::ReplaceValidity(const MaskImageType* const validityImage)
 {
   if(validityImage->GetLargestPossibleRegion() != this->FullImage->GetLargestPossibleRegion())
     {
@@ -966,20 +979,13 @@ void PTXImage::ReplaceValidity(const MaskImageType::Pointer validityImage)
     return;
     }
 
-  // Setup iterators
   itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
 
   while(!imageIterator.IsAtEnd())
     {
-    // Get the old point
     PTXPixel pixel = imageIterator.Get();
-    if(pixel.Valid)
-      {
-      // Copy the color from the RGB image
-      pixel.Valid = validityImage->GetPixel(imageIterator.GetIndex());
-      imageIterator.Set(pixel);
-      }
-
+    pixel.Valid = validityImage->GetPixel(imageIterator.GetIndex());
+    imageIterator.Set(pixel);
     ++imageIterator;
     }
 }
@@ -1013,7 +1019,7 @@ void PTXImage::ReplaceValidity(const MaskImageType::Pointer validityImage)
 // }
 
 
-void PTXImage::ReplaceXYZ(const XYZImageType::Pointer xyz)
+void PTXImage::ReplaceXYZ(const XYZImageType* const xyz)
 {
   // Setup iterators
   itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
@@ -1045,7 +1051,7 @@ void PTXImage::ReplaceXYZ(const XYZImageType::Pointer xyz)
 
 }
 
-void PTXImage::ReplaceRGBD(RGBDImageType::Pointer rgbd)
+void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
 {
   // This function allows the color and depth to be modified externally and the new map applied to the grid
 
@@ -1156,7 +1162,7 @@ itk::Point<float, 3> PTXImage::ApproximateOldPoint(const itk::Index<2>& pixel) c
   return azimuthElevation->TransformAzElToCartesian(azEl);
 }
 
-void PTXImage::ApplyMask(const MaskImageType::Pointer mask)
+void PTXImage::ApplyMask(const MaskImageType* const mask)
 {
   // Blank the PTX image in areas where mask is non-zero
   itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
