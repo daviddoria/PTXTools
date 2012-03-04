@@ -46,6 +46,9 @@ namespace Helpers
   template<typename TImage>
   void WriteImage(const TImage* const image, const std::string& filename);
 
+  template<typename TImage>
+  itk::Index<2> GetNearestValidPixel(const TImage* const image, const itk::Index<2>& queryPixel);
+
 };
 
 #include "Helpers.hxx"

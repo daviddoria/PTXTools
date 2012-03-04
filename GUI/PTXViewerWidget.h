@@ -50,15 +50,15 @@ public:
   PTXViewerWidget(QWidget *parent = 0);
   PTXViewerWidget(const std::string& fileName);
   void SharedConstructor();
-  
+
 public slots:
-  // Menu items
-  // File menu
+
+  /** File menu*/
   void on_actionOpenPTX_activated();
   void on_actionSavePTX_activated();
   void on_actionQuit_activated();
 
-  // Edit menu
+  /** Edit menu*/
   void on_actionReplaceDepthImage_activated();
   void on_actionReplaceColorImage_activated();
   void on_actionReplaceValidityImage_activated();
@@ -66,10 +66,10 @@ public slots:
   void on_actionDownsample_activated();
   void on_actionSetAllPointsToValid_activated();
 
-  // View menu
+  /** View menu*/
   void on_actionFlipImage_activated();
   
-  // Export menu
+  /** Export menu*/
   void on_actionExportRGBImage_activated();
   void on_actionExportRGBDImage_activated();
   void on_actionExportRGBDVImage_activated();
@@ -78,8 +78,10 @@ public slots:
   void on_actionExportValidityImage_activated();
   void on_actionExportUnorganizedPointCloud_activated();
   void on_actionExportOrganizedPointCloud_activated();
+  void on_actionScreenshot2D_activated();
+  void on_actionScreenshot3D_activated();
 
-  // Image display radio buttons.
+  /** Image display radio buttons.*/
   void on_radRGB_clicked();
   void on_radDepth_clicked();
   void on_radIntensity_clicked();
@@ -99,7 +101,7 @@ protected:
 
   void ResetCamera();
 
-  // Things for the 2D window
+  /** Things for the 2D window*/
   vtkSmartPointer<vtkInteractorStyleImage> InteractorStyleImage;
   vtkSmartPointer<vtkRenderer> LeftRenderer;
 
@@ -111,7 +113,7 @@ protected:
 
   ImageLayer<PTXImage::UnsignedCharImageType> ValidityImageLayer;
 
-  // Things for the 3D window
+  /** Things for the 3D window*/
   //vtkSmartPointer<vtkInteractorStyleTrackballCamera> InteractorStyle3D;
   vtkSmartPointer<PointSelectionStyle3D> InteractorStyle3D;
   vtkSmartPointer<vtkRenderer> RightRenderer;
@@ -119,16 +121,16 @@ protected:
   vtkSmartPointer<vtkPolyDataMapper> PointsPolyDataMapper;
   vtkSmartPointer<vtkActor> PointsActor;
 
-  // Refresh both renderers and render windows
+  /** Refresh both renderers and render windows*/
   void Refresh();
 
-  // Allows the background color to be changed
+  /** Allows the background color to be changed*/
   double BackgroundColor[3];
 
-  // Allows the image to be flipped so that it is "right side up"
+  /** Allows the image to be flipped so that it is "right side up"*/
   double CameraUp[3];
 
-  // Store the PTX file when it is opened.
+  /** Store the PTX file when it is opened.*/
   PTXImage PTX;
 
   template <typename TImage>
@@ -138,6 +140,6 @@ protected:
   std::string FileName;
 };
 
-#include "PTXViewerWidget.hxx"
+#include "PTXViewerWidget.hpp"
 
 #endif

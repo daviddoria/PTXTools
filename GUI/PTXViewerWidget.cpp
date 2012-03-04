@@ -31,11 +31,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vtkImageActor.h>
 #include <vtkImageData.h>
 #include <vtkInteractorStyleImage.h>
+#include <vtkPNGWriter.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkSmartPointer.h>
+#include <vtkWindowToImageFilter.h>
 
 // Qt
 #include <QFileDialog>
@@ -136,6 +138,51 @@ void PTXViewerWidget::on_actionFlipImage_activated()
   this->LeftRenderer->GetActiveCamera()->SetViewUp(this->CameraUp);
   this->RightRenderer->GetActiveCamera()->SetViewUp(this->CameraUp);
   this->Refresh();
+}
+
+void PTXViewerWidget::on_actionScreenshot2D_activated()
+{
+  QString filename = QFileDialog::getSaveFileName(this, "Save PNG Screenshot", "", "PNG Files (*.png)");
+
+  if(filename.isEmpty())
+    {
+    return;
+    }
+
+  vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+    vtkSmartPointer<vtkWindowToImageFilter>::New();
+  windowToImageFilter->SetInput(this->qvtkWidgetLeft->GetRenderWindow());
+  //windowToImageFilter->SetMagnification(3);
+  windowToImageFilter->Update();
+
+  vtkSmartPointer<vtkPNGWriter> writer =
+    vtkSmartPointer<vtkPNGWriter>::New();
+  writer->SetFileName(filename.toStdString().c_str());
+  writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+  writer->Write();
+}
+
+void PTXViewerWidget::on_actionScreenshot3D_activated()
+{
+  QString filename = QFileDialog::getSaveFileName(this, "Save PNG Screenshot", "", "PNG Files (*.png)");
+
+  if(filename.isEmpty())
+    {
+    return;
+    }
+    
+  vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+    vtkSmartPointer<vtkWindowToImageFilter>::New();
+  windowToImageFilter->SetInput(this->qvtkWidgetRight->GetRenderWindow());
+  //windowToImageFilter->SetMagnification(3);
+  //windowToImageFilter->SetInputBufferTypeToRGBA();
+  windowToImageFilter->Update();
+
+  vtkSmartPointer<vtkPNGWriter> writer =
+    vtkSmartPointer<vtkPNGWriter>::New();
+  writer->SetFileName(filename.toStdString().c_str());
+  writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+  writer->Write();
 }
 
 // File menu
@@ -282,17 +329,21 @@ void PTXViewerWidget::Display()
   Helpers::ITKRGBImageToVTKImage(this->ColorImageLayer.Image, this->ColorImageLayer.ImageData);
 
   this->PTX.CreateDepthImage(this->DepthImageLayer.Image);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image, this->DepthImageLayer.ImageData);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image,
+                                                                    this->DepthImageLayer.ImageData);
 
   this->PTX.CreateIntensityImage(this->IntensityImageLayer.Image);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image, this->IntensityImageLayer.ImageData);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image,
+                                                                    this->IntensityImageLayer.ImageData);
 
   this->PTX.CreateValidityImage(this->ValidityImageLayer.Image);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::UnsignedCharImageType>(this->ValidityImageLayer.Image, this->ValidityImageLayer.ImageData);
+  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::UnsignedCharImageType>(this->ValidityImageLayer.Image,
+                                                                           this->ValidityImageLayer.ImageData);
 
   this->PTX.CreatePointCloud(this->PointsPolyData);
 
-  this->statusBar()->showMessage("Loaded PTX: " +  QString::number(this->PTX.GetWidth()) + " x " + QString::number(this->PTX.GetHeight()));
+  this->statusBar()->showMessage("Loaded PTX: " +  QString::number(this->PTX.GetWidth()) + " x " +
+                                 QString::number(this->PTX.GetHeight()));
   Refresh();
 
 }
@@ -389,7 +440,7 @@ void PTXViewerWidget::on_actionReplaceValidityImageInverted_activated()
 
 void PTXViewerWidget::on_actionReplaceColorImage_activated()
 {
-  QString fileName = QFileDialog::getOpenFileName(this, "Open Color Image", "", "Image Files (*.mha)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Open Color Image", "", "Image Files (*.mha *.png)");
 
   if(fileName.toStdString().empty())
     {

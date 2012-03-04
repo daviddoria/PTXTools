@@ -75,7 +75,7 @@ void PointSelectionStyle3D::OnLeftButtonDown()
     picker = PointPicker;
   }
 
-  std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
+  //std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
   int success = picker->Pick(this->Interactor->GetEventPosition()[0],
                              this->Interactor->GetEventPosition()[1],
                              0,  // always zero.

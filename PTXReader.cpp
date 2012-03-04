@@ -118,5 +118,7 @@ PTXImage PTXReader::Read(const std::string& filename)
   // Close the input file
   infile.close();
 
+  ptxImage.Backup();
+
   return ptxImage;
 }

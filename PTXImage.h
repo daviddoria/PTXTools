@@ -49,12 +49,12 @@ public:
   typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> RGBVectorImageType;
 
   // A binary image
-  typedef itk::Image<unsigned char, 2> MaskImageType;
   typedef itk::Image<unsigned char, 2> UnsignedCharImageType;
+  typedef UnsignedCharImageType MaskImageType;
 
   // A scalar float image
   typedef itk::Image<float, 2> FloatImageType;
-  typedef itk::Image<float, 2> DepthImageType;
+  typedef FloatImageType DepthImageType;
 
   // An image to hold X,Y,and Z coordinate channels.
   typedef itk::Image<itk::CovariantVector<float, 3>, 2> XYZImageType;
@@ -68,96 +68,115 @@ public:
   // A 5 channel image (R, G, B, Depth, Intensity)
   typedef itk::Image<itk::CovariantVector<float, 5>, 2> RGBDIImageType;
 
-  // Constructor
+  /** Default constructor */
   PTXImage();
 
-  // Add/append a ptx file to the right of this one.
+  /** This constructor is typically used internally to create a PTXImage object from the backup OriginalFullImage */
+  PTXImage(FullImageType* const fullImage);
+
+  /** Add/append a ptx file to the right of this one. */
   void AppendPTXRight(const PTXImage&);
 
-  // Coordinate images
+  /** Coordinate images */
   FloatImageType::Pointer GetCoordinateImage(const unsigned int dimension) const;
 
+  /** Write the x,y, and z components of the points to a 3 channel float image */
   void WriteXYZ(const std::string& filePrefix) const;
   XYZImageType::Pointer GetXYZImage() const;
 
+  /** Write the x component of the points to a float image */
   void WriteX(const std::string& filePrefix) const;
   FloatImageType::Pointer GetXImage() const;
 
+  /** Write the y component of the points to a float image */
   void WriteY(const std::string& filePrefix) const;
   FloatImageType::Pointer GetYImage() const;
 
+  /** Write the z component of the points to a float image */
   void WriteZ(const std::string& filePrefix) const;
   FloatImageType::Pointer GetZImage() const;
 
+  /** Write a scalar float image to a file */
   void WriteFloatImage(const FloatImageType* const image, const std::string& filename) const;
 
-  // Derivatives
+  /** Derivatives */
   FloatImageType::Pointer GetLaplacian(const unsigned int dimension) const;
 
+  /** Write the Laplacian of each component channel */
   void WriteXYZLaplacian(const std::string& filePrefix) const;
   XYZImageType::Pointer GetXYZLaplacian() const;
 
+  /** Write the Laplacian of the x component */
   void WriteXLaplacian(const std::string& filePrefix) const;
   FloatImageType::Pointer GetXLaplacian() const;
 
+  /** Write the Laplacian of the y component */
   void WriteYLaplacian(const std::string& filePrefix) const;
   FloatImageType::Pointer GetYLaplacian() const;
 
+  /** Write the Laplacian of the z component */
   void WriteZLaplacian(const std::string& filePrefix) const;
   FloatImageType::Pointer GetZLaplacian() const;
 
-  // Set the size of the PTXImage (this is done automatically if you use ReadFile)
+  /** Set the size of the PTXImage (this is done automatically if you use ReadFile) */
   void SetSize(const itk::ImageRegion<2>&);
 
-  // Downsample the ptx image by a factor of 'factor'
+  /** Downsample the ptx image by a factor of 'factor' */
   PTXImage Downsample(const unsigned int factor) const;
 
-  // Write a FullImageType to a ptx file
+  /** Write a FullImageType to a ptx file */
   void WritePTX(const FilePrefix& filename) const;
 
-  // Write the projection plane and principal axis to a vtp file
+  /** Write the projection plane and principal axis to a vtp file */
   void WriteProjectionPlane(const std::string& filename) const;
 
+  /** Crop a region */
   void Crop(const itk::ImageRegion<2>& region);
 
+  /** Get all of the information about a specified point */
   PTXPixel GetPTXPixel(const itk::Index<2>& pixel) const;
 
-  // Get center direction ("principal axis")
+  /** Get center direction ("principal axis") */
   typedef itk::CovariantVector<float, 3> VectorType;
   VectorType GetPrincipalAxis() const;
 
-  // Compute the Laplacian of the depth image where pixels are weighted by their distance to the center of the kernel.
+  /** Compute the Laplacian of the depth image where pixels are weighted by their distance to the center of the kernel. */
   void ComputeWeightedDepthLaplacian(const std::string& filename) const;
 
-  // Create a 2D image of the points in the grid in which the points were acquired
+  /** Create a 2D image of the points in the grid in which the points were acquired */
   void CreateRGBImage(RGBImageType::Pointer image) const;
   void WriteRGBImage(const FilePrefix& prefix) const;
 
-  // Create a colored point cloud
+  /** Create a colored point cloud */
   void CreatePointCloud(vtkPolyData* const pointCloud) const;
   void WritePointCloud(const FilePrefix& prefix) const;
   void WritePointCloud(const std::string& fileName) const;
-  
+
+  /** Create an organized/structured grid of 3D points */
   void CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structuredGrid) const;
   void WriteStructuredGrid(const std::string& fileName) const;
 
-  // Create an image of the intensities of the points in the grid in which they were acquired
+  /** Create an image of the intensities of the points in the grid in which they were acquired */
   void CreateIntensityImage(FloatImageType::Pointer image) const;
   void WriteIntensityImage(const FilePrefix& filePrefix) const;
 
-  // Create a 2D, 1 channel image of the depths of the points in the grid in which they were acquired
+  /** Create a 2D, 1 channel image of the depths of the points in the grid in which they were acquired */
   void CreateDepthImage(FloatImageType::Pointer image) const;
   void WriteDepthImage(const FilePrefix& filePrefix) const;
 
+  /** Compute and write the Laplacian of the depth image */
   void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
   FloatImageType::Pointer GetDepthLaplacian() const;
 
+  /** Compute and write a 4 channel image (r,g,b,depth) */
   void CreateRGBDImage(RGBDImageType::Pointer image) const;
   void WriteRGBDImage(const FilePrefix& filePrefix) const;
 
+  /** Compute and write a 5 channel image (r,g,b,depth,validity) */
   void CreateRGBDVImage(RGBDVImageType::Pointer image) const;
   void WriteRGBDVImage(const FilePrefix& filePrefix) const;
 
+  /** Compute and write a 5 channel image (r,g,b,depth,intensity) */
   void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
   void WriteRGBDIImage(const FilePrefix& filePrefix) const;
 
@@ -169,66 +188,76 @@ public:
   /** Interpret all points as being valid */
   void SetAllPointsToValid();
 
-  // This function allows the depth map to be modified externally and the new map applied to the grid
+  /** This function allows the depth map to be modified externally and the new map applied to the grid */
   void ReplaceDepth(const FloatImageType* const depthImage);
 
-  // This function allows the color and depth to be modified externally and the new map applied to the grid
+  /** This function allows the color and depth to be modified externally and the new map applied to the grid */
   void ReplaceRGBD(const RGBDImageType* const rgbd);
 
-  // This function allows the color to be modified
+  /** This function allows the color to be modified */
   void ReplaceRGB(const RGBVectorImageType* const rgb);
   void ReplaceRGB(const RGBImageType* const rgb);
 
-  // This function allows the color to be modified
+  /** This function allows the color to be modified */
   void ReplaceXYZ(const XYZImageType* const xyz);
 
-  // Blank the PTX image in areas where mask is non-zero
+  /** Blank the PTX image in areas where mask is non-zero */
   void ApplyMask(const MaskImageType* const mask);
 
-  // Create a mask image where invalid pixels are non-zero
+  /** Create a mask image where invalid pixels are non-zero */
   void WriteInvalidMask(const std::string& filename) const;
   void CreateValidityImage(MaskImageType* const image) const;
 
-  // Create a mask image of points below a certain depthThreshold
+  /** Create a mask image of points below a certain depthThreshold */
   void WriteDepthThresholdMask(const std::string& filename, const float depthThreshold) const;
 
-  // Count invalid points
+  /** Count invalid points */
   unsigned int CountInvalidPoints() const;
   unsigned int CountValidPoints() const;
 
-  // The main storage image.
+  /** The main storage image. */
   FullImageType::Pointer FullImage;
 
-  // Access the main data.
+  /** The store the original information so it can be referenced when modifying things. */
+  FullImageType::Pointer OriginalFullImage;
+
+  /** Copy FullImage into OriginalFullImage. */
+  void Backup();
+  
+  /** Access the main data. */
   FullImageType::Pointer GetFullImage() const;
 
-  // Get the size of the main data.
+  /** Get the size of the main data. */
   itk::Size<2> GetSize() const;
 
-  // Get the height of the main data.
+  /** Get the height of the main data. */
   unsigned int GetHeight() const;
 
-  // Get the width of the main data.
+  /** Get the width of the main data. */
   unsigned int GetWidth() const;
 
-  // Set a specific pixel to a specified value.
+  /** Set a specific pixel to a specified value. */
   void SetPixel(const itk::Index<2>&, const PTXPixel&);
 
-  // Find the nearest pixel which is not marked as invalid.
-  itk::Index<2> FindNearestValidPixel(const itk::Index<2>& pixel, const itk::Offset<2>& offset) const;
+  /** Find the nearest pixel which is not marked as invalid. */
+  itk::Index<2> FindNearestValidPixel(const itk::Index<2>& pixel, itk::Offset<2> offset) const;
 
-  // Get the theta (side to side) angle of a pixel
+  /** Get the theta (side to side) angle of a pixel */
   float ApproximateTheta(const itk::Index<2>& pixel) const;
 
-  // Get the phi (up and down) angle of a pixel
+  /** Get the phi (up and down) angle of a pixel */
   float ApproximatePhi(const itk::Index<2>& pixel) const;
 
+  /** Creates a point unit distance from the origin in the interpolated direction of the sphereical grid point */
   itk::Point<float, 3> ApproximateOldPoint(const itk::Index<2>& pixel) const;
 
-  // Get the phi (up and down) angle of a pixel
+  /** Interpolated direction of the sphereical grid point */
+  itk::Vector<float, 3> ApproximateRayDirection(const itk::Index<2>& pixel) const;
+
+  /** Get the phi (up and down) angle of a pixel */
   float GetPhi(const itk::Index<2>& index) const;
 
-  // Get the theta (side to side) angle of a pixel
+  /** Get the theta (side to side) angle of a pixel */
   float GetTheta(const itk::Index<2>& index) const;
 
   void ComputeAverageDeltaPhi();

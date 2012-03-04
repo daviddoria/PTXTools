@@ -105,4 +105,10 @@ void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkIma
   outputImage->Modified();
 }
 
+template<typename TImage>
+itk::Index<2> GetNearestValidPixel(const TImage* const image, const itk::Index<2>& queryPixel)
+{
+  throw std::runtime_error("Helpers::GetNearestValidPixel() is not yet implemented!");
+}
+
 } // end namespace

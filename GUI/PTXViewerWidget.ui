@@ -92,7 +92,7 @@
      <x>0</x>
      <y>0</y>
      <width>900</width>
-     <height>28</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -126,6 +126,8 @@
     <addaction name="actionExportIntensityImage"/>
     <addaction name="actionExportUnorganizedPointCloud"/>
     <addaction name="actionExportOrganizedPointCloud"/>
+    <addaction name="actionScreenshot3D"/>
+    <addaction name="actionScreenshot2D"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -237,6 +239,16 @@
   <action name="actionReplaceValidityImageInverted">
    <property name="text">
     <string>Replace validity image inverted</string>
+   </property>
+  </action>
+  <action name="actionScreenshot3D">
+   <property name="text">
+    <string>Screenshot 3D</string>
+   </property>
+  </action>
+  <action name="actionScreenshot2D">
+   <property name="text">
+    <string>Screenshot 2D</string>
    </property>
   </action>
  </widget>

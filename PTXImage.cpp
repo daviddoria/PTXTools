@@ -46,8 +46,15 @@ PTXImage::PTXImage()
 {
   // Create the main image
   this->FullImage = FullImageType::New();
+  this->OriginalFullImage = FullImageType::New();
 
   this->Debug = false;
+}
+
+PTXImage::PTXImage(FullImageType* const fullImage)
+{
+  this->FullImage = FullImageType::New();
+  Helpers::DeepCopy(fullImage, FullImage.GetPointer());
 }
 
 void PTXImage::SetDebug(bool value)
@@ -834,10 +841,19 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
 {
   // This function allows the depth map to be modified externally and the new map applied to the grid
 
-  CountInvalidPoints();
+  //CountInvalidPoints();
 
+  if(OriginalFullImage->GetLargestPossibleRegion() != FullImage->GetLargestPossibleRegion())
+  {
+    throw std::runtime_error("You must call Backup() on the originally read ptx before using ReplaceDepth()!");
+  }
+
+  PTXImage originalPTXImage(OriginalFullImage);
+  originalPTXImage.ComputeAverageDeltaPhi();
+  originalPTXImage.ComputeAverageDeltaTheta();
+  
   // Setup iterators
-  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<FloatImageType> newDepthIterator(depthImage, depthImage->GetLargestPossibleRegion());
 
   itk::Point<float, 3> origin;
@@ -846,39 +862,69 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
   while(!imageIterator.IsAtEnd())
     {
     // Get the old point
-    PTXPixel pixel = imageIterator.Get();
-    itk::Point<float, 3> oldPoint;
-    oldPoint[0] = pixel.X;
-    oldPoint[1] = pixel.Y;
-    oldPoint[2] = pixel.Z;
+    PTXPixel currentPTXPixel = imageIterator.Get();
 
-    // For testing only, compute the old depth
-    double oldDepth = origin.EuclideanDistanceTo(oldPoint);
-    if(this->Debug)
+    PTXPixel originalPTXPixel = OriginalFullImage->GetPixel(imageIterator.GetIndex());
+
+    // If the point is not valid, set it to the origin and move on to the next point.
+    if(!currentPTXPixel.Valid)
+    {
+      currentPTXPixel.X = origin[0];
+      currentPTXPixel.Y = origin[1];
+      currentPTXPixel.Z = origin[2];
+
+      imageIterator.Set(currentPTXPixel);
+      ++imageIterator;
+      ++newDepthIterator;
+      continue;
+    }
+
+    // If the original point was valid, use it's position as the unit vector along which to set the new depth.
+    // If the original point was not valid, interpolate this points direction.
+    itk::Vector<float, 3> rayDirection;
+    if(originalPTXPixel.Valid)
+    {
+      itk::Point<float, 3> oldPoint;
+      oldPoint[0] = originalPTXPixel.X;
+      oldPoint[1] = originalPTXPixel.Y;
+      oldPoint[2] = originalPTXPixel.Z;
+      //std::cout << "Old point " << oldPoint << std::endl;
+      // For testing only, compute the old depth
+      double oldDepth = origin.EuclideanDistanceTo(oldPoint);
+      if(this->Debug)
+        {
+        std::cout << "Old depth: " << oldDepth << " New depth: " << newDepthIterator.Get() << std::endl;
+        }
+
+      // Get the vector from the origin (scanner location) to the old point
+      rayDirection = oldPoint - origin;
+
+      // Get a unit vector in the direction of the old point
+      rayDirection.Normalize();
+    }
+    else
+    {
+      std::cout << "Approximating ray direction..." << std::endl;
+      
+      //oldPoint = originalPTXImage.ApproximateOldPoint(imageIterator.GetIndex());
+      rayDirection = originalPTXImage.ApproximateRayDirection(imageIterator.GetIndex());
+      std::cout << "rayDirection " << rayDirection << std::endl;
+      if(isnan(rayDirection[0]))
       {
-      std::cout << "Old depth: " << oldDepth << " New depth: " << newDepthIterator.Get() << std::endl;
+        throw std::runtime_error("Error computing old point!");
       }
 
-    // Get the vector from the origin (scanner location) and the old point
-    itk::Vector<float, 3> unitVector = oldPoint - origin;
-
-    // Get a unit vector in the direction of the old point
-    unitVector.Normalize();
+    }
 
     // Compute the new point from the vector and the new depth
-    itk::Point<float, 3> newPoint = origin + unitVector * newDepthIterator.Get();
-
-    if(this->Debug)
-      {
-      std::cout << "Old point: " << oldPoint << " New point: " << newPoint << std::endl;
-      }
+    itk::Point<float, 3> newPoint = origin + rayDirection * newDepthIterator.Get();
 
     // Save the new point in the PTXPixel
-    pixel.X = newPoint[0];
-    pixel.Y = newPoint[1];
-    pixel.Z = newPoint[2];
+    currentPTXPixel.X = newPoint[0];
+    currentPTXPixel.Y = newPoint[1];
+    currentPTXPixel.Z = newPoint[2];
 
-    imageIterator.Set(pixel);
+    imageIterator.Set(currentPTXPixel);
 
     ++imageIterator;
     ++newDepthIterator;
@@ -1143,12 +1189,74 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
   CountInvalidPoints();
 }
 
-itk::Point<float, 3> PTXImage::ApproximateOldPoint(const itk::Index<2>& pixel) const
+itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& pixel) const
 {
-  // This function creates a point unit distance from the origin in the approximate direction the old point would have been aquired.
+  /**
+   * This function creates a point unit distance from the origin in the approximate direction
+   * the old point would have been aquired. It should be used, for example, when replacing a
+   * previously invalid point.
+   */
   float phi = ApproximatePhi(pixel);
   float theta = ApproximateTheta(pixel);
 
+  if(isnan(phi))
+  {
+    throw std::runtime_error("Phi is nan!");
+  }
+
+  if(isnan(theta))
+  {
+    ApproximateTheta(pixel);
+    throw std::runtime_error("Theta is nan!");
+  }
+
+  itk::Point<float, 3> azEl;
+  azEl[0] = theta;
+  azEl[1] = phi;
+  azEl[2] = 1;
+  //azEl[2] = -1.0f; // This doesn't seem to make a difference? Seems odd...
+
+  typedef itk::AzimuthElevationToCartesianTransform< float, 3 >
+    AzimuthElevationToCartesian;
+  AzimuthElevationToCartesian::Pointer azimuthElevation =
+    AzimuthElevationToCartesian::New();
+
+  itk::Point<float, 3> transformedPoint = azimuthElevation->TransformAzElToCartesian(azEl);
+  itk::Vector<float, 3> direction;
+  direction[0] = transformedPoint[0];
+  direction[1] = transformedPoint[1];
+  direction[2] = transformedPoint[2];
+  direction.Normalize();
+
+  // Not sure why negating this is necessary, but it seems to be.
+  direction[0] *= -1.0f;
+  direction[1] *= -1.0f;
+  direction[2] *= -1.0f;
+
+  return direction;
+}
+
+itk::Point<float, 3> PTXImage::ApproximateOldPoint(const itk::Index<2>& pixel) const
+{
+  /**
+   * This function creates a point unit distance from the origin in the approximate direction
+   * the old point would have been aquired. It should be used, for example, when replacing a
+   * previously invalid point.
+   */
+  float phi = ApproximatePhi(pixel);
+  float theta = ApproximateTheta(pixel);
+
+  if(isnan(phi))
+  {
+    throw std::runtime_error("Phi is nan!");
+  }
+
+  if(isnan(theta))
+  {
+    ApproximateTheta(pixel);
+    throw std::runtime_error("Theta is nan!");
+  }
+  
   typedef itk::Point<float, 3> PointType;
   PointType azEl;
   azEl[0] = theta;
@@ -1367,6 +1475,12 @@ void PTXImage::ComputeAverageDeltaTheta()
       index[0] = col;
       index[1] = row;
 
+      if(!region.IsInside(lastIndex))
+      {
+        lastIndex = index;
+        continue;
+      }
+
       if(!this->FullImage->GetPixel(index).Valid || // the current pixel is invalid
         !this->FullImage->GetPixel(lastIndex).Valid || // the previous pixel was invalid
         lastIndex[1] != index[1] // if we are not on the same row as the last pixel
@@ -1386,13 +1500,12 @@ void PTXImage::ComputeAverageDeltaTheta()
   float total = 0.0;
   for(unsigned int i = 0; i < deltaThetas.size(); i++)
     {
-    total += deltaThetas[i];
+    total += fabs(deltaThetas[i]);
     }
 
   if(deltaThetas.size() == 0)
     {
-    std::cerr << "There are no valid theta neighbors!" << std::endl;
-    exit(-1);
+    throw std::runtime_error("There are no valid theta neighbors!");
     }
 
   this->AverageDeltaTheta = total/static_cast<float>(deltaThetas.size());
@@ -1418,6 +1531,12 @@ void PTXImage::ComputeAverageDeltaPhi()
       index[0] = col;
       index[1] = row;
 
+      if(!region.IsInside(lastIndex))
+      {
+        lastIndex = index;
+        continue;
+      }
+      
       if(!this->FullImage->GetPixel(index).Valid || // the current pixel is invalid
         !this->FullImage->GetPixel(lastIndex).Valid || // the previous pixel is invalid
         lastIndex[0] != index[0] // if we are not on the same column as the last pixel
@@ -1437,13 +1556,12 @@ void PTXImage::ComputeAverageDeltaPhi()
   float total = 0.0;
   for(unsigned int i = 0; i < deltaPhis.size(); i++)
     {
-    total += deltaPhis[i];
+    total += fabs(deltaPhis[i]);
     }
 
   if(deltaPhis.size() == 0)
     {
-    std::cerr << "There are no valid phi neighbors!" << std::endl;
-    exit(-1);
+    throw std::runtime_error("There are no valid phi neighbors!");
     }
 
   this->AverageDeltaPhi = total/static_cast<float>(deltaPhis.size());
@@ -1503,9 +1621,9 @@ float PTXImage::ApproximateTheta(const itk::Index<2>& pixel) const
 
   itk::Index<2> nearestPixel = FindNearestValidPixel(pixel, offset);
 
-  float theta = GetTheta(nearestPixel);
+  float nearestTheta = GetTheta(nearestPixel);
 
-  return theta + (pixel[0] - nearestPixel[0])*this->AverageDeltaTheta;
+  return nearestTheta + static_cast<float>(pixel[0] - nearestPixel[0])*this->AverageDeltaTheta;
 }
 
 float PTXImage::ApproximatePhi(const itk::Index<2>& pixel) const
@@ -1521,11 +1639,10 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& pixel) const
   return phi + (pixel[1] - nearestPixel[1])*this->AverageDeltaPhi;
 }
 
-itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, const itk::Offset<2>& inputOffset) const
+itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, itk::Offset<2> offset) const
 {
   // This function finds the nearest valid pixel along a row or column (specified by 'offset') of an image.
   itk::Index<2> currentPixel = pixel;
-  itk::Offset<2> offset = inputOffset; // We will need to modify this internally, so we need to create a new object so the input can be const.
 
   //itk::Size<2> size = this->FullImage->GetLargestPossibleRegion().GetSize();
 
@@ -1538,7 +1655,7 @@ itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, const 
     pixelCounter++;
     if(this->FullImage->GetPixel(currentPixel).Valid)
       {
-      std::cout << "Closest valid pixel to " << pixel << " is " << currentPixel << std::endl;
+      //std::cout << "Closest valid pixel to " << pixel << " is " << currentPixel << std::endl;
       return currentPixel;
       }
     }
@@ -1569,8 +1686,9 @@ itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, const 
   //std::cout << "Searched " << pixelCounter << " pixels." << std::endl;
 
   // If we get here, an entire row or column did not have a valid pixel. We cannot deal with images this poor.
-  std::cerr << "No neighbor was found for " << pixel << " in the " << offset << " direction. This should never happen!" << std::endl;
-  exit(-1);
+  std::stringstream ss;
+  ss << "No neighbor was found for " << pixel << " in the " << offset << " direction. This should never happen!";
+  throw std::runtime_error(ss.str());
   return currentPixel; // So the compiler doesn't complain that all paths don't return a value
 }
 
@@ -2185,4 +2303,9 @@ unsigned int PTXImage::GetHeight() const
 unsigned int PTXImage::GetWidth() const
 {
   return this->GetSize()[0];
+}
+
+void PTXImage::Backup()
+{
+  Helpers::DeepCopy(FullImage.GetPointer(), OriginalFullImage.GetPointer());
 }
