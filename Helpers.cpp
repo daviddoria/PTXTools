@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace Helpers
 {
 
-void OutputPolyData(vtkSmartPointer<vtkPolyData> points, std::string filename)
+void OutputPolyData(vtkPolyData* const points, const std::string& filename)
 {
   // Output projected points for debugging
   vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
@@ -46,7 +46,7 @@ void OutputPolyData(vtkSmartPointer<vtkPolyData> points, std::string filename)
   writer->Write();
 }
 
-void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>::Pointer image, vtkImageData* outputImage)
+void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image, vtkImageData* const outputImage)
 {
   typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
   // Setup and allocate the VTK image

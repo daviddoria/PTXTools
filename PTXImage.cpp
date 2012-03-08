@@ -2309,3 +2309,8 @@ void PTXImage::Backup()
 {
   Helpers::DeepCopy(FullImage.GetPointer(), OriginalFullImage.GetPointer());
 }
+
+itk::ImageRegion<2> PTXImage::GetFullRegion() const
+{
+  return this->FullImage->GetLargestPossibleRegion();
+}

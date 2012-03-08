@@ -227,6 +227,9 @@ public:
   /** Access the main data. */
   FullImageType::Pointer GetFullImage() const;
 
+  /** Get the region of the PTX. */
+  itk::ImageRegion<2> GetFullRegion() const;
+  
   /** Get the size of the main data. */
   itk::Size<2> GetSize() const;
 

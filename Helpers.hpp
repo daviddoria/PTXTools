@@ -15,12 +15,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef HELPERS_HPP
+#define HELPERS_HPP
+
 // ITK
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkImageFileWriter.h"
 
 // VTK
 #include <vtkImageData.h>
+
+// STL
+#include <stdexcept>
 
 namespace Helpers
 {
@@ -54,7 +60,7 @@ void DeepCopy(const TImage* const input, TImage* const output)
 }
 
 template<typename TImage>
-void SetAllPixels(typename TImage::Pointer image, typename TImage::PixelType pixel)
+void SetAllPixelsToValue(TImage* const image, typename TImage::PixelType& pixel)
 {
   itk::ImageRegionIterator<TImage> imageIterator(image, image->GetLargestPossibleRegion());
 
@@ -67,7 +73,7 @@ void SetAllPixels(typename TImage::Pointer image, typename TImage::PixelType pix
 
 
 template <typename TImage>
-void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkImageData* outputImage)
+void ITKScalarImageToScaledVTKImage(const TImage* const image, vtkImageData* const outputImage)
 {
   //std::cout << "ITKScalarImagetoVTKImage()" << std::endl;
   typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
@@ -112,3 +118,5 @@ itk::Index<2> GetNearestValidPixel(const TImage* const image, const itk::Index<2
 }
 
 } // end namespace
+
+#endif

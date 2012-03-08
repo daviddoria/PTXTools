@@ -21,6 +21,7 @@
 
 // Custom
 #include "PTXImage.h"
+#include "PTXReader.h"
 
 Eigen::MatrixXd ReadP(const std::string& filename);
 
@@ -44,10 +45,7 @@ int main(int argc, char *argv[])
   std::cout << "outputFileName : " << outputFileName << std::endl;
 
   // Read the PTX file
-  PTXImage ptxImage;
-  ptxImage.ReadFile(ptxFileName);
-  //FilePrefix prefix("test");
-  //ptxImage.WritePTX(prefix);
+  PTXImage ptxImage = PTXReader::Read(ptxFileName);
 
   PTXImage::XYZImageType::Pointer xyzImage = ptxImage.GetXYZImage();
 
@@ -117,7 +115,7 @@ int main(int argc, char *argv[])
     ++xyzImageIterator;
   }
 
-  std::cout << "There were " << badPoints << " that did not project to inside of the image!" << std::endl;
+  std::cout << "There were " << badPoints << " points that did not project to inside of the image!" << std::endl;
   ptxImage.ReplaceRGB(colorImage);
 
   //FilePrefix vtpPrefix("outputPointCloud");

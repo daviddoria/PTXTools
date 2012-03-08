@@ -30,27 +30,36 @@ class vtkPolyData;
 namespace Helpers
 {
   ///// Non-templated functions /////
-  void OutputPolyData(vtkSmartPointer<vtkPolyData> points, std::string filename);
-  void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>::Pointer image, vtkImageData* outputImage);
+
+  /** Write a PolyData to a file */
+  void OutputPolyData(vtkPolyData* const points, const std::string& filename);
+
+  /** Convert an ITK image to a VTK image */
+  void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image, vtkImageData* const outputImage);
 
   ///// Templated functions /////
+  /** Set every pixel in an image to 'pixel' */
   template<typename TImage>
-  void SetAllPixels(typename TImage::Pointer image, typename TImage::PixelType pixel);
+  void SetAllPixelsToValue(TImage* const image, typename TImage::PixelType& pixel);
 
+  /** Deep copy an image. */
   template<typename TImage>
   void DeepCopy(const TImage* const input, TImage* const output);
 
+  /** Rescale and convert an ITK image to a VTK image*/
   template <typename TImage>
-  void ITKScalarImageToScaledVTKImage(const typename TImage::Pointer image, vtkImageData* outputImage);
+  void ITKScalarImageToScaledVTKImage(const TImage* const image, vtkImageData* const outputImage);
 
+  /** Write an image to a file. */
   template<typename TImage>
   void WriteImage(const TImage* const image, const std::string& filename);
 
+  /** Get the nearest valid pixel location. */
   template<typename TImage>
   itk::Index<2> GetNearestValidPixel(const TImage* const image, const itk::Index<2>& queryPixel);
 
 };
 
-#include "Helpers.hxx"
+#include "Helpers.hpp"
 
 #endif
