@@ -16,7 +16,6 @@
  *
  *=========================================================================*/
 
-#include "ui_SelectCorrespondencesWidget.h"
 #include "ResectioningWidget.h"
 
 // STL
@@ -74,6 +73,8 @@
 #include "Pane.h"
 #include "Pane2D.h"
 #include "Pane3D.h"
+#include "PTXImage.h"
+#include "PTXReader.h"
 
 void ResectioningWidget::on_actionHelp_activated()
 {
@@ -101,95 +102,42 @@ void ResectioningWidget::on_actionQuit_activated()
 
 void ResectioningWidget::SharedConstructor()
 {
-  LeftPane = NULL;
-  RightPane = NULL;
-  ProgressDialog = new QProgressDialog;
-
   this->setupUi(this);
 
   connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
-  // Setup icons
-  QIcon openIcon = QIcon::fromTheme("document-open");
-  QIcon saveIcon = QIcon::fromTheme("document-save");
+  PointCloudPane = new Pane3D(this->qvtkWidgetLeft);
+  ImagePane = new Pane2D(this->qvtkWidgetRight);
 
-  // Setup left toolbar
-  actionOpenImageLeft->setIcon(openIcon);
-  this->toolBar_left->addAction(actionOpenImageLeft);
-
-  actionOpenPointCloudLeft->setIcon(openIcon);
-  this->toolBar_left->addAction(actionOpenPointCloudLeft);
-
-  actionSavePointsLeft->setIcon(saveIcon);
-  this->toolBar_left->addAction(actionSavePointsLeft);
-
-  actionLoadPointsLeft->setIcon(openIcon);
-  this->toolBar_left->addAction(actionLoadPointsLeft);
-
-  // Setup right toolbar
-  actionOpenImageRight->setIcon(openIcon);
-  this->toolBar_right->addAction(actionOpenImageRight);
-
-  actionOpenPointCloudRight->setIcon(openIcon);
-  this->toolBar_right->addAction(actionOpenPointCloudRight);
-
-  actionSavePointsRight->setIcon(saveIcon);
-  this->toolBar_right->addAction(actionSavePointsRight);
-
-  actionLoadPointsRight->setIcon(openIcon);
-  this->toolBar_right->addAction(actionLoadPointsRight);
+  ProgressDialog = new QProgressDialog;
 }
 
 ResectioningWidget::ResectioningWidget(const std::string& imageFileName, const std::string& pointCloudFileName)
 {
   SharedConstructor();
 
-  this->LeftPane = new Pane2D(this->qvtkWidgetLeft);
-  LoadImage(LeftPane, imageFileName);
+  LoadImage(imageFileName);
 
-  this->RightPane = new Pane3D(this->qvtkWidgetRight);
-  LoadPointCloud(RightPane, pointCloudFileName);
+  LoadPTX(pointCloudFileName);
 }
 
 // Constructor
 ResectioningWidget::ResectioningWidget()
 {
   SharedConstructor();
-
 };
 
-void ResectioningWidget::LoadPoints(Pane* const pane, const std::string& fileName)
-{
-  // This function reads existing correspondences from a plain text file and displays them in the left pane.
-
-  if(!this->LeftPane)
-    {
-    std::cerr << "Cannot load points unless an image or point cloud is loaded!" << std::endl;
-    return;
-    }
-
-  if(dynamic_cast<Pane2D*>(pane))
-    {
-    LoadPoints2D(dynamic_cast<Pane2D*>(pane), fileName);
-    }
-  else if(dynamic_cast<Pane3D*>(pane))
-    {
-    LoadPoints3D(dynamic_cast<Pane3D*>(pane), fileName);
-    }
-}
-
-
-void ResectioningWidget::LoadPoints2D(Pane2D* const pane, const std::string& filename)
+void ResectioningWidget::LoadCorrespondencesImage(const std::string& filename)
 {
   std::string line;
   std::ifstream fin(filename.c_str());
 
   if(fin == NULL)
     {
-    throw std::runtime_error("LoadPoints2D Cannot open file.");
+    throw std::runtime_error("LoadCorrespondences2D Cannot open file.");
     }
 
-  pane->SelectionStyle->RemoveAll();
+  ImagePane->SelectionStyle->RemoveAll();
 
   while(getline(fin, line))
     {
@@ -199,21 +147,21 @@ void ResectioningWidget::LoadPoints2D(Pane2D* const pane, const std::string& fil
     ss >> p[0] >> p[1];
     p[2] = 0;
 
-    pane->SelectionStyle->AddNumber(p);
+    ImagePane->SelectionStyle->AddNumber(p);
     }
 }
 
-void ResectioningWidget::LoadPoints3D(Pane3D* const pane, const std::string& filename)
+void ResectioningWidget::LoadCorrespondencesPointCloud(const std::string& filename)
 {
   std::string line;
   std::ifstream fin(filename.c_str());
 
   if(fin == NULL)
     {
-    throw std::runtime_error("LoadPoints3D Cannot open file.");
+    throw std::runtime_error("LoadCorrespondences3D Cannot open file.");
     }
 
-  pane->SelectionStyle->RemoveAll();
+  PointCloudPane->SelectionStyle->RemoveAll();
 
   while(getline(fin, line))
     {
@@ -222,162 +170,165 @@ void ResectioningWidget::LoadPoints3D(Pane3D* const pane, const std::string& fil
     double p[3];
     ss >> p[0] >> p[1] >> p[2];
 
-    pane->SelectionStyle->AddNumber(p);
+    PointCloudPane->SelectionStyle->AddNumber(p);
     }
 }
 
-void ResectioningWidget::SavePoints(Pane* const pane)
-{
-  if(!pane)
-    {
-    std::cerr << "You must have loaded and selected points from this pane!" << std::endl;
-    return;
-    }
 
-  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Text Files (*.txt)");
-  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
-  if(fileName.toStdString().empty())
-    {
-    std::cout << "Filename was empty." << std::endl;
-    return;
-    }
-
-  if(dynamic_cast<Pane2D*>(pane))
-    {
-    SavePoints2D(dynamic_cast<Pane2D*>(pane), fileName.toStdString());
-    }
-  else if(dynamic_cast<Pane3D*>(pane))
-    {
-    SavePoints3D(dynamic_cast<Pane3D*>(pane), fileName.toStdString());
-    }
-  
-}
-
-void ResectioningWidget::SavePoints2D(Pane2D* const pane, const std::string& filename)
+void ResectioningWidget::SaveCorrespondencesImage(const std::string& filename)
 {
   std::ofstream fout(filename.c_str());
 
-  for(unsigned int i = 0; i < pane->SelectionStyle->GetNumberOfCorrespondences(); i++)
+  for(unsigned int i = 0; i < ImagePane->SelectionStyle->GetNumberOfCorrespondences(); i++)
     {
-    fout << pane->SelectionStyle->GetCorrespondence(i).x << " "
-         << pane->SelectionStyle->GetCorrespondence(i).y << std::endl;
+    fout << ImagePane->SelectionStyle->GetCorrespondence(i).x << " "
+         << ImagePane->SelectionStyle->GetCorrespondence(i).y << std::endl;
 
     }
   fout.close();
 }
 
-void ResectioningWidget::SavePoints3D(Pane3D* const pane, const std::string& filename)
+void ResectioningWidget::SaveCorrespondencesPointCloud(const std::string& filename)
 {
   std::ofstream fout(filename.c_str());
 
-  for(unsigned int i = 0; i < pane->SelectionStyle->GetNumberOfCorrespondences(); i++)
+  for(unsigned int i = 0; i < PointCloudPane->SelectionStyle->GetNumberOfCorrespondences(); i++)
     {
-    fout << pane->SelectionStyle->GetCorrespondence(i).x << " "
-         << pane->SelectionStyle->GetCorrespondence(i).y << " "
-         << pane->SelectionStyle->GetCorrespondence(i).z << std::endl;
+    fout << PointCloudPane->SelectionStyle->GetCorrespondence(i).x << " "
+         << PointCloudPane->SelectionStyle->GetCorrespondence(i).y << " "
+         << PointCloudPane->SelectionStyle->GetCorrespondence(i).z << std::endl;
     }
   fout.close();
 }
 
-void ResectioningWidget::LoadImage(Pane* const inputPane, const std::string& fileName)
+void ResectioningWidget::LoadImage(const std::string& fileName)
 {
 
 /*
   QFileInfo fileInfo(fileName.toStdString().c_str());
   std::string extension = fileInfo.suffix().toStdString();
   std::cout << "extension: " << extension << std::endl;*/
-  
-  Pane2D* pane = static_cast<Pane2D*>(inputPane);
 
-  if(!pane)
-  {
-    throw std::runtime_error("LoadImage: inputPane is NULL!");
-  }
   typedef itk::ImageFileReader<FloatVectorImageType> ReaderType;
   ReaderType::Pointer reader = ReaderType::New();
   reader->SetFileName(fileName);
   reader->Update();
 
-  pane->Image = reader->GetOutput();
+  ImagePane->Image = reader->GetOutput();
 
   if(this->chkRGB->isChecked())
     {
-    ResectioningHelpers::ITKImagetoVTKRGBImage(pane->Image.GetPointer(), pane->ImageData);
+    ResectioningHelpers::ITKImagetoVTKRGBImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
     }
   else
     {
-    ResectioningHelpers::ITKImagetoVTKMagnitudeImage(pane->Image.GetPointer(), pane->ImageData);
+    ResectioningHelpers::ITKImagetoVTKMagnitudeImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
     }
 
-  pane->ImageSliceMapper->SetInputConnection(pane->ImageData->GetProducerPort());
-  pane->ImageSlice->SetMapper(pane->ImageSliceMapper);
+  ImagePane->ImageSliceMapper->SetInputConnection(ImagePane->ImageData->GetProducerPort());
+  ImagePane->ImageSlice->SetMapper(ImagePane->ImageSliceMapper);
   
   // Add Actor to renderer
   //pane->Renderer->AddActor(pane->ImageActor);
-  pane->Renderer->AddActor(pane->ImageSlice);
-  pane->Renderer->ResetCamera();
+  ImagePane->Renderer->AddActor(ImagePane->ImageSlice);
+  ImagePane->Renderer->ResetCamera();
 
   vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
-  pane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
-  pane->SelectionStyle = PointSelectionStyle2D::New();
-  pane->SelectionStyle->SetCurrentRenderer(pane->Renderer);
+  ImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
+  ImagePane->SelectionStyle = PointSelectionStyle2D::New();
+  ImagePane->SelectionStyle->SetCurrentRenderer(ImagePane->Renderer);
   //pane->SelectionStyle->Initialize();
-  pane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(static_cast<PointSelectionStyle2D*>(pane->SelectionStyle));
+  ImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->
+            SetInteractorStyle(static_cast<PointSelectionStyle2D*>(ImagePane->SelectionStyle));
 
-  pane->Renderer->ResetCamera();
+  ImagePane->Renderer->ResetCamera();
 
-  pane->qvtkWidget->GetRenderWindow()->Render();
+  ImagePane->qvtkWidget->GetRenderWindow()->Render();
 }
 
-void ResectioningWidget::on_actionFlipLeftHorizontally_activated()
+void ResectioningWidget::on_action_Image_FlipHorizontally_activated()
 {
-  if(dynamic_cast<Pane2D*>(this->LeftPane))
-    {
-    static_cast<Pane2D*>(this->LeftPane)->FlipHorizontally();
-    }
-  else
-    {
-    std::cerr << "Cannot flip a point cloud!" << std::endl;
-    }
+  ImagePane->FlipHorizontally();
 }
 
-void ResectioningWidget::on_actionFlipLeftVertically_activated()
+void ResectioningWidget::on_action_Image_FlipVertically_activated()
 {
-  if(dynamic_cast<Pane2D*>(this->LeftPane))
-    {
-    static_cast<Pane2D*>(this->LeftPane)->FlipVertically();
-    }
-  else
-    {
-    std::cerr << "Cannot flip a point cloud!" << std::endl;
-    }
+  ImagePane->FlipVertically();
 }
 
-void ResectioningWidget::on_actionFlipRightHorizontally_activated()
+void ResectioningWidget::LoadPTX(const std::string& fileName)
 {
-  if(dynamic_cast<Pane2D*>(this->RightPane))
+  PTXReader reader;
+  reader.SetFileName(fileName.c_str());
+
+  // Read in the same thread
+//   reader.Read();
+//   PTXImage ptxImage = reader.GetOutput();
+
+  // Start the computation.
+  QFuture<void> future = QtConcurrent::run(&reader, &PTXReader::Read);
+  this->FutureWatcher.setFuture(future);
+  this->ProgressDialog->setMinimum(0);
+  this->ProgressDialog->setMaximum(0);
+  this->ProgressDialog->setLabelText("Opening PTX file...");
+  this->ProgressDialog->setWindowModality(Qt::WindowModal);
+  this->ProgressDialog->exec();
+
+  PTXImage ptxImage = reader.GetOutput();
+
+  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+  ptxImage.CreatePointCloud(polyData);
+
+  vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
+  //lookupTable->SetTableRange(0.0, 10.0);
+  //lookupTable->SetHueRange(0, .5);
+  //lookupTable->SetHueRange(.5, 1);
+  lookupTable->SetHueRange(0, 1);
+
+  // If the cloud has an "Intensity" array, use it for the initial coloring
+  vtkFloatArray* intensityArray = vtkFloatArray::SafeDownCast(
+                                  polyData->GetPointData()->GetArray("Intensity"));
+  if(intensityArray)
     {
-    static_cast<Pane2D*>(this->RightPane)->FlipHorizontally();
+    polyData->GetPointData()->SetActiveScalars("Intensity");
+
+    float range[2];
+    intensityArray->GetValueRange(range);
+
+    lookupTable->SetTableRange(range[0], range[1]);
     }
-  else
-    {
-    std::cerr << "Cannot flip a point cloud!" << std::endl;
-    }
+
+  PointCloudPane->PointCloudMapper->SetInputConnection(polyData->GetProducerPort());
+  PointCloudPane->PointCloudMapper->SetLookupTable(lookupTable);
+  PointCloudPane->PointCloudActor->SetMapper(PointCloudPane->PointCloudMapper);
+  PointCloudPane->PointCloudActor->GetProperty()->SetRepresentationToPoints();
+
+  // Add Actor to renderer
+  PointCloudPane->Renderer->AddActor(PointCloudPane->PointCloudActor);
+  PointCloudPane->Renderer->ResetCamera();
+
+  vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
+
+  pointPicker->PickFromListOn();
+  pointPicker->AddPickList(PointCloudPane->PointCloudActor);
+  PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
+  PointCloudPane->SelectionStyle = PointSelectionStyle3D::New();
+  PointCloudPane->SelectionStyle->SetCurrentRenderer(PointCloudPane->Renderer);
+  PointCloudPane->SelectionStyle->Initialize();
+  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->Data = polyData;
+  PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+         static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle));
+
+  PointCloudPane->Renderer->ResetCamera();
+
+  std::cout << "Computing average spacing..." << std::endl;
+  float averageSpacing = ResectioningHelpers::ComputeAverageSpacing(polyData->GetPoints(), 100000);
+  std::cout << "Done computing average spacing: " << averageSpacing << std::endl;
+
+  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->SetMarkerRadius(averageSpacing * 10.0);
 }
 
-void ResectioningWidget::on_actionFlipRightVertically_activated()
-{
-  if(dynamic_cast<Pane2D*>(this->RightPane))
-    {
-    static_cast<Pane2D*>(this->RightPane)->FlipVertically();
-    }
-  else
-    {
-    std::cerr << "Cannot flip a point cloud!" << std::endl;
-    }
-}
-
-void ResectioningWidget::LoadPointCloud(Pane* const inputPane, const std::string& fileName)
+void ResectioningWidget::LoadVTP(const std::string& fileName)
 {
 
 /*
@@ -385,19 +336,14 @@ void ResectioningWidget::LoadPointCloud(Pane* const inputPane, const std::string
   std::string extension = fileInfo.suffix().toStdString();
   std::cout << "extension: " << extension << std::endl;
   */
-  Pane3D* pane = static_cast<Pane3D*>(inputPane);
 
-  if(!pane)
-  {
-    throw std::runtime_error("LoadImage: inputPane is NULL!");
-  }
-  
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName(fileName.c_str());
 
   //reader->Update();
   // Start the computation.
-  QFuture<void> future = QtConcurrent::run(reader.GetPointer(), static_cast<void(vtkXMLPolyDataReader::*)()>(&vtkXMLPolyDataReader::Update));
+  QFuture<void> future = QtConcurrent::run(reader.GetPointer(),
+                            static_cast<void(vtkXMLPolyDataReader::*)()>(&vtkXMLPolyDataReader::Update));
   this->FutureWatcher.setFuture(future);
   this->ProgressDialog->setMinimum(0);
   this->ProgressDialog->setMaximum(0);
@@ -412,7 +358,8 @@ void ResectioningWidget::LoadPointCloud(Pane* const inputPane, const std::string
   lookupTable->SetHueRange(0, 1);
 
   // If the cloud has an "Intensity" array, use it for the initial coloring
-  vtkFloatArray* intensityArray = vtkFloatArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("Intensity"));
+  vtkFloatArray* intensityArray = vtkFloatArray::SafeDownCast(
+                                  reader->GetOutput()->GetPointData()->GetArray("Intensity"));
   if(intensityArray)
     {
     reader->GetOutput()->GetPointData()->SetActiveScalars("Intensity");
@@ -423,39 +370,41 @@ void ResectioningWidget::LoadPointCloud(Pane* const inputPane, const std::string
     lookupTable->SetTableRange(range[0], range[1]);
     }
 
-  pane->PointCloudMapper->SetInputConnection(reader->GetOutputPort());
-  pane->PointCloudMapper->SetLookupTable(lookupTable);
-  pane->PointCloudActor->SetMapper(pane->PointCloudMapper);
-  pane->PointCloudActor->GetProperty()->SetRepresentationToPoints();
+  PointCloudPane->PointCloudMapper->SetInputConnection(reader->GetOutputPort());
+  PointCloudPane->PointCloudMapper->SetLookupTable(lookupTable);
+  PointCloudPane->PointCloudActor->SetMapper(PointCloudPane->PointCloudMapper);
+  PointCloudPane->PointCloudActor->GetProperty()->SetRepresentationToPoints();
 
   // Add Actor to renderer
-  pane->Renderer->AddActor(pane->PointCloudActor);
-  pane->Renderer->ResetCamera();
+  PointCloudPane->Renderer->AddActor(PointCloudPane->PointCloudActor);
+  PointCloudPane->Renderer->ResetCamera();
 
   vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
 
   pointPicker->PickFromListOn();
-  pointPicker->AddPickList(pane->PointCloudActor);
-  pane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
-  pane->SelectionStyle = PointSelectionStyle3D::New();
-  pane->SelectionStyle->SetCurrentRenderer(pane->Renderer);
-  pane->SelectionStyle->Initialize();
-  static_cast<PointSelectionStyle3D*>(pane->SelectionStyle)->Data = reader->GetOutput();
-  pane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(static_cast<PointSelectionStyle3D*>(pane->SelectionStyle));
+  pointPicker->AddPickList(PointCloudPane->PointCloudActor);
+  PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
+  PointCloudPane->SelectionStyle = PointSelectionStyle3D::New();
+  PointCloudPane->SelectionStyle->SetCurrentRenderer(PointCloudPane->Renderer);
+  PointCloudPane->SelectionStyle->Initialize();
+  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->Data = reader->GetOutput();
+  PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+         static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle));
 
-  pane->Renderer->ResetCamera();
+  PointCloudPane->Renderer->ResetCamera();
 
   std::cout << "Computing average spacing..." << std::endl;
   float averageSpacing = ResectioningHelpers::ComputeAverageSpacing(reader->GetOutput()->GetPoints(), 100000);
   std::cout << "Done computing average spacing: " << averageSpacing << std::endl;
 
-  static_cast<PointSelectionStyle3D*>(pane->SelectionStyle)->SetMarkerRadius(averageSpacing * 10.0);
+  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->SetMarkerRadius(averageSpacing * 10.0);
 }
 
-void ResectioningWidget::on_actionLoadPointsLeft_activated()
+void ResectioningWidget::on_action_Image_LoadCorrespondences_activated()
 {
   // Get a filename to open
-  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".",
+                                                  "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
 
   std::cout << "Got filename: " << fileName.toStdString() << std::endl;
   if(fileName.toStdString().empty())
@@ -464,13 +413,14 @@ void ResectioningWidget::on_actionLoadPointsLeft_activated()
     return;
     }
 
-  LoadPoints(this->LeftPane, fileName.toStdString());
+  LoadCorrespondencesImage(fileName.toStdString());
 }
 
-void ResectioningWidget::on_actionLoadPointsRight_activated()
+void ResectioningWidget::on_action_PointCloud_LoadCorrespondences_activated()
 {
   // Get a filename to open
-  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".",
+                                                  "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
 
   std::cout << "Got filename: " << fileName.toStdString() << std::endl;
   if(fileName.toStdString().empty())
@@ -478,13 +428,14 @@ void ResectioningWidget::on_actionLoadPointsRight_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
-  LoadPoints(this->RightPane, fileName.toStdString());
+  LoadCorrespondencesPointCloud(fileName.toStdString());
 }
 
-void ResectioningWidget::on_actionOpenImageLeft_activated()
+void ResectioningWidget::on_action_Image_Open_activated()
 {
   // Get a filename to open
-  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".",
+                                                  "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
 
   std::cout << "Got filename: " << fileName.toStdString() << std::endl;
   if(fileName.toStdString().empty())
@@ -492,37 +443,11 @@ void ResectioningWidget::on_actionOpenImageLeft_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
-    
-  if(this->LeftPane)
-    {
-    delete this->LeftPane;
-    }
-  this->LeftPane = new Pane2D(this->qvtkWidgetLeft);
-  LoadImage(this->LeftPane, fileName.toStdString());
+
+  LoadImage(fileName.toStdString());
 }
 
-void ResectioningWidget::on_actionOpenImageRight_activated()
-{
-  // Get a filename to open
-  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
-
-  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
-  if(fileName.toStdString().empty())
-    {
-    std::cout << "Filename was empty." << std::endl;
-    return;
-    }
-    
-  if(this->RightPane)
-    {
-    delete this->RightPane;
-    }
-  this->RightPane = new Pane2D(this->qvtkWidgetRight);
-  LoadImage(this->RightPane, fileName.toStdString());
-}
-
-
-void ResectioningWidget::on_actionOpenPointCloudLeft_activated()
+void ResectioningWidget::on_action_PointCloud_OpenVTP_activated()
 {
   // Get a filename to open
   QString fileName = QFileDialog::getOpenFileName(this, "Open Point Cloud", ".", "Files (*.vtp)");
@@ -533,17 +458,12 @@ void ResectioningWidget::on_actionOpenPointCloudLeft_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
-    
-  if(this->LeftPane)
-    {
-    delete this->LeftPane;
-    }
-  this->LeftPane = new Pane3D(this->qvtkWidgetLeft);
-  LoadPointCloud(this->LeftPane, fileName.toStdString());
+
+  LoadVTP(fileName.toStdString());
   std::cout << "Done loading point cloud." << std::endl;
 }
 
-void ResectioningWidget::on_actionOpenPointCloudRight_activated()
+void ResectioningWidget::on_action_PointCloud_OpenPTX_activated()
 {
   // Get a filename to open
   QString fileName = QFileDialog::getOpenFileName(this, "Open Point Cloud", ".", "Files (*.vtp)");
@@ -554,50 +474,59 @@ void ResectioningWidget::on_actionOpenPointCloudRight_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
-    
-  if(this->RightPane)
-    {
-    delete this->RightPane;
-    }
-  this->RightPane = new Pane3D(this->qvtkWidgetRight);
-  LoadPointCloud(this->RightPane, fileName.toStdString());
+
+  LoadPTX(fileName.toStdString());
   std::cout << "Done loading point cloud." << std::endl;
 }
 
-void ResectioningWidget::on_actionSavePointsLeft_activated()
+
+void ResectioningWidget::on_action_Image_SaveCorrespondences_activated()
 {
-  SavePoints(this->LeftPane);
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Text Files (*.txt)");
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+  
 }
 
-void ResectioningWidget::on_actionSavePointsRight_activated()
+void ResectioningWidget::on_action_PointCloud_SaveCorrespondences_activated()
 {
-  SavePoints(this->RightPane);
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Text Files (*.txt)");
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
 }
 
-void ResectioningWidget::on_btnDeleteLastCorrespondenceLeft_clicked()
+void ResectioningWidget::on_btnDeleteLastCorrespondencePointCloud_clicked()
 {
-  this->LeftPane->SelectionStyle->DeleteLastCorrespondence();
-  this->LeftPane->Refresh();
+  this->PointCloudPane->SelectionStyle->DeleteLastCorrespondence();
+  this->PointCloudPane->Refresh();
 }
 
-void ResectioningWidget::on_btnDeleteAllCorrespondencesLeft_clicked()
+void ResectioningWidget::on_btnDeleteAllCorrespondencesPointCloud_clicked()
 {
-  this->LeftPane->SelectionStyle->RemoveAll();
-  this->LeftPane->Refresh();
+  this->PointCloudPane->SelectionStyle->RemoveAll();
+  this->PointCloudPane->Refresh();
   //static_cast<PointSelectionStyle2D*>(pane->SelectionStyle)->RemoveAll();
   //this->qvtkWidgetLeft->GetRenderWindow()->Render();
 }
 
-void ResectioningWidget::on_btnDeleteLastCorrespondenceRight_clicked()
+void ResectioningWidget::on_btnDeleteLastCorrespondenceImage_clicked()
 {
-  this->RightPane->SelectionStyle->DeleteLastCorrespondence();
-  this->RightPane->Refresh();
+  this->ImagePane->SelectionStyle->DeleteLastCorrespondence();
+  this->ImagePane->Refresh();
 }
 
-void ResectioningWidget::on_btnDeleteAllCorrespondencesRight_clicked()
+void ResectioningWidget::on_btnDeleteAllCorrespondencesImage_clicked()
 {
-  this->RightPane->SelectionStyle->RemoveAll();
-  this->RightPane->Refresh();
+  this->ImagePane->SelectionStyle->RemoveAll();
+  this->ImagePane->Refresh();
   //static_cast<PointSelectionStyle2D*>(pane->SelectionStyle)->RemoveAll();
   //this->qvtkWidgetRight->GetRenderWindow()->Render();
 }

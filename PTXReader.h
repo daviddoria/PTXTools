@@ -25,6 +25,17 @@ class PTXReader
 {
 public:
   static PTXImage Read(const std::string& filename);
+
+  void SetFileName(const std::string& filename);
+
+  void Read();
+
+  PTXImage GetOutput();
+
+private:
+  std::string FileName;
+  PTXImage ptxImage;
+  
 };
 
 #endif

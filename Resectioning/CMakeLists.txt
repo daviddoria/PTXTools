@@ -34,7 +34,6 @@ Resectioning.cpp
 ResectioningHelpers.cpp
 ../Helpers.cpp
 
-
 Pane.cpp
 Pane2D.cpp
 Pane3D.cpp
@@ -44,3 +43,11 @@ PointSelectionStyle3D.cpp
 
 ${ResectioningUISrcs} ${ResectioningMOCSrcs} ${ResourceSrcs} )
 TARGET_LINK_LIBRARIES(ResectioningInteractive QVTK ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${PTXLibraries})
+
+
+SET(ResectionSmart ON CACHE BOOL "Append one ptx to the right of another")
+if(ResectionSmart)
+  ADD_EXECUTABLE(ResectionSmart ColorPTXFromImage.cpp Resectioning.cpp)
+  TARGET_LINK_LIBRARIES(ResectionSmart ${PTXLibraries})
+  INSTALL( TARGETS ResectionSmart RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()

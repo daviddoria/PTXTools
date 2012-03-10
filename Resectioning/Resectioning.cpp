@@ -13,8 +13,11 @@
 #include <iostream>
 #include <string>
 
+namespace Resectioning
+{
+  
 /** Color the provided PTX after mapping the colors from 'colorImage' through P. */
-void ResectionSmart(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
+void ResectionSmart(const Eigen::MatrixXd& P, PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
 {
   std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   std::cout << "P: " << P << std::endl;
@@ -55,7 +58,8 @@ void ResectionSmart(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
   //projectedImage->FillBuffer(emptyVector);
   Helpers::SetAllPixelsToValue(projectedImage.GetPointer(), emptyVector);
 
-  itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage, xyzImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage,
+                                                                         xyzImage->GetLargestPossibleRegion());
 
   unsigned int badPoints = 0;
 
@@ -104,7 +108,8 @@ void ResectionSmart(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
 
   std::cout << "There were " << badPoints << " that did not project to inside of the image!" << std::endl;
 
-  itk::ImageRegionConstIterator<PixelImageType> projectedImageIterator(projectedImage, projectedImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<PixelImageType> projectedImageIterator(projectedImage,
+                                                                       projectedImage->GetLargestPossibleRegion());
 
   while(!projectedImageIterator.IsAtEnd())
     {
@@ -119,7 +124,8 @@ void ResectionSmart(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
       // Find and color the closest point
       itk::Index<2> closestPixel;
       float minDepth = std::numeric_limits<float>::max();
-      //std::cout << "There were " << projectedImageIterator.Get().size() << " points that projected to this pixel." << std::endl;
+      //std::cout << "There were " << projectedImageIterator.Get().size()
+                  << " points that projected to this pixel." << std::endl;
       for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
         {
         itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
@@ -141,7 +147,8 @@ void ResectionSmart(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
 
       // Find the closest point
       float minDepth = std::numeric_limits<float>::max();
-      //std::cout << "There were " << projectedImageIterator.Get().size() << " points that projected to this pixel." << std::endl;
+      //std::cout << "There were " << projectedImageIterator.Get().size()
+//                  << " points that projected to this pixel." << std::endl;
       for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
         {
         itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
@@ -177,27 +184,23 @@ void ResectionSmart(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
     ++projectedImageIterator;
     } // end while over whole image
 
-
-  typedef  itk::ImageFileWriter< PTXImage::MaskImageType > MaskWriterType;
-  MaskWriterType::Pointer maskWriter = MaskWriterType::New();
-  maskWriter->SetFileName("ValidColorMask.png");
-  maskWriter->SetInput(validityMask);
-  maskWriter->Update();
+  Helpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
 
   ptxImage.ReplaceValidity(validityMask);
 
   ptxImage.ReplaceRGB(colorImage);
 
-  std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
+  //std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
 
 }
 
 /*
-void ResectionNaive()
+void ResectionNaive(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
 {
   if(argc < 5)
     {
-    std::cerr << "Required arguments: cameraMatrixFileName.txt ptxFileName.ptx imageFileName.png outputFileName.ptx" << std::endl;
+    std::cerr << "Required arguments: cameraMatrixFileName.txt ptxFileName.ptx\
+              imageFileName.png outputFileName.ptx" << std::endl;
     return EXIT_FAILURE;
     }
   // Parse arguments
@@ -293,3 +296,33 @@ void ResectionNaive()
   ptxImage.WritePTX(ptxPrefix);
 
 }*/
+
+
+Eigen::MatrixXd ReadP(const std::string& filename)
+{
+  Eigen::MatrixXd P(3,4);
+
+  std::string line;
+  std::ifstream fin(filename.c_str());
+
+  if(fin == NULL)
+  {
+    std::cout << "Cannot open file." << std::endl;
+  }
+
+  unsigned int lineCounter = 0;
+  while(getline(fin, line))
+    {
+    std::stringstream ss;
+    ss << line;
+    ss >> P(lineCounter,0);
+    ss >> P(lineCounter,1);
+    ss >> P(lineCounter,2);
+    ss >> P(lineCounter,3);
+    lineCounter++;
+    }
+  return P;
+
+}
+
+} // end namespace

@@ -19,6 +19,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdexcept>
 
+void PTXReader::Read()
+{
+  this->ptxImage = Read(this->FileName);
+
+}
+
+PTXImage PTXReader::GetOutput()
+{
+  return this->ptxImage;
+}
+
+void PTXReader::SetFileName(const std::string& filename)
+{
+  this->FileName = filename;
+}
+
 PTXImage PTXReader::Read(const std::string& filename)
 {
   PTXImage ptxImage;

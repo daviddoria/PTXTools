@@ -55,61 +55,62 @@ class ResectioningWidget : public QMainWindow, public Ui::ResectioningWidget
   Q_OBJECT
 public:
 
-  // Constructor/Destructor
+  /** Default constructor */
   ResectioningWidget();
+
+  /** Constructor for loading files automatically. */
   ResectioningWidget(const std::string& imageFileName, const std::string& pointCloudFileName);
   
   ~ResectioningWidget() {};
 
 public slots:
-  void on_actionOpenImageLeft_activated();
-  void on_actionOpenPointCloudLeft_activated();
-  void on_actionSavePointsLeft_activated();
-  void on_actionLoadPointsLeft_activated();
+  // Image
+  void on_action_Image_Open_activated();
+  void on_action_Image_SaveCorrespondences_activated();
+  void on_action_Image_LoadCorrespondences_activated();
 
-  void on_actionOpenImageRight_activated();
-  void on_actionOpenPointCloudRight_activated();
-  void on_actionSavePointsRight_activated();
-  void on_actionLoadPointsRight_activated();
+  void on_action_PointCloud_OpenVTP_activated();
+  void on_action_PointCloud_OpenPTX_activated();
+  void on_action_PointCloud_LoadCorrespondences_activated();
+  void on_action_PointCloud_SaveCorrespondences_activated();
   
   void on_actionHelp_activated();
   void on_actionQuit_activated();
   
-  void on_btnDeleteLastCorrespondenceLeft_clicked();
-  void on_btnDeleteAllCorrespondencesLeft_clicked();
-  void on_btnDeleteLastCorrespondenceRight_clicked();
-  void on_btnDeleteAllCorrespondencesRight_clicked();
-  
-  void on_actionFlipLeftHorizontally_activated();
-  void on_actionFlipLeftVertically_activated();
-  void on_actionFlipRightHorizontally_activated();
-  void on_actionFlipRightVertically_activated();
-  
+  void on_btnDeleteLastCorrespondencePointCloud_clicked();
+  void on_btnDeleteAllCorrespondencesPointCloud_clicked();
+  void on_btnDeleteLastCorrespondenceImage_clicked();
+  void on_btnDeleteAllCorrespondencesImage_clicked();
+
+  void on_action_Image_FlipHorizontally_activated();
+  void on_action_Image_FlipVertically_activated();
+
 private:
 
   void SharedConstructor();
-  
+
   QFutureWatcher<void> FutureWatcher;
   QProgressDialog* ProgressDialog;
 
   /** Load correspondences */
-  void LoadPoints(Pane* const pane, const std::string& fileName);
-  void LoadPoints2D(Pane2D* const pane, const std::string& filename);
-  void LoadPoints3D(Pane3D* const pane, const std::string& filename);
+  void LoadCorrespondencesImage(const std::string& filename);
+  void LoadCorrespondencesPointCloud(const std::string& filename);
 
   /** Save correspondences */
-  void SavePoints(Pane* const pane);
-  void SavePoints2D(Pane2D* const pane, const std::string& filename);
-  void SavePoints3D(Pane3D* const pane, const std::string& filename);
+  void SaveCorrespondencesImage(const std::string& filename);
+  void SaveCorrespondencesPointCloud(const std::string& filename);
 
   /** Load an image*/
-  void LoadImage(Pane* const pane, const std::string& fileName);
+  void LoadImage(const std::string& fileName);
 
-  /** Load a point cloud*/
-  void LoadPointCloud(Pane* const pane, const std::string& fileName);
+  /** Load a VTP. */
+  void LoadVTP(const std::string& fileName);
+
+  /** Load a PTX. */
+  void LoadPTX(const std::string& fileName);
   
-  Pane* LeftPane;
-  Pane* RightPane;
+  Pane2D* ImagePane;
+  Pane3D* PointCloudPane;
   
 };
 
