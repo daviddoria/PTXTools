@@ -1,5 +1,8 @@
 #include <iostream>
 
+namespace CameraCalibration
+{
+  
 template<typename T>
 T Centroid(const typename std::vector<T,typename Eigen::aligned_allocator<T> >& points)
 {
@@ -66,3 +69,5 @@ Eigen::MatrixXd ComputeNormalizationTransform(const typename std::vector<T,typen
 
   return similarityTransform;
 }
+
+} // end namespace

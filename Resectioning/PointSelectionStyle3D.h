@@ -69,12 +69,19 @@ public:
   void RemoveAll();
   void DeleteLastCorrespondence();
 
+  /** This is the point cloud that is displayed and used to select points. */
   vtkPolyData* Data;
 
+  /** Get the number of correspondences that have been selected. */
+  unsigned int GetNumberOfCorrespondences();
+
+  /** Get a particular correspondence. */
+  Coord3D GetCorrespondence(const unsigned int correspondenceId);
+  
   void SetCurrentRenderer(vtkRenderer*);
   
 private:
-  
+
 
 };
 

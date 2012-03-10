@@ -65,9 +65,8 @@
 #include <vtkXMLPolyDataReader.h>
 
 // Custom
+#include "CameraCalibration.h"
 #include "Helpers.h"
-#include "ResectioningHelpers.h"
-#include "Types.h"
 #include "PointSelectionStyle2D.h"
 #include "PointSelectionStyle3D.h"
 #include "Pane.h"
@@ -75,6 +74,9 @@
 #include "Pane3D.h"
 #include "PTXImage.h"
 #include "PTXReader.h"
+#include "Resectioning.h"
+#include "ResectioningHelpers.h"
+#include "Types.h"
 
 void ResectioningWidget::on_actionHelp_activated()
 {
@@ -104,12 +106,17 @@ void ResectioningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
+  ProgressDialog = new QProgressDialog;
+  this->ProgressDialog->setMinimum(0);
+  this->ProgressDialog->setMaximum(0);
+  this->ProgressDialog->setWindowModality(Qt::WindowModal);
+
+  // Whenever the operation in another thread finishes, hide the progress bar.
   connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
   PointCloudPane = new Pane3D(this->qvtkWidgetLeft);
   ImagePane = new Pane2D(this->qvtkWidgetRight);
 
-  ProgressDialog = new QProgressDialog;
 }
 
 ResectioningWidget::ResectioningWidget(const std::string& imageFileName, const std::string& pointCloudFileName)
@@ -121,7 +128,19 @@ ResectioningWidget::ResectioningWidget(const std::string& imageFileName, const s
   LoadPTX(pointCloudFileName);
 }
 
-// Constructor
+ResectioningWidget::ResectioningWidget(const std::string& imageFileName, const std::string& imageCorrespondenceFile,
+                                       const std::string& pointCloudFileName,
+                                       const std::string& pointCloudCorrespondenceFile)
+{
+  SharedConstructor();
+
+  LoadImage(imageFileName);
+  LoadCorrespondencesImage(imageCorrespondenceFile);
+  
+  LoadPTX(pointCloudFileName);
+  LoadCorrespondencesPointCloud(pointCloudCorrespondenceFile);
+}
+
 ResectioningWidget::ResectioningWidget()
 {
   SharedConstructor();
@@ -216,14 +235,7 @@ void ResectioningWidget::LoadImage(const std::string& fileName)
 
   ImagePane->Image = reader->GetOutput();
 
-  if(this->chkRGB->isChecked())
-    {
-    ResectioningHelpers::ITKImagetoVTKRGBImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
-    }
-  else
-    {
-    ResectioningHelpers::ITKImagetoVTKMagnitudeImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
-    }
+  ResectioningHelpers::ITKImagetoVTKRGBImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
 
   ImagePane->ImageSliceMapper->SetInputConnection(ImagePane->ImageData->GetProducerPort());
   ImagePane->ImageSlice->SetMapper(ImagePane->ImageSliceMapper);
@@ -265,19 +277,18 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
 //   reader.Read();
 //   PTXImage ptxImage = reader.GetOutput();
 
-  // Start the computation.
-  QFuture<void> future = QtConcurrent::run(&reader, &PTXReader::Read);
-  this->FutureWatcher.setFuture(future);
-  this->ProgressDialog->setMinimum(0);
-  this->ProgressDialog->setMaximum(0);
+  // Read the file in a different thread because it could take a while.
+  QFuture<void> readerFuture = QtConcurrent::run(&reader, &PTXReader::Read);
+  this->FutureWatcher.setFuture(readerFuture);
   this->ProgressDialog->setLabelText("Opening PTX file...");
-  this->ProgressDialog->setWindowModality(Qt::WindowModal);
   this->ProgressDialog->exec();
 
-  PTXImage ptxImage = reader.GetOutput();
+  // Since we have displayed a modal dialog, it will wait here without needing to call WaitForFinished
+
+  this->PTX = reader.GetOutput();
 
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
-  ptxImage.CreatePointCloud(polyData);
+  this->PTX.CreatePointCloud(polyData);
 
   vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
   //lookupTable->SetTableRange(0.0, 10.0);
@@ -322,7 +333,14 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
   PointCloudPane->Renderer->ResetCamera();
 
   std::cout << "Computing average spacing..." << std::endl;
-  float averageSpacing = ResectioningHelpers::ComputeAverageSpacing(polyData->GetPoints(), 100000);
+  //float averageSpacing = ResectioningHelpers::ComputeAverageSpacing(polyData->GetPoints(), 100000);
+  QFuture<float> spacingFuture = QtConcurrent::run(ResectioningHelpers::ComputeAverageSpacing,
+                                                  polyData->GetPoints(), 100000);
+  this->FutureWatcher.setFuture(spacingFuture);
+  this->ProgressDialog->setLabelText("Computing average spacing...");
+  this->ProgressDialog->exec();
+
+  float averageSpacing = *spacingFuture.begin();
   std::cout << "Done computing average spacing: " << averageSpacing << std::endl;
 
   static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->SetMarkerRadius(averageSpacing * 10.0);
@@ -489,7 +507,6 @@ void ResectioningWidget::on_action_Image_SaveCorrespondences_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
-  
 }
 
 void ResectioningWidget::on_action_PointCloud_SaveCorrespondences_activated()
@@ -529,4 +546,27 @@ void ResectioningWidget::on_btnDeleteAllCorrespondencesImage_clicked()
   this->ImagePane->Refresh();
   //static_cast<PointSelectionStyle2D*>(pane->SelectionStyle)->RemoveAll();
   //this->qvtkWidgetRight->GetRenderWindow()->Render();
+}
+
+void ResectioningWidget::on_btnResection_clicked()
+{
+  CameraCalibration::Point2DVector points2D;
+
+  for(vtkIdType pointId = 0; pointId < ImagePane->SelectionStyle->GetNumberOfCorrespondences(); ++pointId)
+  {
+    Coord3D coord = ImagePane->SelectionStyle->GetCorrespondence(pointId);
+    points2D.push_back(Eigen::Vector2d (coord.x, coord.y));
+  }
+  
+  CameraCalibration::Point3DVector points3D;
+  for(vtkIdType pointId = 0; pointId < PointCloudPane->SelectionStyle->GetNumberOfCorrespondences(); ++pointId)
+  {
+    Coord3D coord = ImagePane->SelectionStyle->GetCorrespondence(pointId);
+    points3D.push_back(Eigen::Vector3d (coord.x, coord.y, coord.z));
+  }
+  
+  Eigen::MatrixXd P = CameraCalibration::ComputeP_NormalizedDLT(points2D, points3D);
+
+  PTXImage resectionedPTX = Resectioning::ResectionSmart(P, this->PTX, this->ColorImage);
+  
 }

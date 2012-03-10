@@ -3,6 +3,9 @@
 #include <iostream>
 #include <fstream>
 
+namespace CameraCalibration
+{
+  
 Point2DVector LoadPoints2D(const std::string& filename)
 {
   std::cout << "LoadPoint2D " << filename << std::endl;
@@ -247,3 +250,5 @@ float NonLinearProjectionError(Eigen::Vector2d& parameters)
     }
 }
 */
+
+} // end namespace

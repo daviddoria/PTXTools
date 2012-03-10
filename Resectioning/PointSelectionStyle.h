@@ -56,7 +56,9 @@ class PointSelectionStyle
   protected:
     std::vector<vtkProp*> Numbers;
     std::vector<vtkActor*> Points;
-    std::vector<Coord3D> Coordinates; // This should really be a more abstract Coord (with unknown dimension at this time)
+
+    /** This should really be a more abstract Coord (with unknown dimension at this time) */
+    std::vector<Coord3D> Coordinates; 
 
     float MarkerRadius;
 };

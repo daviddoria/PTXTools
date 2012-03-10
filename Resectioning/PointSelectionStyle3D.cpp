@@ -202,3 +202,16 @@ void PointSelectionStyle3D::DeleteLastCorrespondence()
   this->Points.erase(this->Points.end()-1);
   this->Coordinates.erase(this->Coordinates.end()-1);
 }
+
+unsigned int PointSelectionStyle3D::GetNumberOfCorrespondences()
+{
+  return this->SelectedPoints->GetNumberOfPoints();
+}
+
+Coord3D PointSelectionStyle3D::GetCorrespondence(const unsigned int correspondenceId)
+{
+  double p[3];
+  this->SelectedPoints->GetPoint(correspondenceId, p);
+  Coord3D coord(p[0], p[1], p[2]);
+  return coord;
+}

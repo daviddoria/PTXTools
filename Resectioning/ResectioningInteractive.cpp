@@ -38,12 +38,26 @@ int main( int argc, char** argv )
   }
   else if(argc == 3)
   {
-    std::cout << "Using image/point cloud arguments." << std::endl;
+    std::cout << "Using files arguments." << std::endl;
     std::string imageFileName = argv[1];
     std::string pointCloudFileName = argv[2];
     std::cout << "Image: " << imageFileName << std::endl;
     std::cout << "Point cloud: " << pointCloudFileName << std::endl;
     resectioningWidget = new ResectioningWidget(imageFileName, pointCloudFileName);
+  }
+  else if(argc == 5)
+  {
+    std::cout << "Using files+correspondences arguments." << std::endl;
+    std::string imageFileName = argv[1];
+    std::string imageCorrespondencesFile = argv[2];
+    std::string pointCloudFileName = argv[3];
+    std::string pointCloudCorrespondencesFile = argv[4];
+    std::cout << "Image: " << imageFileName << std::endl;
+    std::cout << "Image correspondences: " << imageCorrespondencesFile << std::endl;
+    std::cout << "Point cloud: " << pointCloudFileName << std::endl;
+    std::cout << "Point cloud correspondences: " << pointCloudCorrespondencesFile << std::endl;
+    resectioningWidget = new ResectioningWidget(imageFileName, pointCloudFileName,
+                             imageCorrespondencesFile, pointCloudCorrespondencesFile);
   }
   else
   {

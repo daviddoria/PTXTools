@@ -47,7 +47,7 @@ TARGET_LINK_LIBRARIES(ResectioningInteractive QVTK ${VTK_LIBRARIES} ${ITK_LIBRAR
 
 SET(ResectionSmart ON CACHE BOOL "Append one ptx to the right of another")
 if(ResectionSmart)
-  ADD_EXECUTABLE(ResectionSmart ColorPTXFromImage.cpp Resectioning.cpp)
+  ADD_EXECUTABLE(ResectionSmart ColorPTXFromImage.cpp Resectioning.cpp ResectioningHelpers.cpp)
   TARGET_LINK_LIBRARIES(ResectionSmart ${PTXLibraries})
   INSTALL( TARGETS ResectionSmart RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()

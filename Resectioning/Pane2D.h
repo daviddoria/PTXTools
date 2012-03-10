@@ -11,10 +11,10 @@ class vtkImageSlice;
 struct Pane2D : public Pane
 {
   Pane2D(QVTKWidget* qvtkWidget);
-  
+
   FloatVectorImageType::Pointer Image;
   vtkSmartPointer<vtkImageData> ImageData;
-  
+
   vtkSmartPointer<vtkImageSliceMapper> ImageSliceMapper;
   vtkSmartPointer<vtkImageSlice> ImageSlice;
 

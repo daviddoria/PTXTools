@@ -17,7 +17,7 @@ namespace Resectioning
 {
   
 /** Color the provided PTX after mapping the colors from 'colorImage' through P. */
-void ResectionSmart(const Eigen::MatrixXd& P, PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
+PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
 {
   std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   std::cout << "P: " << P << std::endl;
@@ -186,12 +186,13 @@ void ResectionSmart(const Eigen::MatrixXd& P, PTXImage& ptxImage, PTXImage::RGBI
 
   Helpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
 
-  ptxImage.ReplaceValidity(validityMask);
-
-  ptxImage.ReplaceRGB(colorImage);
+  PTXImage outputPTX = ptxImage;
+  outputPTX.ReplaceValidity(validityMask);
+  outputPTX.ReplaceRGB(colorImage);
 
   //std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
 
+  return outputPTX;
 }
 
 /*

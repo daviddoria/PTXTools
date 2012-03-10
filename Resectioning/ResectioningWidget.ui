@@ -6,25 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1434</width>
-    <height>798</height>
+    <width>928</width>
+    <height>494</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Interactive Correspondence Selection</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" columnstretch="1">
-    <item row="3" column="0">
-     <widget class="QCheckBox" name="chkRGB">
-      <property name="text">
-       <string>Interpret image as RGB</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
+   <layout class="QGridLayout" name="gridLayout" columnstretch="0">
     <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,20">
       <item>
@@ -72,18 +62,18 @@
      </layout>
     </item>
     <item row="1" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0">
+     <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,1,1">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QPushButton" name="btnDeleteLastCorrespondenceLeft">
+         <widget class="QPushButton" name="btnDeleteLastCorrespondencePointCloud">
           <property name="text">
            <string>Delete Last</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="btnDeleteAllCorrespondencesLeft">
+         <widget class="QPushButton" name="btnDeleteAllCorrespondencesPointCloud">
           <property name="text">
            <string>Delete All</string>
           </property>
@@ -94,14 +84,14 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
-         <widget class="QPushButton" name="btnDeleteLastCorrespondenceRight">
+         <widget class="QPushButton" name="btnDeleteLastCorrespondenceImage">
           <property name="text">
            <string>Delete Last</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="btnDeleteAllCorrespondencesRight">
+         <widget class="QPushButton" name="btnDeleteAllCorrespondencesImage">
           <property name="text">
            <string>Delete All</string>
           </property>
@@ -114,6 +104,13 @@
       </item>
      </layout>
     </item>
+    <item row="3" column="0">
+     <widget class="QPushButton" name="btnResection">
+      <property name="text">
+       <string>Resection</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -121,7 +118,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1434</width>
+     <width>928</width>
      <height>21</height>
     </rect>
    </property>

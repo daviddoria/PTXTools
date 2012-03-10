@@ -21,11 +21,6 @@
 
 #include "ui_ResectioningWidget.h"
 
-// VTK
-#include <vtkSmartPointer.h>
-#include <vtkSeedWidget.h>
-#include <vtkPointHandleRepresentation2D.h>
-
 // ITK
 #include "itkImage.h"
 
@@ -39,6 +34,7 @@ class QProgressDialog;
 #include "Pane2D.h"
 #include "Pane3D.h"
 #include "PointSelectionStyle.h"
+#include "PTXImage.h"
 #include "Types.h"
 
 // Forward declarations
@@ -60,6 +56,11 @@ public:
 
   /** Constructor for loading files automatically. */
   ResectioningWidget(const std::string& imageFileName, const std::string& pointCloudFileName);
+
+  /** Constructor for loading files and correspondences automatically. */
+  ResectioningWidget(const std::string& imageFileName, const std::string& imageCorrespondenceFile,
+                     const std::string& pointCloudFileName,
+                     const std::string& pointCloudCorrespondenceFile);
   
   ~ResectioningWidget() {};
 
@@ -68,27 +69,30 @@ public slots:
   void on_action_Image_Open_activated();
   void on_action_Image_SaveCorrespondences_activated();
   void on_action_Image_LoadCorrespondences_activated();
+  void on_btnDeleteLastCorrespondenceImage_clicked();
+  void on_btnDeleteAllCorrespondencesImage_clicked();
+  void on_action_Image_FlipHorizontally_activated();
+  void on_action_Image_FlipVertically_activated();
 
+  // Point cloud
   void on_action_PointCloud_OpenVTP_activated();
   void on_action_PointCloud_OpenPTX_activated();
   void on_action_PointCloud_LoadCorrespondences_activated();
   void on_action_PointCloud_SaveCorrespondences_activated();
+  void on_btnDeleteLastCorrespondencePointCloud_clicked();
+  void on_btnDeleteAllCorrespondencesPointCloud_clicked();
   
+  // File menu
   void on_actionHelp_activated();
   void on_actionQuit_activated();
   
-  void on_btnDeleteLastCorrespondencePointCloud_clicked();
-  void on_btnDeleteAllCorrespondencesPointCloud_clicked();
-  void on_btnDeleteLastCorrespondenceImage_clicked();
-  void on_btnDeleteAllCorrespondencesImage_clicked();
-
-  void on_action_Image_FlipHorizontally_activated();
-  void on_action_Image_FlipVertically_activated();
+  void on_btnResection_clicked();
 
 private:
 
   void SharedConstructor();
 
+  /** Allow things to be run in a different thread while displaying a progress bar */
   QFutureWatcher<void> FutureWatcher;
   QProgressDialog* ProgressDialog;
 
@@ -111,7 +115,9 @@ private:
   
   Pane2D* ImagePane;
   Pane3D* PointCloudPane;
-  
+
+  PTXImage PTX;
+  PTXImage::RGBImageType::Pointer ColorImage;
 };
 
 #endif
