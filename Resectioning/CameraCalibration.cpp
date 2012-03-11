@@ -1,7 +1,9 @@
 #include "CameraCalibration.h"
 
+// STL
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 namespace CameraCalibration
 {
@@ -36,7 +38,9 @@ Point3DVector LoadPoints3D(const std::string& filename)
   Point3DVector points;
   if(fin == NULL)
     {
-    std::cout << "Cannot open file." << std::endl;
+    std::stringstream ss;
+    ss << "CameraCalibration:LoadPoints3D Cannot open file " << filename;
+    throw std::runtime_error(ss.str());
     }
 
   while(getline(fin, line))
@@ -55,10 +59,26 @@ Eigen::MatrixXd ComputeP_NormalizedDLT(const Point2DVector& points2D, const Poin
   unsigned int numberOfPoints = points2D.size();
   if(points3D.size() != numberOfPoints)
     {
-    std::cerr << "The number of 2D points (" << points2D.size() << ") must match the number of 3D points (" << points3D.size() << ")!" << std::endl;
-    exit(-1);
+    std::stringstream ss;
+    ss << "ComputeP_NormalizedDLT: The number of 2D points (" << points2D.size()
+       << ") must match the number of 3D points (" << points3D.size() << ")!" << std::endl;
+    throw std::runtime_error(ss.str());
     }
 
+  std::cout << "ComputeP_NormalizedDLT: 2D points: " << std::endl;
+  for(Point2DVector::const_iterator iter = points2D.begin(); iter != points2D.end(); ++iter)
+  {
+    Point2DVector::value_type p = *iter;
+    std::cout << p[0] << " " << p[1] << std::endl;
+  }
+
+  std::cout << "ComputeP_NormalizedDLT: 3D points: " << std::endl;
+  for(Point3DVector::const_iterator iter = points3D.begin(); iter != points3D.end(); ++iter)
+  {
+    Point3DVector::value_type p = *iter;
+    std::cout << p[0] << " " << p[1] << " " << p[2] << std::endl;
+  }
+  
   Eigen::MatrixXd similarityTransform2D = ComputeNormalizationTransform<Eigen::Vector2d>(points2D);
   Eigen::MatrixXd similarityTransform3D = ComputeNormalizationTransform<Eigen::Vector3d>(points3D);
 
@@ -147,8 +167,10 @@ Eigen::MatrixXd Reshape(const Eigen::VectorXd& vec, const unsigned int rows, con
 {
   if(static_cast<unsigned int>(vec.rows()) != rows*cols)
     {
-    std::cerr << "Cannot reshape a vector with " << vec.rows() << " to a " << rows << " x " << cols << " matrix!" << std::endl;
-    exit(-1);
+    std::stringstream ss;
+    ss << "Cannot reshape a vector with " << vec.rows() << " to a "
+       << rows << " x " << cols << " matrix!" << std::endl;
+    throw std::runtime_error(ss.str());
     }
 
   Eigen::MatrixXd P(rows,cols);

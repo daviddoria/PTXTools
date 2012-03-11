@@ -21,6 +21,9 @@
 // STL
 #include <stdexcept>
 
+// Eigen
+#include <Eigen/Dense>
+
 // ITK
 #include "itkCastImageFilter.h"
 #include "itkImageFileReader.h"
@@ -106,7 +109,7 @@ void ResectioningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
-  ProgressDialog = new QProgressDialog;
+  this->ProgressDialog = new QProgressDialog;
   this->ProgressDialog->setMinimum(0);
   this->ProgressDialog->setMaximum(0);
   this->ProgressDialog->setWindowModality(Qt::WindowModal);
@@ -114,9 +117,12 @@ void ResectioningWidget::SharedConstructor()
   // Whenever the operation in another thread finishes, hide the progress bar.
   connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
-  PointCloudPane = new Pane3D(this->qvtkWidgetLeft);
-  ImagePane = new Pane2D(this->qvtkWidgetRight);
+  this->PointCloudPane = new Pane3D(this->qvtkPointCloud);
+  this->ImagePane = new Pane2D(this->qvtkImage);
 
+  this->ResultImagePane = new Pane2D(this->qvtkResultImage);
+
+  this->ColorImage = FloatVectorImageType::New();
 }
 
 ResectioningWidget::ResectioningWidget(const std::string& imageFileName, const std::string& pointCloudFileName)
@@ -136,7 +142,7 @@ ResectioningWidget::ResectioningWidget(const std::string& imageFileName, const s
 
   LoadImage(imageFileName);
   LoadCorrespondencesImage(imageCorrespondenceFile);
-  
+
   LoadPTX(pointCloudFileName);
   LoadCorrespondencesPointCloud(pointCloudCorrespondenceFile);
 }
@@ -233,6 +239,8 @@ void ResectioningWidget::LoadImage(const std::string& fileName)
   reader->SetFileName(fileName);
   reader->Update();
 
+  Helpers::DeepCopy(reader->GetOutput(), this->ColorImage.GetPointer());
+
   ImagePane->Image = reader->GetOutput();
 
   ResectioningHelpers::ITKImagetoVTKRGBImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
@@ -286,6 +294,7 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
   // Since we have displayed a modal dialog, it will wait here without needing to call WaitForFinished
 
   this->PTX = reader.GetOutput();
+  this->OriginalPTX = reader.GetOutput();
 
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
   this->PTX.CreatePointCloud(polyData);
@@ -334,8 +343,9 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
 
   std::cout << "Computing average spacing..." << std::endl;
   //float averageSpacing = ResectioningHelpers::ComputeAverageSpacing(polyData->GetPoints(), 100000);
+  unsigned int pointsToUse = 1000;
   QFuture<float> spacingFuture = QtConcurrent::run(ResectioningHelpers::ComputeAverageSpacing,
-                                                  polyData->GetPoints(), 100000);
+                                                  polyData->GetPoints(), pointsToUse);
   this->FutureWatcher.setFuture(spacingFuture);
   this->ProgressDialog->setLabelText("Computing average spacing...");
   this->ProgressDialog->exec();
@@ -551,6 +561,8 @@ void ResectioningWidget::on_btnDeleteAllCorrespondencesImage_clicked()
 void ResectioningWidget::on_btnResection_clicked()
 {
   CameraCalibration::Point2DVector points2D;
+  std::cout << "There are " << ImagePane->SelectionStyle->GetNumberOfCorrespondences()
+            << " correspondences in the image pane." << std::endl;
 
   for(vtkIdType pointId = 0; pointId < ImagePane->SelectionStyle->GetNumberOfCorrespondences(); ++pointId)
   {
@@ -559,14 +571,72 @@ void ResectioningWidget::on_btnResection_clicked()
   }
   
   CameraCalibration::Point3DVector points3D;
+  std::cout << "There are " << PointCloudPane->SelectionStyle->GetNumberOfCorrespondences()
+            << " correspondences in the point cloud pane." << std::endl;
   for(vtkIdType pointId = 0; pointId < PointCloudPane->SelectionStyle->GetNumberOfCorrespondences(); ++pointId)
   {
-    Coord3D coord = ImagePane->SelectionStyle->GetCorrespondence(pointId);
+    Coord3D coord = PointCloudPane->SelectionStyle->GetCorrespondence(pointId);
     points3D.push_back(Eigen::Vector3d (coord.x, coord.y, coord.z));
   }
-  
+
+  std::cout << "There are " << points2D.size() << " 2D points and "
+            << points3D.size() << " 3D points to use with DLT." << std::endl;
   Eigen::MatrixXd P = CameraCalibration::ComputeP_NormalizedDLT(points2D, points3D);
 
-  PTXImage resectionedPTX = Resectioning::ResectionSmart(P, this->PTX, this->ColorImage);
+
+  typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
+  RGBImageType::Pointer rgbImage = RGBImageType::New();
+
+  Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
   
+  Helpers::ITKVectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
+
+  Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
+  
+  // Compute the resectioning in the same thread
+  //this->PTX = Resectioning::ResectionSmart(P, this->OriginalPTX, rgbImage.GetPointer());
+  this->PTX = Resectioning::ResectionNaive(P, this->OriginalPTX, rgbImage.GetPointer());
+
+  // Compute the resectioning in a different thread
+//   QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::ResectionSmart, P,
+//                                                         this->OriginalPTX, this->ColorImage);
+//   this->FutureWatcher.setFuture(resectionFuture);
+//   this->ProgressDialog->setLabelText("Resectioning...");
+//   this->ProgressDialog->exec();
+//   this->PTX = *resectionFuture.begin();
+
+  ShowResultImage();
+}
+
+void ResectioningWidget::ShowResultImage()
+{
+  PTXImage::RGBImageType::Pointer rgbimage = PTXImage::RGBImageType::New();
+  this->PTX.CreateRGBImage(rgbimage.GetPointer());
+
+  typedef itk::VectorImage<float, 2> VectorImageType;
+  VectorImageType::Pointer image = VectorImageType::New();
+
+  Helpers::ITKRGBImageToVectorImage(rgbimage, image);
+  
+  ResultImagePane->Image = image;
+
+  ResectioningHelpers::ITKImagetoVTKRGBImage(ResultImagePane->Image.GetPointer(), ResultImagePane->ImageData);
+
+  ResultImagePane->ImageSliceMapper->SetInputConnection(ResultImagePane->ImageData->GetProducerPort());
+  ResultImagePane->ImageSlice->SetMapper(ResultImagePane->ImageSliceMapper);
+
+  // Add Actor to renderer
+  //pane->Renderer->AddActor(pane->ImageActor);
+  ResultImagePane->Renderer->AddActor(ResultImagePane->ImageSlice);
+  ResultImagePane->Renderer->ResetCamera();
+
+  ResultImagePane->SelectionStyle = PointSelectionStyle2D::New();
+  ResultImagePane->SelectionStyle->SetCurrentRenderer(ResultImagePane->Renderer);
+  //pane->SelectionStyle->Initialize();
+  ResultImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->
+            SetInteractorStyle(static_cast<PointSelectionStyle2D*>(ResultImagePane->SelectionStyle));
+
+  ResultImagePane->Renderer->ResetCamera();
+
+  qvtkResultImage->GetRenderWindow()->Render();
 }

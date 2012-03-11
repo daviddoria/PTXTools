@@ -144,7 +144,7 @@ public:
   void ComputeWeightedDepthLaplacian(const std::string& filename) const;
 
   /** Create a 2D image of the points in the grid in which the points were acquired */
-  void CreateRGBImage(RGBImageType::Pointer image) const;
+  void CreateRGBImage(RGBImageType* const image) const;
   void WriteRGBImage(const FilePrefix& prefix) const;
 
   /** Create a colored point cloud */

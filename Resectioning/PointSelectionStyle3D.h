@@ -64,7 +64,7 @@ public:
   vtkSmartPointer<vtkPoints> SelectedPoints;
   vtkSmartPointer<vtkPolyData> SelectedPointsPolyData;
 
-  void AddNumber(double p[3]);
+  void AddNumber(const double p[3]);
 
   void RemoveAll();
   void DeleteLastCorrespondence();
@@ -78,7 +78,7 @@ public:
   /** Get a particular correspondence. */
   Coord3D GetCorrespondence(const unsigned int correspondenceId);
   
-  void SetCurrentRenderer(vtkRenderer*);
+  void SetCurrentRenderer(vtkRenderer* const renderer);
   
 private:
 

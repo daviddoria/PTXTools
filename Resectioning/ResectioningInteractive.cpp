@@ -56,8 +56,8 @@ int main( int argc, char** argv )
     std::cout << "Image correspondences: " << imageCorrespondencesFile << std::endl;
     std::cout << "Point cloud: " << pointCloudFileName << std::endl;
     std::cout << "Point cloud correspondences: " << pointCloudCorrespondencesFile << std::endl;
-    resectioningWidget = new ResectioningWidget(imageFileName, pointCloudFileName,
-                             imageCorrespondencesFile, pointCloudCorrespondencesFile);
+    resectioningWidget = new ResectioningWidget(imageFileName, imageCorrespondencesFile,
+                                                pointCloudFileName, pointCloudCorrespondencesFile);
   }
   else
   {

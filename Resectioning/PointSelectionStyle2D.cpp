@@ -80,7 +80,7 @@ void PointSelectionStyle2D::RemoveAllPoints()
 }
 */
 
-void PointSelectionStyle2D::AddNumber(double p[3])
+void PointSelectionStyle2D::AddNumber(const double p[3])
 {
   // Convert the current number to a string
   std::stringstream ss;
@@ -90,17 +90,20 @@ void PointSelectionStyle2D::AddNumber(double p[3])
   coord.x = p[0];
   coord.y = p[1];
   Coordinates.push_back(coord);
-  
-  p[0] = static_cast<int>( p[0] + 0.5 );
-  p[1] = static_cast<int>( p[1] + 0.5 );
-  p[2] = 0;
-  std::cout << "Adding marker at " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+
+  // The coordinate provided is the corner of the pixel - we want to display the sphere in the center of the pixel.
+  double markerCenter[3];
+  markerCenter[0] = static_cast<int>( p[0] + 0.5 );
+  markerCenter[1] = static_cast<int>( p[1] + 0.5 );
+  markerCenter[2] = 0;
+  std::cout << "Adding marker at " << markerCenter[0] << " "
+            << markerCenter[1] << " " << markerCenter[2] << std::endl;
 
   // Create the number
   // Create the text
   vtkSmartPointer<vtkCaptionActor2D> captionActor = vtkSmartPointer<vtkCaptionActor2D>::New();
   captionActor->SetCaption( ss.str().c_str() );
-  captionActor->SetAttachmentPoint(p);
+  captionActor->SetAttachmentPoint(markerCenter);
   captionActor->BorderOff();
   //captionActor->SetPadding(10);
   captionActor->GetCaptionTextProperty()->SetFontFamilyToTimes();
@@ -115,7 +118,7 @@ void PointSelectionStyle2D::AddNumber(double p[3])
   // Create a sphere
   vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
   sphereSource->SetRadius(.5);
-  sphereSource->SetCenter(p);
+  sphereSource->SetCenter(markerCenter);
   sphereSource->Update();
 
   // Create a mapper
@@ -144,7 +147,7 @@ void PointSelectionStyle2D::RemoveAll()
   this->Coordinates.clear();
 }
 
-void PointSelectionStyle2D::SetCurrentRenderer(vtkRenderer* renderer)
+void PointSelectionStyle2D::SetCurrentRenderer(vtkRenderer* const renderer)
 {
   vtkInteractorStyleImage::SetCurrentRenderer(renderer);
 }

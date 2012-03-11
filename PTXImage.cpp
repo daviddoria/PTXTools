@@ -424,7 +424,7 @@ void PTXImage::WriteInvalidMask(const std::string& filename) const
   writer->Update();
 }
 
-void PTXImage::CreateRGBImage(RGBImageType::Pointer image) const
+void PTXImage::CreateRGBImage(RGBImageType* const image) const
 {
   // Setup the image
   image->SetRegions(this->FullImage->GetLargestPossibleRegion());
@@ -938,14 +938,16 @@ void PTXImage::ReplaceRGB(const RGBVectorImageType* const rgb)
 
   if(rgb->GetLargestPossibleRegion() != this->FullImage->GetLargestPossibleRegion())
     {
-    std::cerr << "Input image must be exactly the same size as the PTX file!" << std::endl;
-    std::cerr << "Input image is " << rgb->GetLargestPossibleRegion()
-              << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
-    return;
+    std::stringstream ss;
+    ss << "PTXImage::ReplaceRGB: Input image must be exactly the same size as the PTX file!" << std::endl
+       << "Input image is " << rgb->GetLargestPossibleRegion()
+       << " and PTX is " << this->FullImage->GetLargestPossibleRegion() << std::endl;
+    throw std::runtime_error(ss.str());
     }
 
   // Setup iterators
-  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage,
+                                                        this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBVectorImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
 
   while(!imageIterator.IsAtEnd())
@@ -980,7 +982,8 @@ void PTXImage::ReplaceRGB(const RGBImageType* const rgb)
     }
 
   // Setup iterators
-  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage,
+                                                        this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
 
   while(!imageIterator.IsAtEnd())
@@ -1003,7 +1006,8 @@ void PTXImage::ReplaceRGB(const RGBImageType* const rgb)
 
 void PTXImage::SetAllPointsToValid()
 {
-  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage,
+                                                                 this->FullImage->GetLargestPossibleRegion());
 
   while(!imageIterator.IsAtEnd())
     {
@@ -1025,7 +1029,8 @@ void PTXImage::ReplaceValidity(const MaskImageType* const validityImage)
     return;
     }
 
-  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage,
+                                                                 this->FullImage->GetLargestPossibleRegion());
 
   while(!imageIterator.IsAtEnd())
     {
@@ -1039,7 +1044,8 @@ void PTXImage::ReplaceValidity(const MaskImageType* const validityImage)
 // void PTXImage::ReplaceRGB(const RGBImageType::Pointer rgb)
 // {
 //   // Setup iterators
-//   itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+//   itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage,
+//                                                             this->FullImage->GetLargestPossibleRegion());
 //   itk::ImageRegionConstIterator<RGBImageType> rgbIterator(rgb, rgb->GetLargestPossibleRegion());
 //
 //   while(!fullImageIterator.IsAtEnd())
@@ -1068,7 +1074,8 @@ void PTXImage::ReplaceValidity(const MaskImageType* const validityImage)
 void PTXImage::ReplaceXYZ(const XYZImageType* const xyz)
 {
   // Setup iterators
-  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage,
+                                                        this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<XYZImageType> xyzIterator(xyz, xyz->GetLargestPossibleRegion());
 
   unsigned int newPoints = 0; // These points were previously invalid. This is just record keeping for fun.
@@ -1107,7 +1114,8 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
   ComputeAverageDeltaTheta();
 
   // Setup iterators
-  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage,
+                                                        this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBDImageType> rgbdIterator(rgbd, rgbd->GetLargestPossibleRegion());
 
   itk::Point<float, 3> origin;

@@ -94,8 +94,16 @@ void PointSelectionStyle3D::Initialize()
 
 void PointSelectionStyle3D::OnLeftButtonDown() 
 {
-  //std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
-  int success = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
+  //std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " "
+  //          << this->Interactor->GetEventPosition()[1] << std::endl;
+
+  vtkPointPicker* picker = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker());
+  if(!picker)
+  {
+    throw std::runtime_error("PointSelectionStyle3D::OnLeftButtonDown() picker is NULL!");
+  }
+  
+  int success = picker->Pick(this->Interactor->GetEventPosition()[0],
   //vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
           this->Interactor->GetEventPosition()[1],
           0,  // always zero.
@@ -115,7 +123,8 @@ void PointSelectionStyle3D::OnLeftButtonDown()
 
   if(pointPicker->GetDataSet() != this->Data)
     {
-    std::cerr << "pointPicker->GetDataSet(): " << pointPicker->GetDataSet() << " this->Data: " << this->Data << std::endl;
+    std::cerr << "pointPicker->GetDataSet(): " << pointPicker->GetDataSet() << " this->Data: "
+              << this->Data << std::endl;
     throw std::runtime_error("Did not pick from the correct data set!");
     }
   /*
@@ -124,7 +133,8 @@ void PointSelectionStyle3D::OnLeftButtonDown()
   this->Data->GetPoint(pointId, p);
   
   //std::cout << "Picked point: " << pointId << std::endl;
-  //std::cout << "Point: " << pointId << " should have coordinate: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+  //std::cout << "Point: " << pointId << " should have coordinate: "
+              << p[0] << " " << p[1] << " " << p[2] << std::endl;
   */
   double picked[3] = {0,0,0};
   
@@ -147,7 +157,7 @@ void PointSelectionStyle3D::OnLeftButtonDown()
 
 }
 
-void PointSelectionStyle3D::AddNumber(double p[3])
+void PointSelectionStyle3D::AddNumber(const double p[3])
 {
   // Create the text
   std::stringstream ss;
@@ -159,17 +169,19 @@ void PointSelectionStyle3D::AddNumber(double p[3])
   coord.y = p[1];
   coord.z = p[2];
   Coordinates.push_back(coord);
-
+  std::cout << "There are " << Coordinates.size() << " 3D coordinates." << std::endl;
+  
   SelectedPoints->InsertNextPoint(p);
   SelectedPointsPolyData->SetPoints(SelectedPoints);
   SelectedPointsPolyData->Modified();
   
-  std::cout << "There are " << SelectedPointsPolyData->GetNumberOfPoints() << " selected points." << std::endl;
+  std::cout << "There are " << SelectedPointsPolyData->GetNumberOfPoints() << " selected 3D points." << std::endl;
   for(vtkIdType i = 0; i < SelectedPointsPolyData->GetNumberOfPoints(); ++i)
   {
     double selectedPoint[3];
     SelectedPointsPolyData->GetPoint(i, selectedPoint);
-    std::cout << "Selected point " << i << " : " << selectedPoint[0] << " " << selectedPoint[1] << " " << selectedPoint[2] << std::endl;
+    std::cout << "Selected point " << i << " : " << selectedPoint[0] << " "
+              << selectedPoint[1] << " " << selectedPoint[2] << std::endl;
   }
   
   // Create the dots
@@ -189,7 +201,7 @@ void PointSelectionStyle3D::RemoveAll()
   this->Coordinates.clear();
 }
 
-void PointSelectionStyle3D::SetCurrentRenderer(vtkRenderer* renderer)
+void PointSelectionStyle3D::SetCurrentRenderer(vtkRenderer* const renderer)
 {
   vtkInteractorStyle::SetCurrentRenderer(renderer);
 }

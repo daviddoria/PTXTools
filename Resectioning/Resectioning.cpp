@@ -17,7 +17,8 @@ namespace Resectioning
 {
   
 /** Color the provided PTX after mapping the colors from 'colorImage' through P. */
-PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
+PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+                        const PTXImage::RGBImageType* const inputImage)
 {
   std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
   std::cout << "P: " << P << std::endl;
@@ -37,7 +38,7 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXI
   green.SetGreen(255);
   green.SetBlue(0);
 
-  colorImage->FillBuffer(green);
+  resultImage->FillBuffer(green);
 
   // We also want to track which pixels were filled
   PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
@@ -66,7 +67,8 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXI
   // Iterate over the scan points image and track where each projects in the 'projectedImage'
   while(!xyzImageIterator.IsAtEnd())
     {
-    if(ptxImage.GetPTXPixel(xyzImageIterator.GetIndex()).Valid)
+    itk::Index<2> ptxPixelLocation = xyzImageIterator.GetIndex();
+    if(ptxImage.GetPTXPixel(ptxPixelLocation).Valid)
       {
       // Get the value of the current pixel
       PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
@@ -90,15 +92,16 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXI
       projectedPixel[0] = round(projected(0));
       projectedPixel[1] = round(projected(1));
 
-      if(!colorImage->GetLargestPossibleRegion().IsInside(projectedPixel))
+      // If it projects outside the image, skip it
+      if(!inputImage->GetLargestPossibleRegion().IsInside(projectedPixel))
         {
         // Do nothing
         }
       else
         {
-        std::vector<itk::Index<2> > projectedSoFar = projectedImage->GetPixel(projectedPixel);
+        std::vector<itk::Index<2> >& projectedSoFar = projectedImage->GetPixel(ptxPixelLocation);
         projectedSoFar.push_back(xyzImageIterator.GetIndex());
-        projectedImage->SetPixel(projectedPixel, projectedSoFar);
+
         //std::cout << "pixel: " << projectedPixel << std::endl;
         }
       } // end if valid
@@ -164,7 +167,7 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXI
 
       // Color all points within a tolerance of the minimum depth
       PTXImage::RGBImageType::PixelType color;
-      color = colorImage->GetPixel(projectedImageIterator.GetIndex());
+      color = inputImage->GetPixel(projectedImageIterator.GetIndex());
       for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
         {
         itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
@@ -173,7 +176,7 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXI
           {
           if(fabs(ptxPixel.GetDepth() - minDepth) < .1)
             {
-            colorImage->SetPixel(currentPixel, color);
+            resultImage->SetPixel(currentPixel, color);
             validityMask->SetPixel(currentPixel, 255);
             } // end if in tolerance
           } // end if valid
@@ -188,59 +191,40 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage, PTXI
 
   PTXImage outputPTX = ptxImage;
   outputPTX.ReplaceValidity(validityMask);
-  outputPTX.ReplaceRGB(colorImage);
+  outputPTX.ReplaceRGB(resultImage.GetPointer());
 
   //std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
 
   return outputPTX;
 }
 
-/*
-void ResectionNaive(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage)
+PTXImage ResectionNaive(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+                        const PTXImage::RGBImageType* const inputImage)
 {
-  if(argc < 5)
-    {
-    std::cerr << "Required arguments: cameraMatrixFileName.txt ptxFileName.ptx\
-              imageFileName.png outputFileName.ptx" << std::endl;
-    return EXIT_FAILURE;
-    }
-  // Parse arguments
-  std::string cameraMatrixFileName = argv[1];
-  std::string ptxFileName = argv[2];
-  std::string imageFileName = argv[3];
-  std::string outputFileName = argv[4];
-
-  // Output arguments
-  std::cout << "cameraMatrixFileName : " << cameraMatrixFileName << std::endl;
-  std::cout << "ptxFileName : " << ptxFileName << std::endl;
-  std::cout << "imageFileName : " << imageFileName << std::endl;
-  std::cout << "outputFileName : " << outputFileName << std::endl;
-
-  // Read the PTX file
-  PTXImage ptxImage = PTXReader::Read(ptxFileName);
-
   PTXImage::XYZImageType::Pointer xyzImage = ptxImage.GetXYZImage();
 
   PTXImage::RGBImageType::Pointer colorImage = PTXImage::RGBImageType::New();
-  ptxImage.CreateRGBImage(colorImage);
+  colorImage->SetRegions(ptxImage.GetFullRegion());
+  colorImage->Allocate();
+
+  PTXImage::RGBImageType::PixelType green;
+  green.SetRed(0);
+  green.SetGreen(255);
+  green.SetBlue(0);
+
+  colorImage->FillBuffer(green);
+  //ptxImage.CreateRGBImage(colorImage);
   //std::cout << "colorImage: " << colorImage->GetLargestPossibleRegion() << std::endl;
 
   // Read the camera matrix relating the input image to the PTX/scan/LiDAR file
-  Eigen::MatrixXd P = ReadP(cameraMatrixFileName);
   std::cout << "P: " << P << std::endl;
 
-  // Read the input image
-  typedef itk::ImageFileReader<PTXImage::RGBImageType> ReaderType;
-  ReaderType::Pointer imageReader = ReaderType::New();
-  imageReader->SetFileName(imageFileName);
-  imageReader->Update();
-
-  itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage, xyzImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage,
+                                                                         xyzImage->GetLargestPossibleRegion());
   //ptxImage.WritePTX("test2.ptx");
   unsigned int badPoints = 0;
   while(!xyzImageIterator.IsAtEnd())
   {
-
     // Get the value of the current pixel
     PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
 
@@ -267,7 +251,7 @@ void ResectionNaive(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
 
     PTXImage::RGBImageType::PixelType color;
 
-    if(!imageReader->GetOutput()->GetLargestPossibleRegion().IsInside(projectedPixel))
+    if(!inputImage->GetLargestPossibleRegion().IsInside(projectedPixel))
       {
       //std::cout << "Point does not project to image!" << std::endl;
       badPoints++;
@@ -277,7 +261,7 @@ void ResectionNaive(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
       }
     else
       {
-      color = imageReader->GetOutput()->GetPixel(projectedPixel);
+      color = inputImage->GetPixel(projectedPixel);
       }
 
     //std::cout << "color: " << color << std::endl;
@@ -288,15 +272,15 @@ void ResectionNaive(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageTyp
   }
 
   std::cout << "There were " << badPoints << " points that did not project to inside of the image!" << std::endl;
-  ptxImage.ReplaceRGB(colorImage);
+
+  PTXImage outputPTX = ptxImage;
+
+  outputPTX.ReplaceRGB(colorImage);
 
   //FilePrefix vtpPrefix("outputPointCloud");
   //ptxImage.WritePointCloud(vtpPrefix);
-
-  FilePrefix ptxPrefix(outputFileName);
-  ptxImage.WritePTX(ptxPrefix);
-
-}*/
+  return outputPTX;
+}
 
 
 Eigen::MatrixXd ReadP(const std::string& filename)

@@ -48,13 +48,15 @@ void ITKImagetoVTKImage(const FloatVectorImageType* const image, vtkImageData* c
 // Convert a vector ITK image to a VTK image for display
 void ITKImagetoVTKRGBImage(const FloatVectorImageType* const image, vtkImageData* const outputImage)
 {
-  // This function assumes an ND (with N>3) image has the first 3 channels as RGB and extra information in the remaining channels.
+  // This function assumes an ND (with N>3) image has the first 3 channels as
+  // RGB and extra information in the remaining channels.
   
-  //std::cout << "ITKImagetoVTKRGBImage()" << std::endl;
+  std::cout << "ITKImagetoVTKRGBImage()" << std::endl;
   if(image->GetNumberOfComponentsPerPixel() < 3)
     {
     std::stringstream ss;
-    ss << "The input image has " << image->GetNumberOfComponentsPerPixel() << " components, but at least 3 are required.";
+    ss << "The input image has " << image->GetNumberOfComponentsPerPixel()
+       << " components, but at least 3 are required.";
     throw std::runtime_error(ss.str());
     }
 
@@ -68,16 +70,19 @@ void ITKImagetoVTKRGBImage(const FloatVectorImageType* const image, vtkImageData
   outputImage->AllocateScalars();
 
   // Copy all of the input image pixels to the output image
-  itk::ImageRegionConstIteratorWithIndex<FloatVectorImageType> imageIterator(image,image->GetLargestPossibleRegion());
+  itk::ImageRegionConstIteratorWithIndex<FloatVectorImageType> imageIterator(image,
+                                                                             image->GetLargestPossibleRegion());
   imageIterator.GoToBegin();
 
   while(!imageIterator.IsAtEnd())
     {
     unsigned char* pixel = static_cast<unsigned char*>(outputImage->GetScalarPointer(imageIterator.GetIndex()[0],
                                                                                      imageIterator.GetIndex()[1],0));
-    for(unsigned int component = 0; component < 3; component++)
+    for(unsigned int component = 0; component < 3; ++component)
       {
-      pixel[component] = static_cast<unsigned char>(imageIterator.Get()[component]);
+      unsigned char value = static_cast<unsigned char>(imageIterator.Get()[component]);
+      //std::cout << "Value: " << static_cast<int>(value) << std::endl;
+      pixel[component] = value;
       }
 
     ++imageIterator;

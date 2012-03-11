@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ITK
 #include "itkImage.h"
 #include "itkRGBPixel.h"
+#include "itkVectorImage.h"
 
 // VTK
 #include "vtkSmartPointer.h"
@@ -35,7 +36,16 @@ namespace Helpers
   void OutputPolyData(vtkPolyData* const points, const std::string& filename);
 
   /** Convert an ITK image to a VTK image */
-  void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image, vtkImageData* const outputImage);
+  void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image,
+                             vtkImageData* const outputImage);
+
+  /** Convert an ITK RGB image to an ITK vector image */
+  void ITKRGBImageToVectorImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image,
+                                itk::VectorImage<float, 2>* const outputImage);
+
+  /** Convert an ITK vector image to an ITK RGB image */
+  void ITKVectorImageToRGBImage(const itk::VectorImage<float, 2>* const image,
+                                itk::Image<itk::RGBPixel<unsigned char>, 2>* const outputImage);
 
   ///// Templated functions /////
   /** Set every pixel in an image to 'pixel' */
@@ -45,6 +55,11 @@ namespace Helpers
   /** Deep copy an image. */
   template<typename TImage>
   void DeepCopy(const TImage* const input, TImage* const output);
+
+  /** An overload to copy a vector image - the pixel size must be set. */
+  template<typename TPixel>
+  void DeepCopy(const itk::VectorImage<TPixel, 2>* const input,
+                itk::VectorImage<TPixel, 2>* const output);
 
   /** Rescale and convert an ITK image to a VTK image*/
   template <typename TImage>

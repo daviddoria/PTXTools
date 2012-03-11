@@ -42,18 +42,14 @@ template<typename T>
 void RemoveAllActors(std::vector<T> actors, vtkRenderer* const renderer);
 //void RemoveAllActors(const std::vector<T>& actors, vtkRenderer* const renderer);
 
-void ITKImagetoVTKImage(const FloatVectorImageType* const image, vtkImageData* const outputImage); // This function simply drives ITKImagetoVTKRGBImage or ITKImagetoVTKMagnitudeImage
+// This function simply drives ITKImagetoVTKRGBImage or ITKImagetoVTKMagnitudeImage
+void ITKImagetoVTKImage(const FloatVectorImageType* const image, vtkImageData* const outputImage); 
 void ITKImagetoVTKRGBImage(const FloatVectorImageType* const image, vtkImageData* const outputImage);
 void ITKImagetoVTKMagnitudeImage(const FloatVectorImageType* const image, vtkImageData* const outputImage);
 
-/** Compute the average distance between neighboring points. 'numberOfPointsToUse' is not const because if it is 0, then it is set to the full number of points in the data set. */
+/** Compute the average distance between neighboring points. 'numberOfPointsToUse'
+ * is not const because if it is 0, then it is set to the full number of points in the data set. */
 float ComputeAverageSpacing(vtkPoints* const points, unsigned int numberOfPointsToUse);
-
-template<typename TImage>
-void DeepCopyScalarImage(const TImage* const input, TImage* const output);
-
-template<typename TImage>
-void DeepCopyVectorImage(const TImage* const input, TImage* const output);
 
 #include "ResectioningHelpers.hpp"
 

@@ -46,7 +46,8 @@ void OutputPolyData(vtkPolyData* const points, const std::string& filename)
   writer->Write();
 }
 
-void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image, vtkImageData* const outputImage)
+void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image,
+                           vtkImageData* const outputImage)
 {
   typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
   // Setup and allocate the VTK image
@@ -75,5 +76,60 @@ void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* co
 
   outputImage->Modified();
 }
+
+void ITKVectorImageToRGBImage(const itk::VectorImage<float, 2>* const image,
+                              itk::Image<itk::RGBPixel<unsigned char>, 2>* const outputImage)
+{
+  if(image->GetNumberOfComponentsPerPixel() < 3)
+  {
+    throw std::runtime_error("Cannot convert a vector image with < 3 channels to an RGB image!");
+  }
+
+  outputImage->SetRegions(image->GetLargestPossibleRegion());
+  outputImage->Allocate();
+
+  typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
+  typedef itk::VectorImage<float, 2> VectorImageType;
+
+  itk::ImageRegionConstIteratorWithIndex<VectorImageType> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    RGBImageType::PixelType outputPixel;
+    outputPixel.SetRed(imageIterator.Get()[0]);
+    outputPixel.SetGreen(imageIterator.Get()[1]);
+    outputPixel.SetBlue(imageIterator.Get()[2]);
+    outputImage->SetPixel(imageIterator.GetIndex(), outputPixel);
+
+    ++imageIterator;
+    }
+}
+
+void ITKRGBImageToVectorImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image,
+                              itk::VectorImage<float, 2>* const outputImage)
+{
+  outputImage->SetRegions(image->GetLargestPossibleRegion());
+  outputImage->SetNumberOfComponentsPerPixel(3);
+  outputImage->Allocate();
+
+  typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
+  typedef itk::VectorImage<float, 2> VectorImageType;
+  
+  itk::ImageRegionConstIteratorWithIndex<RGBImageType> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    // Can't get a reference of a pixel from a VectorImage apparently?
+    //VectorImageType::PixelType& outputPixel = outputImage->GetPixel(imageIterator.GetIndex());
+    VectorImageType::PixelType outputPixel = outputImage->GetPixel(imageIterator.GetIndex());
+    outputPixel[0] = imageIterator.Get().GetRed();
+    outputPixel[1] = imageIterator.Get().GetGreen();
+    outputPixel[2] = imageIterator.Get().GetBlue();
+    outputImage->SetPixel(imageIterator.GetIndex(), outputPixel);
+  
+    ++imageIterator;
+    }
+}
+
 
 }; // end Helpers namespace

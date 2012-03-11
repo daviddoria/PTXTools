@@ -13,11 +13,12 @@
 namespace Resectioning
 {
   PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
-                          PTXImage::RGBImageType* const colorImage);
+                          const PTXImage::RGBImageType* const colorImage);
 
   Eigen::MatrixXd ReadP(const std::string& filename);
   
-  // void ResectionNaive(Eigen::MatrixXd P, PTXImage& ptxImage, PTXImage::RGBImageType* const colorImage);
+  PTXImage ResectionNaive(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+                          const PTXImage::RGBImageType* const colorImage);
 }
 
 #endif

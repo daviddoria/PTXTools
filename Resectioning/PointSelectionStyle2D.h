@@ -38,14 +38,14 @@ public:
   
   void OnLeftButtonDown();
 
-  void AddNumber(double p[3]);
+  void AddNumber(const double p[3]);
 
   void Initialize() {}
   
   void RemoveAll();
   void DeleteLastCorrespondence();
   
-  void SetCurrentRenderer(vtkRenderer*);
+  void SetCurrentRenderer(vtkRenderer* const renderer);
 };
 
 #endif

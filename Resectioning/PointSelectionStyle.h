@@ -37,17 +37,17 @@ class PointSelectionStyle
   public:
     virtual void OnLeftButtonDown() = 0;
 
-    virtual void AddNumber(double p[3]) = 0;
+    virtual void AddNumber(const double p[3]) = 0;
 
     virtual void RemoveAll() = 0;
 
     virtual void DeleteLastCorrespondence() = 0;
 
-    virtual void SetCurrentRenderer(vtkRenderer*) = 0;
+    virtual void SetCurrentRenderer(vtkRenderer* const renderer) = 0;
 
     void SetMarkerRadius(const float radius);
 
-    unsigned int GetNumberOfCorrespondences();
+    virtual unsigned int GetNumberOfCorrespondences();
 
     Coord3D GetCorrespondence(const unsigned int correspondenceId);
 

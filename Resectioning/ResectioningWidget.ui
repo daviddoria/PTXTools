@@ -47,13 +47,13 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QVTKWidget" name="qvtkWidgetLeft"/>
+           <widget class="QVTKWidget" name="qvtkPointCloud"/>
           </item>
           <item>
-           <widget class="QVTKWidget" name="qvtkWidgetRight"/>
+           <widget class="QVTKWidget" name="qvtkImage"/>
           </item>
           <item>
-           <widget class="QVTKWidget" name="qvtkResult"/>
+           <widget class="QVTKWidget" name="qvtkResultImage"/>
           </item>
          </layout>
         </item>

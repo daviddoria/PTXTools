@@ -107,17 +107,34 @@ private:
   /** Load an image*/
   void LoadImage(const std::string& fileName);
 
+  /** Get the resulting image from the resulting ptx and display it. */
+  void ShowResultImage();
+
   /** Load a VTP. */
   void LoadVTP(const std::string& fileName);
 
   /** Load a PTX. */
   void LoadPTX(const std::string& fileName);
-  
+
+  /** The pane responsible for displaying, manipulating, and selecting the image. */
   Pane2D* ImagePane;
+
+  /** The pane responsible for displaying, manipulating, and selecting the point cloud. */
   Pane3D* PointCloudPane;
 
+  /** The pane responsible for displaying the output image. */
+  Pane2D* ResultImagePane;
+
+  /** The active/displayed point cloud is produced from this. */
   PTXImage PTX;
-  PTXImage::RGBImageType::Pointer ColorImage;
+
+  /** The point cloud that was loaded. We must save this because if a second resectioning is performed,
+   *  it should start from the original, not the last iteration of resectioning. */
+  PTXImage OriginalPTX;
+
+  /** The image that was loaded. */
+  FloatVectorImageType::Pointer ColorImage;
+  //PTXImage::RGBImageType::Pointer ColorImage;
 };
 
 #endif
