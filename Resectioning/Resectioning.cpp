@@ -38,21 +38,18 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
   green.SetGreen(255);
   green.SetBlue(0);
 
-  resultImage->FillBuffer(green);
-
-  // We also want to track which pixels were filled
-  PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
-  validityMask->SetRegions(xyzImage->GetLargestPossibleRegion());
-  validityMask->Allocate();
-  validityMask->FillBuffer(0);
+  Helpers::SetAllPixelsToValue(resultImage.GetPointer(), green);
 
   //ptxImage.CreateRGBImage(resultImage);
 
   //std::cout << "resultImage: " << resultImage->GetLargestPossibleRegion() << std::endl;
 
+  // Create an image the size of the input color image tracking which 3D points were projected
+  // to each image point.
   typedef itk::Image<std::vector<itk::Index<2> >, 2> PixelImageType;
   PixelImageType::Pointer projectedImage = PixelImageType::New();
-  projectedImage->SetRegions(ptxImage.GetFullRegion());
+  //projectedImage->SetRegions(ptxImage.GetFullRegion());
+  projectedImage->SetRegions(inputImage->GetLargestPossibleRegion());
   projectedImage->Allocate();
 
   std::vector<itk::Index<2> > emptyVector;
@@ -62,7 +59,7 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
   itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage,
                                                                          xyzImage->GetLargestPossibleRegion());
 
-  unsigned int badPoints = 0;
+  unsigned int numberOfBadPoints = 0;
 
   // Iterate over the scan points image and track where each projects in the 'projectedImage'
   while(!xyzImageIterator.IsAtEnd())
@@ -99,7 +96,10 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
         }
       else
         {
-        std::vector<itk::Index<2> >& projectedSoFar = projectedImage->GetPixel(ptxPixelLocation);
+        resultImage->SetPixel(xyzImageIterator.GetIndex(), inputImage->GetPixel(projectedPixel));
+
+        std::vector<itk::Index<2> >& projectedSoFar = projectedImage->GetPixel(projectedPixel);
+
         projectedSoFar.push_back(xyzImageIterator.GetIndex());
 
         //std::cout << "pixel: " << projectedPixel << std::endl;
@@ -109,52 +109,39 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
     ++xyzImageIterator;
     }
 
-  std::cout << "There were " << badPoints << " that did not project to inside of the image!" << std::endl;
+  std::cout << "There were " << numberOfBadPoints << " that did not project to inside of the image!" << std::endl;
 
   itk::ImageRegionConstIterator<PixelImageType> projectedImageIterator(projectedImage,
                                                                        projectedImage->GetLargestPossibleRegion());
 
+  // Track which pixels were filled
+  PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
+  validityMask->SetRegions(xyzImage->GetLargestPossibleRegion());
+  validityMask->Allocate();
+  validityMask->FillBuffer(0);
+
+  // This is a loop over the large input image pixels
   while(!projectedImageIterator.IsAtEnd())
     {
-    if(projectedImageIterator.Get().size() == 0)
+    std::vector<itk::Index<2> > projected3Dpoints = projectedImageIterator.Get();
+  
+    if(projected3Dpoints.size() == 0)
       {
-      //std::cout << "Point does not project to image!" << std::endl;
-      badPoints++;
+      // No points projected to this pixel
+//       validityMask->SetPixel(ptxPixelLocationToColor, 0);
+//       resultImage->SetPixel(ptxPixelLocationToColor, green);
       }
     else
       {
-      /*
-      // Find and color the closest point
-      itk::Index<2> closestPixel;
-      float minDepth = std::numeric_limits<float>::max();
-      //std::cout << "There were " << projectedImageIterator.Get().size()
-                  << " points that projected to this pixel." << std::endl;
-      for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
-        {
-        itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
-        //std::cout << "Current pixel: " << currentPixel << std::endl;
-
-        // Determine the minimum depth
-        PTXPixel ptxPixel = ptxImage.GetPTXPixel(currentPixel);
-        if(ptxPixel.GetDepth() < minDepth)
-          {
-          minDepth = ptxPixel.GetDepth();
-          closestPixel = projectedImageIterator.Get()[i];
-          }
-        }
-      PTXImage::RGBImageType::PixelType color;
-      color = imageReader->GetOutput()->GetPixel(projectedImageIterator.GetIndex());
-      colorImage->SetPixel(closestPixel, color);
-      */
-
-
       // Find the closest point
       float minDepth = std::numeric_limits<float>::max();
       //std::cout << "There were " << projectedImageIterator.Get().size()
 //                  << " points that projected to this pixel." << std::endl;
-      for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
+      unsigned int closestProjectedPointIndex = 0;
+      for(unsigned int projectedPointIndex = 0; projectedPointIndex < projected3Dpoints.size();
+          ++projectedPointIndex)
         {
-        itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
+        itk::Index<2> currentPixel = projected3Dpoints[projectedPointIndex];
         //std::cout << "Current pixel: " << currentPixel << std::endl;
 
         // Determine the minimum depth
@@ -162,25 +149,14 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
         if(ptxPixel.GetDepth() < minDepth)
           {
           minDepth = ptxPixel.GetDepth();
+          closestProjectedPointIndex = projectedPointIndex;
           }
         } // end loop over points projected to this pixel
 
-      // Color all points within a tolerance of the minimum depth
-      PTXImage::RGBImageType::PixelType color;
-      color = inputImage->GetPixel(projectedImageIterator.GetIndex());
-      for(unsigned int i = 0; i < projectedImageIterator.Get().size(); ++i)
-        {
-        itk::Index<2> currentPixel = projectedImageIterator.Get()[i];
-        PTXPixel ptxPixel = ptxImage.GetPTXPixel(currentPixel);
-        if(ptxPixel.Valid)
-          {
-          if(fabs(ptxPixel.GetDepth() - minDepth) < .1)
-            {
-            resultImage->SetPixel(currentPixel, color);
-            validityMask->SetPixel(currentPixel, 255);
-            } // end if in tolerance
-          } // end if valid
-        } // end for
+      PTXImage::RGBImageType::PixelType color = inputImage->GetPixel(projectedImageIterator.GetIndex());
+      itk::Index<2> ptxPixelLocationToColor = projected3Dpoints[closestProjectedPointIndex];
+      resultImage->SetPixel(ptxPixelLocationToColor, color);
+      validityMask->SetPixel(ptxPixelLocationToColor, 255);
 
       } // end else over > 0 projections
 
@@ -190,7 +166,7 @@ PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
   Helpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
 
   PTXImage outputPTX = ptxImage;
-  outputPTX.ReplaceValidity(validityMask);
+  //outputPTX.ReplaceValidity(validityMask);
   outputPTX.ReplaceRGB(resultImage.GetPointer());
 
   //std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;

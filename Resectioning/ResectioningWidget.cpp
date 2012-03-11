@@ -587,23 +587,23 @@ void ResectioningWidget::on_btnResection_clicked()
   typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
   RGBImageType::Pointer rgbImage = RGBImageType::New();
 
-  Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
+  //Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
   
   Helpers::ITKVectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
 
-  Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
+  //Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
   
   // Compute the resectioning in the same thread
   //this->PTX = Resectioning::ResectionSmart(P, this->OriginalPTX, rgbImage.GetPointer());
-  this->PTX = Resectioning::ResectionNaive(P, this->OriginalPTX, rgbImage.GetPointer());
+  //this->PTX = Resectioning::ResectionNaive(P, this->OriginalPTX, rgbImage.GetPointer());
 
   // Compute the resectioning in a different thread
-//   QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::ResectionSmart, P,
-//                                                         this->OriginalPTX, this->ColorImage);
-//   this->FutureWatcher.setFuture(resectionFuture);
-//   this->ProgressDialog->setLabelText("Resectioning...");
-//   this->ProgressDialog->exec();
-//   this->PTX = *resectionFuture.begin();
+  QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::ResectionSmart, P,
+                                                        this->OriginalPTX, rgbImage.GetPointer());
+  this->FutureWatcher.setFuture(resectionFuture);
+  this->ProgressDialog->setLabelText("Resectioning...");
+  this->ProgressDialog->exec();
+  this->PTX = *resectionFuture.begin();
 
   ShowResultImage();
 }
