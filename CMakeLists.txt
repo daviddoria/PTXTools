@@ -112,6 +112,13 @@ if(PTX_PTXtoPointCloud)
   INSTALL( TARGETS ptxPTXtoPointCloud RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
+SET(PTX_PTXtoMesh ON CACHE BOOL "Extract the point coordinates")
+if(PTX_PTXtoMesh)
+  ADD_EXECUTABLE(ptxPTXtoMesh PTXtoMesh.cpp)
+  TARGET_LINK_LIBRARIES(ptxPTXtoMesh ${PTXLibraries})
+  INSTALL( TARGETS ptxPTXtoMesh RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
+
 SET(PTX_PTXtoDepthImage ON CACHE BOOL "Write the ptx depth image")
 if(PTX_PTXtoDepthImage)
   ADD_EXECUTABLE(ptxPTXtoDepthImage PTXtoDepthImage.cpp)

@@ -109,6 +109,8 @@ void ResectioningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
+  this->Mesh = vtkSmartPointer<vtkPolyData>::New();
+
   this->ProgressDialog = new QProgressDialog;
   this->ProgressDialog->setMinimum(0);
   this->ProgressDialog->setMaximum(0);
@@ -298,6 +300,12 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
 
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
   this->PTX.CreatePointCloud(polyData);
+
+  QFuture<void> triangulationFuture = QtConcurrent::run(&PTX, &PTXImage::GetMesh, this->Mesh);
+  this->FutureWatcher.setFuture(triangulationFuture);
+  this->ProgressDialog->setLabelText("Triangulating...");
+  this->ProgressDialog->exec();
+  // this->PTX.GetMesh(this->Mesh);
 
   vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
   //lookupTable->SetTableRange(0.0, 10.0);

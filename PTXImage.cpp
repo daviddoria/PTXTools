@@ -21,16 +21,19 @@
 
 // VTK
 #include <vtkAppendPolyData.h>
+#include <vtkCellArray.h>
+#include <vtkDelaunay2D.h>
 #include <vtkFloatArray.h>
 #include <vtkPoints.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
 #include <vtkPlaneSource.h>
 #include <vtkLineSource.h>
-#include <vtkPlane.h>
 #include <vtkMath.h>
+#include <vtkPlane.h>
+#include <vtkSmartPointer.h>
 #include <vtkStructuredGrid.h>
+#include <vtkTriangle.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataWriter.h>
@@ -2375,4 +2378,79 @@ void PTXImage::Backup()
 itk::ImageRegion<2> PTXImage::GetFullRegion() const
 {
   return this->FullImage->GetLargestPossibleRegion();
+}
+
+
+void PTXImage::GetMesh(vtkPolyData* const output)
+{
+  // Create a grid of theta/phi coordinates (keeps only connectivity, not geometry)
+  vtkSmartPointer<vtkPoints> points2D = vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPoints> points3D = vtkSmartPointer<vtkPoints>::New();
+
+  itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+
+  while(!fullImageIterator.IsAtEnd())
+    {
+    if(fullImageIterator.Get().IsValid())
+      {
+      points2D->InsertNextPoint(fullImageIterator.GetIndex()[0], fullImageIterator.GetIndex()[1], 0.0f);
+      points3D->InsertNextPoint(fullImageIterator.Get().X, fullImageIterator.Get().Y, fullImageIterator.Get().Z);
+      }
+    ++fullImageIterator;
+    }
+
+  std::cout << "There are " << points2D->GetNumberOfPoints() << " 2D points and " << points3D->GetNumberOfPoints() << " 3D points." << std::endl;
+  
+  // Add the 2d grid points to a polydata object
+  vtkSmartPointer<vtkPolyData> polydata2d = vtkSmartPointer<vtkPolyData>::New();
+  polydata2d->SetPoints(points2D);
+
+  // Triangulate the grid points
+  vtkSmartPointer<vtkDelaunay2D> delaunay = vtkSmartPointer<vtkDelaunay2D>::New();
+  delaunay->SetInput(polydata2d);
+  delaunay->Update();
+
+  std::cout << "Finished delaunay." << std::endl;
+  
+  // Get the resulting triangles from the triangulation
+  vtkCellArray* cells = delaunay->GetOutput()->GetPolys();
+
+  // Create the 3d triangle array
+  vtkSmartPointer<vtkCellArray> Triangles3D = vtkSmartPointer<vtkCellArray>::New();
+
+  // Initialize some variables
+  vtkIdType npts; // the number of points in a cell
+  vtkIdType* pts; //indexes to the points
+
+  // Go through all the triangles of the Delaunay triangulation and add them to the 3d polydata if they are shorter than MaxMeshEdgeLength
+  cells->InitTraversal();
+  while (cells->GetNextCell(npts,pts))
+    {
+    // Get the 3 points of the current triangle
+    double p0[3];
+    double p1[3];
+    double p2[3];
+
+    points3D->GetPoint(pts[0], p0);
+    points3D->GetPoint(pts[1], p1);
+    points3D->GetPoint(pts[2], p2);
+
+    // Add the triangle to the 3d polydata
+    vtkSmartPointer<vtkTriangle> triangle = vtkSmartPointer<vtkTriangle>::New();
+
+    triangle->GetPointIds()->SetId(0,pts[0]);
+    triangle->GetPointIds()->SetId(1,pts[1]);
+    triangle->GetPointIds()->SetId(2,pts[2]);
+    Triangles3D->InsertNextCell(triangle);
+
+    }//end while
+
+  std::cout << "Finished adding triangles." << std::endl;
+  
+  // Save the 3d triangles in the output polydata
+  vtkSmartPointer<vtkPolyData> polydata3d = vtkSmartPointer<vtkPolyData>::New();
+  polydata3d->SetPoints(points3D);
+  output->DeepCopy(polydata3d);
+  output->SetPolys(Triangles3D);
+
 }

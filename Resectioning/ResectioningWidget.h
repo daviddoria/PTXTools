@@ -136,6 +136,8 @@ private:
    *  it should start from the original, not the last iteration of resectioning. */
   PTXImage OriginalPTX;
 
+  vtkSmartPointer<vtkPolyData> Mesh;
+
   /** The image that was loaded. */
   FloatVectorImageType::Pointer ColorImage;
   //PTXImage::RGBImageType::Pointer ColorImage;

@@ -276,6 +276,8 @@ public:
 
   void SetDebug(bool);
 
+  void GetMesh(vtkPolyData* const output);
+  
 private:
   float AverageDeltaTheta;
   float AverageDeltaPhi;
