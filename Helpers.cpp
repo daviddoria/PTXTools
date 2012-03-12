@@ -36,7 +36,7 @@ void OutputPolyData(vtkPolyData* const points, const std::string& filename)
   // Output projected points for debugging
   vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
     vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexGlyphFilter->AddInput(points);
+  vertexGlyphFilter->SetInputData(points);
   vertexGlyphFilter->Update();
 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer =
@@ -51,13 +51,14 @@ void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* co
 {
   typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
   // Setup and allocate the VTK image
-  outputImage->SetNumberOfScalarComponents(3);
-  outputImage->SetScalarTypeToUnsignedChar();
+  //outputImage->SetNumberOfScalarComponents(3);
+  //outputImage->SetScalarTypeToUnsignedChar();
   outputImage->SetDimensions(image->GetLargestPossibleRegion().GetSize()[0],
                              image->GetLargestPossibleRegion().GetSize()[1],
                              1);
 
-  outputImage->AllocateScalars();
+  //outputImage->AllocateScalars();
+  outputImage->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
 
   // Copy all of the scaled magnitudes to the output image
   itk::ImageRegionConstIteratorWithIndex<RGBImageType> imageIterator(image, image->GetLargestPossibleRegion());

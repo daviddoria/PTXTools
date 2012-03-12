@@ -13,11 +13,141 @@
 #include <iostream>
 #include <string>
 
+// VTK
+#include <vtkModifiedBSPTree.h>
+#include <vtkPolyData.h>
+
 namespace Resectioning
 {
+
+/** Color the provided PTX after mapping the colors from 'colorImage' through P. */
+PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+                        const PTXImage::RGBImageType* const inputImage)
+{
+  std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
+  std::cout << "P: " << P << std::endl;
+
+  //FilePrefix prefix("test");
+  //ptxImage.WritePTX(prefix);
+
+  PTXImage::XYZImageType::Pointer xyzImage = ptxImage.GetXYZImage();
+
+  // This is the output image. Start by making it entirely green, then we will fill in valid values.
+  PTXImage::RGBImageType::Pointer resultImage = PTXImage::RGBImageType::New();
+  resultImage->SetRegions(xyzImage->GetLargestPossibleRegion());
+  resultImage->Allocate();
+
+  PTXImage::RGBImageType::PixelType green;
+  green.SetRed(0);
+  green.SetGreen(255);
+  green.SetBlue(0);
+
+  Helpers::SetAllPixelsToValue(resultImage.GetPointer(), green);
+
+  itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage,
+                                                                         xyzImage->GetLargestPossibleRegion());
+
+  unsigned int numberOfFailedProjectionPoints = 0;
+  unsigned int numberOfOutsidePoints = 0;
+
+  vtkSmartPointer<vtkModifiedBSPTree> tree = vtkSmartPointer<vtkModifiedBSPTree>::New();
+  tree->SetDataSet(ptxImage.GetMesh());
+  tree->BuildLocator();
+
+  // Track which pixels were filled
+  PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
+  validityMask->SetRegions(xyzImage->GetLargestPossibleRegion());
+  validityMask->Allocate();
+  validityMask->FillBuffer(0);
+
+  double cameraLocation[3] = {P(0, 3), P(1,3), P(2,3)};
+  
+  // Iterate over the scan points image and project each one in the 'inputImage'
+  while(!xyzImageIterator.IsAtEnd())
+    {
+    itk::Index<2> ptxPixelLocation = xyzImageIterator.GetIndex();
+    if(ptxImage.GetPTXPixel(ptxPixelLocation).Valid)
+      {
+      // Get the value of the current pixel
+      PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
+
+      Eigen::Vector4d X;
+      X(0) = xyz[0];
+      X(1) = xyz[1];
+      X(2) = xyz[2];
+      X(3) = 1;
+
+      // Perform the projection
+      Eigen::Vector3d projectedHomog = P * X;
+
+      // Get the projected point in non-homogeneous coordinates
+      Eigen::Vector2d projected = projectedHomog.hnormalized();
+
+      //std::cout << "Projected " << p[0] << " " << p[1] << " " << p[2] << " to : " << projected << std::endl;
+
+      // Get the pixel that the point was projected to
+      itk::Index<2> projectedPixel;
+      projectedPixel[0] = round(projected(0));
+      projectedPixel[1] = round(projected(1));
+
+      // If it projects outside the image, skip it
+      if(!inputImage->GetLargestPossibleRegion().IsInside(projectedPixel))
+        {
+        // Do nothing
+        numberOfOutsidePoints++;
+        }
+      else
+        {
+        // Check if the line segment from the point to the scanner intersects the mesh. If it does, then it should not take the color that it projects to in the image.
+        float tolerance = .001;
+        double t;
+        double x[3];
+        double pcoords[3];
+        int subId = 0;
+        vtkIdType cellId = 0;
+
+        unsigned int numberOfTreeHits = 0;
+        unsigned int numberOfManualHits = 0;
+
+        double p[3] = {xyz[0], xyz[1], xyz[2]};
+
+//         std::cout << "Casting ray between " << p0[0] << " " << p0[1] << " " << p0[2]
+//                     << " and " << p1[0] << " " << p1[1] << " " << p1[2] << std::endl;
+        // Perform the intersection using the tree
+        int treeHit = tree->IntersectWithLine(p, cameraLocation, tolerance, t, x, pcoords, subId, cellId);
+
+        if(!treeHit) // If we don't intersect the mesh, then this point should be colored by the pixel it projects to
+          {
+          resultImage->SetPixel(xyzImageIterator.GetIndex(), inputImage->GetPixel(projectedPixel));
+          validityMask->SetPixel(xyzImageIterator.GetIndex(), 255);
+          }
+        else
+          {
+          numberOfFailedProjectionPoints++;
+          }
+        //std::cout << "pixel: " << projectedPixel << std::endl;
+        }
+      } // end if valid
+
+    ++xyzImageIterator;
+    }
+
+  std::cout << "There were " << numberOfFailedProjectionPoints << " that failed the mesh intersection test!" << std::endl;
+  std::cout << "There were " << numberOfOutsidePoints << " that did not project to inside of the image!" << std::endl;
+
+  Helpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
+
+  PTXImage outputPTX = ptxImage;
+  //outputPTX.ReplaceValidity(validityMask);
+  outputPTX.ReplaceRGB(resultImage.GetPointer());
+
+  //std::cout << "Output has " << ptxImage.CountValidPoints() << " valid points." << std::endl;
+
+  return outputPTX;
+}
   
 /** Color the provided PTX after mapping the colors from 'colorImage' through P. */
-PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+PTXImage Resection_ProjectionSorting(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
                         const PTXImage::RGBImageType* const inputImage)
 {
   std::cout << "Input has " << ptxImage.CountValidPoints() << " valid points." << std::endl;

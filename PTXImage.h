@@ -216,12 +216,6 @@ public:
   unsigned int CountValidPoints() const;
   unsigned int CountZeroPoints() const;
 
-  /** The main storage image. */
-  FullImageType::Pointer FullImage;
-
-  /** The store the original information so it can be referenced when modifying things. */
-  FullImageType::Pointer OriginalFullImage;
-
   /** Copy FullImage into OriginalFullImage. */
   void Backup();
   
@@ -276,13 +270,26 @@ public:
 
   void SetDebug(bool);
 
-  void GetMesh(vtkPolyData* const output);
+  void ComputeMesh();
+  
+  //void GetMesh(vtkPolyData* const output);
+  vtkPolyData* GetMesh() const;
   
 private:
   float AverageDeltaTheta;
   float AverageDeltaPhi;
 
   bool Debug;
+
+
+  /** The main storage image. */
+  FullImageType::Pointer FullImage;
+
+  /** The store the original information so it can be referenced when modifying things. */
+  FullImageType::Pointer OriginalFullImage;
+
+  /** A mesh created on the points. */
+  vtkSmartPointer<vtkPolyData> Mesh;
 };
 
 #endif

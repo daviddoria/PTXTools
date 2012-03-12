@@ -37,7 +37,8 @@ struct Frame
 
     vtkSmartPointer<vtkTransformFilter> transformFilter =
       vtkSmartPointer<vtkTransformFilter>::New();
-    transformFilter->SetInputConnection(polydata->GetProducerPort());
+    //transformFilter->SetInputConnection(polydata->GetProducerPort());
+    transformFilter->SetInputData(polydata);
     transformFilter->SetTransform(transform);
     transformFilter->Update();
 
@@ -146,7 +147,8 @@ struct Frame
     vtkSmartPointer<vtkXMLPolyDataWriter> writer =
       vtkSmartPointer<vtkXMLPolyDataWriter>::New();
     writer->SetFileName(filename.c_str());
-    writer->SetInputConnection(polydata->GetProducerPort());
+    //writer->SetInputConnection(polydata->GetProducerPort());
+    writer->SetInputData(polydata);
     writer->Write();
   }
 

@@ -62,8 +62,8 @@ PointSelectionStyle3D::PointSelectionStyle3D()
   SelectedPointsPolyData->SetPoints(SelectedPoints);
 
   Glyph3D = vtkSmartPointer<vtkGlyph3D>::New();
-  Glyph3D->SetSource(DotSource->GetOutput());
-  Glyph3D->SetInputConnection(SelectedPointsPolyData->GetProducerPort());
+  Glyph3D->SetSourceData(DotSource->GetOutput());
+  Glyph3D->SetInputData(SelectedPointsPolyData);
 
   SelectedPointsMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   SelectedPointsMapper->SetInputConnection(Glyph3D->GetOutputPort());
@@ -73,7 +73,7 @@ PointSelectionStyle3D::PointSelectionStyle3D()
 
   // Create the text numbers
   LabeledDataMapper = vtkSmartPointer<vtkLabeledDataMapper>::New();
-  LabeledDataMapper->SetInputConnection(SelectedPointsPolyData->GetProducerPort());
+  LabeledDataMapper->SetInputData(SelectedPointsPolyData);
   LabeledDataMapper->GetLabelTextProperty()->SetFontSize(20);
   LabelActor = vtkSmartPointer<vtkActor2D>::New();
   LabelActor->SetMapper(LabeledDataMapper);

@@ -128,10 +128,11 @@ void Mask::MakeVTKImage(vtkImageData* const image, const TColor& validColor, con
   dims[1] = this->GetLargestPossibleRegion().GetSize()[1];
   dims[2] = 1;
 
-  image->SetScalarTypeToUnsignedChar();
-  image->SetNumberOfScalarComponents(4);
+  //image->SetScalarTypeToUnsignedChar();
+  //image->SetNumberOfScalarComponents(4);
   image->SetDimensions(dims);
-  image->AllocateScalars();
+  //image->AllocateScalars();
+  image->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
 
   for(int i = 0; i < dims[0]; ++i)
     {

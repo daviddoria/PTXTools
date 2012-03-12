@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
   imageReader->SetFileName(imageFileName);
   imageReader->Update();
 
-  Resectioning::ResectionSmart(P, ptxImage, imageReader->GetOutput());
+  Resectioning::Resection_ProjectionSorting(P, ptxImage, imageReader->GetOutput());
 
   FilePrefix ptxPrefix(outputFileName);
   ptxImage.WritePTX(ptxPrefix);

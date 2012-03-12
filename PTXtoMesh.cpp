@@ -22,13 +22,13 @@ int main (int argc, char *argv[])
   
 
   PTXImage ptxImage = PTXReader::Read(inputFilename);
+  ptxImage.ComputeMesh();
 
-  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
-  ptxImage.GetMesh(polyData);
+  vtkPolyData* polyData = ptxImage.GetMesh();
 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(outputFileName.c_str());
-  writer->SetInputConnection(polyData->GetProducerPort());
+  writer->SetInputData(polyData);
   writer->Write();
 
   return EXIT_SUCCESS;

@@ -109,8 +109,6 @@ void ResectioningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
-  this->Mesh = vtkSmartPointer<vtkPolyData>::New();
-
   this->ProgressDialog = new QProgressDialog;
   this->ProgressDialog->setMinimum(0);
   this->ProgressDialog->setMaximum(0);
@@ -247,7 +245,7 @@ void ResectioningWidget::LoadImage(const std::string& fileName)
 
   ResectioningHelpers::ITKImagetoVTKRGBImage(ImagePane->Image.GetPointer(), ImagePane->ImageData);
 
-  ImagePane->ImageSliceMapper->SetInputConnection(ImagePane->ImageData->GetProducerPort());
+  ImagePane->ImageSliceMapper->SetInputData(ImagePane->ImageData);
   ImagePane->ImageSlice->SetMapper(ImagePane->ImageSliceMapper);
   
   // Add Actor to renderer
@@ -301,7 +299,7 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
   this->PTX.CreatePointCloud(polyData);
 
-  QFuture<void> triangulationFuture = QtConcurrent::run(&PTX, &PTXImage::GetMesh, this->Mesh);
+  QFuture<void> triangulationFuture = QtConcurrent::run(&PTX, &PTXImage::ComputeMesh);
   this->FutureWatcher.setFuture(triangulationFuture);
   this->ProgressDialog->setLabelText("Triangulating...");
   this->ProgressDialog->exec();
@@ -326,7 +324,7 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
     lookupTable->SetTableRange(range[0], range[1]);
     }
 
-  PointCloudPane->PointCloudMapper->SetInputConnection(polyData->GetProducerPort());
+  PointCloudPane->PointCloudMapper->SetInputData(polyData);
   PointCloudPane->PointCloudMapper->SetLookupTable(lookupTable);
   PointCloudPane->PointCloudActor->SetMapper(PointCloudPane->PointCloudMapper);
   PointCloudPane->PointCloudActor->GetProperty()->SetRepresentationToPoints();
@@ -611,8 +609,16 @@ void ResectioningWidget::on_btnResection_clicked()
   //this->PTX = Resectioning::ResectionNaive(P, this->OriginalPTX, rgbImage.GetPointer());
 
   // Compute the resectioning in a different thread
-  QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::ResectionSmart, P,
+//   QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::Resection_ProjectionSorting, P,
+//                                                         this->OriginalPTX, rgbImage.GetPointer());
+
+  if(PTX.GetMesh()->GetNumberOfPoints() == 0)
+  {
+    PTX.ComputeMesh();
+  }
+  QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::Resection_MeshIntersection, P,
                                                         this->OriginalPTX, rgbImage.GetPointer());
+
   this->FutureWatcher.setFuture(resectionFuture);
   this->ProgressDialog->setLabelText("Resectioning...");
   this->ProgressDialog->exec();
@@ -635,7 +641,7 @@ void ResectioningWidget::ShowResultImage()
 
   ResectioningHelpers::ITKImagetoVTKRGBImage(ResultImagePane->Image.GetPointer(), ResultImagePane->ImageData);
 
-  ResultImagePane->ImageSliceMapper->SetInputConnection(ResultImagePane->ImageData->GetProducerPort());
+  ResultImagePane->ImageSliceMapper->SetInputData(ResultImagePane->ImageData);
   ResultImagePane->ImageSlice->SetMapper(ResultImagePane->ImageSliceMapper);
 
   // Add Actor to renderer

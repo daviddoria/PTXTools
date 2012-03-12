@@ -12,7 +12,10 @@
 
 namespace Resectioning
 {
-  PTXImage ResectionSmart(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+  PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
+                          const PTXImage::RGBImageType* const colorImage);
+  
+  PTXImage Resection_ProjectionSorting(const Eigen::MatrixXd& P, const PTXImage& ptxImage,
                           const PTXImage::RGBImageType* const colorImage);
 
   Eigen::MatrixXd ReadP(const std::string& filename);

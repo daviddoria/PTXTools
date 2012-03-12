@@ -52,6 +52,8 @@ PTXImage::PTXImage()
   this->OriginalFullImage = FullImageType::New();
 
   this->Debug = false;
+
+  this->Mesh = vtkSmartPointer<vtkPolyData>::New();
 }
 
 PTXImage::PTXImage(FullImageType* const fullImage)
@@ -590,7 +592,7 @@ void PTXImage::CreatePointCloud(vtkPolyData* const pointCloud) const
 
   // Create a vertex at each point
   vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexGlyphFilter->AddInput(polydata);
+  vertexGlyphFilter->SetInputData(polydata);
   vertexGlyphFilter->Update();
 
   // Add the ptx image size to the field data
@@ -690,7 +692,7 @@ void PTXImage::WritePointCloud(const std::string& fileName) const
 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(fileName.c_str());
-  writer->SetInputConnection(pointCloud->GetProducerPort());
+  writer->SetInputData(pointCloud);
   writer->Write();
 }
 
@@ -702,7 +704,7 @@ void PTXImage::WriteStructuredGrid(const std::string& fileName) const
 
   vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
   writer->SetFileName(fileName.c_str());
-  writer->SetInputConnection(structuredGrid->GetProducerPort());
+  writer->SetInputData(structuredGrid);
   writer->Write();
   
 }
@@ -2162,7 +2164,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
 
   vtkSmartPointer<vtkTransformFilter> transformFilter =
     vtkSmartPointer<vtkTransformFilter>::New();
-  transformFilter->SetInputConnection(projectedPointsPolydata->GetProducerPort());
+  transformFilter->SetInputData(projectedPointsPolydata);
   transformFilter->SetTransform(transform);
   transformFilter->Update();
 
@@ -2380,8 +2382,17 @@ itk::ImageRegion<2> PTXImage::GetFullRegion() const
   return this->FullImage->GetLargestPossibleRegion();
 }
 
+// void PTXImage::GetMesh(vtkPolyData* const output)
+// {
+//   output->DeepCopy(this->Mesh);
+// }
 
-void PTXImage::GetMesh(vtkPolyData* const output)
+vtkPolyData* PTXImage::GetMesh() const
+{
+  return this->Mesh;
+}
+
+void PTXImage::ComputeMesh()
 {
   // Create a grid of theta/phi coordinates (keeps only connectivity, not geometry)
   vtkSmartPointer<vtkPoints> points2D = vtkSmartPointer<vtkPoints>::New();
@@ -2407,7 +2418,7 @@ void PTXImage::GetMesh(vtkPolyData* const output)
 
   // Triangulate the grid points
   vtkSmartPointer<vtkDelaunay2D> delaunay = vtkSmartPointer<vtkDelaunay2D>::New();
-  delaunay->SetInput(polydata2d);
+  delaunay->SetInputData(polydata2d);
   delaunay->Update();
 
   std::cout << "Finished delaunay." << std::endl;
@@ -2450,7 +2461,7 @@ void PTXImage::GetMesh(vtkPolyData* const output)
   // Save the 3d triangles in the output polydata
   vtkSmartPointer<vtkPolyData> polydata3d = vtkSmartPointer<vtkPolyData>::New();
   polydata3d->SetPoints(points3D);
-  output->DeepCopy(polydata3d);
-  output->SetPolys(Triangles3D);
+  this->Mesh->DeepCopy(polydata3d);
+  this->Mesh->SetPolys(Triangles3D);
 
 }
