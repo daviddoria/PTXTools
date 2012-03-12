@@ -117,16 +117,39 @@ unsigned int PTXImage::CountValidPoints() const
   return  totalPoints - CountInvalidPoints();
 }
 
+unsigned int PTXImage::CountZeroPoints() const
+{
+  itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage,
+                                                                 this->FullImage->GetLargestPossibleRegion());
+
+  unsigned int numberOfZeroPoints = 0;
+  while(!fullImageIterator.IsAtEnd())
+    {
+    PTXPixel fullPixel = fullImageIterator.Get();
+
+    if(fullPixel.IsZero())
+      {
+      numberOfZeroPoints++;
+      }
+
+    ++fullImageIterator;
+    }
+
+  //std::cout << "There are " << numberOfInvalidPoints << " invalid points." << std::endl;
+  return numberOfZeroPoints;
+}
+
 unsigned int PTXImage::CountInvalidPoints() const
 {
-  itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<FullImageType> fullImageIterator(this->FullImage,
+                                                                 this->FullImage->GetLargestPossibleRegion());
 
   unsigned int numberOfInvalidPoints = 0;
   while(!fullImageIterator.IsAtEnd())
     {
     PTXPixel fullPixel = fullImageIterator.Get();
 
-    if(!fullPixel.Valid)
+    if(!fullPixel.IsValid())
       {
       numberOfInvalidPoints++;
       }
@@ -370,7 +393,7 @@ void PTXImage::CreateValidityImage(MaskImageType* const image) const
     {
     PTXPixel fullPixel = fullImageIterator.Get();
 
-    if(fullPixel.Valid)
+    if(fullPixel.IsValid())
       {
       validityIterator.Set(255); // non-zero means "valid"
       }
@@ -401,7 +424,7 @@ void PTXImage::WriteInvalidMask(const std::string& filename) const
     {
     PTXPixel fullPixel = fullImageIterator.Get();
 
-    if(fullPixel.Valid)
+    if(fullPixel.IsValid())
       {
       maskIterator.Set(0); // zero (black) means "valid"
       }
@@ -435,7 +458,8 @@ void PTXImage::CreateRGBImage(RGBImageType* const image) const
   itk::ImageRegionIterator<RGBImageType> rgbImageIterator(image, image->GetLargestPossibleRegion());
   rgbImageIterator.GoToBegin();
 
-  itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage,
+                                                            this->FullImage->GetLargestPossibleRegion());
   fullImageIterator.GoToBegin();
 
   // Traverse the full image, extracting the color information and saving it in the RGB image
@@ -446,7 +470,7 @@ void PTXImage::CreateRGBImage(RGBImageType* const image) const
     //itk::CovariantVector<unsigned char, 3> rgbPixel;
     RGBImageType::PixelType rgbPixel;
 
-    if(fullPixel.Valid)
+    if(fullPixel.IsValid())
       {
       /*
       rgbPixel[0] = fullPixel.R;
@@ -536,7 +560,7 @@ void PTXImage::CreatePointCloud(vtkPolyData* const pointCloud) const
     rgb[1] = pixel.G;
     rgb[2] = pixel.B;
 
-    if(pixel.Valid)
+    if(pixel.IsValid())
       {
       colors->InsertNextTupleValue(rgb);
       points->InsertNextPoint(pixel.X, pixel.Y, pixel.Z);
@@ -614,7 +638,7 @@ void PTXImage::CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structure
 
     PTXPixel pixel = imageIterator.Get();
 
-    if(pixel.Valid)
+    if(pixel.IsValid())
       {
       unsigned char rgb[3];
       rgb[0] = pixel.R;
@@ -788,7 +812,7 @@ void PTXImage::CreateIntensityImage(FloatImageType::Pointer image) const
   while(!imageIterator.IsAtEnd())
     {
     PTXPixel pixel = imageIterator.Get();
-    if(pixel.Valid)
+    if(pixel.IsValid())
       {
       intensityImageIterator.Set(pixel.Intensity);
       }
@@ -853,12 +877,15 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
   originalPTXImage.ComputeAverageDeltaTheta();
   
   // Setup iterators
-  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage, this->FullImage->GetLargestPossibleRegion());
-  itk::ImageRegionConstIterator<FloatImageType> newDepthIterator(depthImage, depthImage->GetLargestPossibleRegion());
+  itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage,
+                                                                 this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<FloatImageType> newDepthIterator(depthImage,
+                                                                 depthImage->GetLargestPossibleRegion());
 
   itk::Point<float, 3> origin;
   origin.Fill(0);
 
+  unsigned int numberOfApproximatedDirections = 0;
   while(!imageIterator.IsAtEnd())
     {
     // Get the old point
@@ -867,7 +894,7 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     PTXPixel originalPTXPixel = OriginalFullImage->GetPixel(imageIterator.GetIndex());
 
     // If the point is not valid, set it to the origin and move on to the next point.
-    if(!currentPTXPixel.Valid)
+    if(!currentPTXPixel.Valid) // Note: this should not be IsValid(), as we test the IsZero condition separately
     {
       currentPTXPixel.X = origin[0];
       currentPTXPixel.Y = origin[1];
@@ -882,7 +909,7 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     // If the original point was valid, use it's position as the unit vector along which to set the new depth.
     // If the original point was not valid, interpolate this points direction.
     itk::Vector<float, 3> rayDirection;
-    if(originalPTXPixel.Valid)
+    if(originalPTXPixel.IsValid())
     {
       itk::Point<float, 3> oldPoint;
       oldPoint[0] = originalPTXPixel.X;
@@ -904,11 +931,11 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     }
     else
     {
-      std::cout << "Approximating ray direction..." << std::endl;
-      
+      // std::cout << "Approximating ray direction..." << std::endl;
+      numberOfApproximatedDirections++;
       //oldPoint = originalPTXImage.ApproximateOldPoint(imageIterator.GetIndex());
       rayDirection = originalPTXImage.ApproximateRayDirection(imageIterator.GetIndex());
-      std::cout << "rayDirection " << rayDirection << std::endl;
+      // std::cout << "rayDirection " << rayDirection << std::endl;
       if(isnan(rayDirection[0]))
       {
         throw std::runtime_error("Error computing old point!");
@@ -930,6 +957,7 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     ++newDepthIterator;
     }
 
+  std::cout << "Approximated " << numberOfApproximatedDirections << " directions." << std::endl;
 }
 
 void PTXImage::ReplaceRGB(const RGBVectorImageType* const rgb)
@@ -954,7 +982,7 @@ void PTXImage::ReplaceRGB(const RGBVectorImageType* const rgb)
     {
     // Get the old point
     PTXPixel pixel = imageIterator.Get();
-    if(pixel.Valid)
+    if(pixel.IsValid())
       {
       // Copy the color from the RGB image
       pixel.R = rgbIterator.Get()[0];
@@ -990,7 +1018,7 @@ void PTXImage::ReplaceRGB(const RGBImageType* const rgb)
     {
     // Get the old point
     PTXPixel pixel = imageIterator.Get();
-    if(pixel.Valid)
+    if(pixel.IsValid())
       {
       // Copy the color from the RGB image
       pixel.R = rgbIterator.Get().GetRed();
@@ -1011,7 +1039,6 @@ void PTXImage::SetAllPointsToValid()
 
   while(!imageIterator.IsAtEnd())
     {
-    // Get the old point
     PTXPixel pixel = imageIterator.Get();
     pixel.Valid = true;
     imageIterator.Set(pixel);
@@ -1138,7 +1165,7 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
     // If the point was invalid, construct a vector in its direction incase the depth is now valid
     bool previousValidity = pixel.Valid;
 
-    if(pixel.Valid == false)
+    if(pixel.IsValid() == false)
       {
       madeValid++;
       pixel.Valid = true;
@@ -1214,7 +1241,7 @@ itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& pix
 
   if(isnan(theta))
   {
-    ApproximateTheta(pixel);
+    //ApproximateTheta(pixel);
     throw std::runtime_error("Theta is nan!");
   }
 
@@ -1489,8 +1516,10 @@ void PTXImage::ComputeAverageDeltaTheta()
         continue;
       }
 
-      if(!this->FullImage->GetPixel(index).Valid || // the current pixel is invalid
-        !this->FullImage->GetPixel(lastIndex).Valid || // the previous pixel was invalid
+      if(!this->FullImage->GetPixel(index).IsValid() || // the current pixel is invalid
+        !this->FullImage->GetPixel(lastIndex).IsValid() || // the previous pixel was invalid
+        this->FullImage->GetPixel(index).IsZero() || // this pixel is marked as valid, but is (0,0,0)
+        this->FullImage->GetPixel(lastIndex).IsZero() || // this pixel is marked as valid, but is (0,0,0)
         lastIndex[1] != index[1] // if we are not on the same row as the last pixel
         )
         {
@@ -1545,8 +1574,10 @@ void PTXImage::ComputeAverageDeltaPhi()
         continue;
       }
       
-      if(!this->FullImage->GetPixel(index).Valid || // the current pixel is invalid
-        !this->FullImage->GetPixel(lastIndex).Valid || // the previous pixel is invalid
+      if(!this->FullImage->GetPixel(index).IsValid() || // the current pixel is invalid
+        !this->FullImage->GetPixel(lastIndex).IsValid() || // the previous pixel is invalid
+        this->FullImage->GetPixel(index).IsZero() || // this pixel is marked as valid, but is (0,0,0)
+        this->FullImage->GetPixel(lastIndex).IsZero() || // this pixel is marked as valid, but is (0,0,0)
         lastIndex[0] != index[0] // if we are not on the same column as the last pixel
         )
         {
@@ -1579,7 +1610,7 @@ void PTXImage::ComputeAverageDeltaPhi()
 
 float PTXImage::GetPhi(const itk::Index<2>& index) const
 {
-  if(!this->FullImage->GetPixel(index).Valid)
+  if(!this->FullImage->GetPixel(index).IsValid())
     {
     std::cerr << "Cannot GetPhi on an invalid pixel!" << std::endl;
     exit(-1);
@@ -1601,7 +1632,7 @@ float PTXImage::GetPhi(const itk::Index<2>& index) const
 
 float PTXImage::GetTheta(const itk::Index<2>& index) const
 {
-  if(!this->FullImage->GetPixel(index).Valid)
+  if(!this->FullImage->GetPixel(index).IsValid())
     {
     std::cerr << "Cannot GetPhi on an invalid pixel!" << std::endl;
     exit(-1);
@@ -1659,21 +1690,22 @@ itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, itk::O
   while(this->FullImage->GetLargestPossibleRegion().IsInside(currentPixel+offset))
     {
     currentPixel += offset;
-    //std::cout << "currentPixel: " << currentPixel << " Valid? " << this->FullImage->GetPixel(currentPixel).Valid << std::endl;
+    //std::cout << "currentPixel: " << currentPixel << " Valid? "
+    //          << this->FullImage->GetPixel(currentPixel).Valid << std::endl;
     pixelCounter++;
-    if(this->FullImage->GetPixel(currentPixel).Valid)
+    if(this->FullImage->GetPixel(currentPixel).IsValid())
       {
       //std::cout << "Closest valid pixel to " << pixel << " is " << currentPixel << std::endl;
       return currentPixel;
       }
     }
 
-  std::cout << "Searched " << pixelCounter << " pixels." << std::endl;
+  //std::cout << "Searched " << pixelCounter << " pixels." << std::endl;
 
-  std::cout << "Offset was " << offset << std::endl;
+  //std::cout << "Offset was " << offset << std::endl;
   offset[0] *= -1;
   offset[1] *= -1;
-  std::cout << "Offset is now " << offset << std::endl;
+  //std::cout << "Offset is now " << offset << std::endl;
 
   currentPixel = pixel; // reset to function input
 
@@ -1682,9 +1714,10 @@ itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, itk::O
   while(this->FullImage->GetLargestPossibleRegion().IsInside(currentPixel+offset))
     {
     currentPixel += offset;
-    //std::cout << "currentPixel: " << currentPixel << " Valid? " << this->FullImage->GetPixel(currentPixel).Valid << std::endl;
+    //std::cout << "currentPixel: " << currentPixel << " Valid? "
+    //          << this->FullImage->GetPixel(currentPixel).Valid << std::endl;
     pixelCounter++;
-    if(this->FullImage->GetPixel(currentPixel).Valid)
+    if(this->FullImage->GetPixel(currentPixel).IsValid())
       {
       std::cout << "Closest valid pixel to " << pixel << " is " << currentPixel << std::endl;
       return currentPixel;
@@ -1739,6 +1772,9 @@ void PTXImage::WritePTX(const FilePrefix& filePrefix) const
        << "0 0 1 0" << std::endl
        << "0 0 0 1" << std::endl;
 
+  unsigned int numberOfInvalidPixels = 0;
+  unsigned int numberOfZeroPixels = 0;
+
   for(unsigned int theta = 0; theta < numberOfThetaPoints; theta++)
     {
     for(unsigned int phi = 0; phi < numberOfPhiPoints; phi++)
@@ -1748,14 +1784,28 @@ void PTXImage::WritePTX(const FilePrefix& filePrefix) const
       pixelIndex[1] = phi;
 
       PTXPixel pixel = this->FullImage->GetPixel(pixelIndex);
-      if(pixel.Valid)
+      if(pixel.Valid) // Note: this must not be IsValid, as we are testing the IsZero condition separately
         {
-        fout << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << pixel.Intensity
+        // If the pixel was originally invalid, but has been marked as valid,
+        // write it with intensity 1.0 instead of 0.5 so it will be read in
+        // as valid in the future.
+        if(pixel.IsZero())
+          {
+          numberOfZeroPixels++;
+          fout << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << 1.0
             << " " << static_cast<int>(pixel.R) << " " << static_cast<int>(pixel.G)
             << " " << static_cast<int>(pixel.B) << std::endl;
+          }
+        else // Write the point as-is
+          {
+          fout << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << pixel.Intensity
+            << " " << static_cast<int>(pixel.R) << " " << static_cast<int>(pixel.G)
+            << " " << static_cast<int>(pixel.B) << std::endl;
+          }
         }
       else
         {
+        numberOfInvalidPixels++;
         /*
         std::cout << "Invalid pixel would have been written as: "
                   << pixel.X << " " << pixel.Y << " " << pixel.Z << " " << pixel.Intensity
@@ -1766,6 +1816,9 @@ void PTXImage::WritePTX(const FilePrefix& filePrefix) const
         }
       }
     }
+
+  std::cout << "WritePTX: Wrote " << numberOfInvalidPixels << " invalid pixels." << std::endl;
+  std::cout << "WritePTX: Wrote " << numberOfZeroPixels << " zero pixels." << std::endl;
 
   fout.close();
 }
@@ -1798,7 +1851,7 @@ void PTXImage::ComputeWeightedDepthLaplacian(const std::string& filename) const
 
   while(!imageIterator.IsAtEnd())
     {
-    if(!imageIterator.GetCenterPixel().Valid)
+    if(!imageIterator.GetCenterPixel().IsValid())
       {
       ++imageIterator;
       ++outputIterator;
@@ -1831,7 +1884,7 @@ void PTXImage::ComputeWeightedDepthLaplacian(const std::string& filename) const
     std::vector<float> depths;
     for(unsigned int i = 0; i < offsets.size(); i++)
       {
-      if(imageIterator.GetPixel(left).Valid)
+      if(imageIterator.GetPixel(left).IsValid())
         {
         float dist = DistanceBetweenPoints(imageIterator.GetCenterPixel(), imageIterator.GetPixel(offsets[i]));
         inverseDistances.push_back(1.0/dist);
@@ -1896,7 +1949,7 @@ PTXImage::VectorType PTXImage::GetPrincipalAxis() const
 
 float PTXImage::DistanceBetweenPoints(const PTXPixel& a, const PTXPixel& b) const
 {
-  if(!a.Valid || !b.Valid)
+  if(!a.IsValid() || !b.IsValid())
     {
     std::cerr << "Warning: Comparing distance between pixels which are not both valid." << std::endl;
     return 0.0;
@@ -2081,10 +2134,10 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   WriteRGBImage(prefix);
   }
 
-  if(!centerPixel.Valid)
+  if(!centerPixel.IsValid())
     {
-    std::cerr << "CenterPixel is not valid!" << std::endl;
-    exit(-1);
+    throw std::runtime_error("CenterPixel is not valid!");
+    
     }
   double centerPixelArray[3] = {centerPixel.X, centerPixel.Y, centerPixel.Z};
 
@@ -2162,7 +2215,8 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
 
     // Get the index of the pixel in the original image from which this point came from
     int originalPixel[2];
-    vtkIntArray::SafeDownCast(shiftTransformFilter->GetOutput()->GetPointData()->GetArray("OriginalPixel"))->GetTupleValue(i, originalPixel);
+    vtkIntArray::SafeDownCast(shiftTransformFilter->GetOutput()->
+            GetPointData()->GetArray("OriginalPixel"))->GetTupleValue(i, originalPixel);
 
     itk::Index<2> originalPixelIndex;
     originalPixelIndex[0] = originalPixel[0];
@@ -2224,26 +2278,26 @@ itk::Index<2> PTXImage::FindValidTopCenterPixel() const
   topCenterIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
   topCenterIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1;
 
-  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+  if(this->FullImage->GetPixel(topCenterIndex).IsValid())
     {
     return topCenterIndex;
     }
 
   topCenterIndex[1] -= 1;
-  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+  if(this->FullImage->GetPixel(topCenterIndex).IsValid())
     {
     return topCenterIndex;
     }
 
   topCenterIndex[1] += 1;
   topCenterIndex[0] += 1;
-  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+  if(this->FullImage->GetPixel(topCenterIndex).IsValid())
     {
     return topCenterIndex;
     }
 
   topCenterIndex[0] -= 2;
-  if(this->FullImage->GetPixel(topCenterIndex).Valid)
+  if(this->FullImage->GetPixel(topCenterIndex).IsValid())
     {
     return topCenterIndex;
     }
@@ -2261,7 +2315,7 @@ itk::Index<2> PTXImage::FindValidCenterPixel() const
   centerIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
   centerIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] / 2;
 
-  if(this->FullImage->GetPixel(centerIndex).Valid)
+  if(this->FullImage->GetPixel(centerIndex).IsValid())
     {
     return centerIndex;
     }
@@ -2270,7 +2324,7 @@ itk::Index<2> PTXImage::FindValidCenterPixel() const
   offset[0] = 1;
   offset[1] = 0;
 
-  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+  if(this->FullImage->GetPixel(centerIndex + offset).IsValid())
     {
     return centerIndex + offset;
     }
@@ -2278,21 +2332,21 @@ itk::Index<2> PTXImage::FindValidCenterPixel() const
   offset[0] = -1;
   offset[1] = 0;
 
-  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+  if(this->FullImage->GetPixel(centerIndex + offset).IsValid())
     {
     return centerIndex + offset;
     }
 
   offset[0] = 0;
   offset[1] = 1;
-  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+  if(this->FullImage->GetPixel(centerIndex + offset).IsValid())
     {
     return centerIndex + offset;
     }
 
   offset[0] = 0;
   offset[1] = -1;
-  if(this->FullImage->GetPixel(centerIndex + offset).Valid)
+  if(this->FullImage->GetPixel(centerIndex + offset).IsValid())
     {
     return centerIndex + offset;
     }

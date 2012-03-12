@@ -46,8 +46,9 @@ PTXImage PTXReader::Read(const std::string& filename)
   // Verify that the file was opened correctly
   if(!infile)
     {
-    std::cout << "Could not open file " << filename << "!" << std::endl;
-    throw std::runtime_error("File not found!");
+    std::stringstream ss;
+    ss << "PTXReader: Could not open file " << filename << "!";
+    throw std::runtime_error(ss.str());
     }
 
   // Read the header
@@ -78,6 +79,7 @@ PTXImage PTXReader::Read(const std::string& filename)
   ptxImage.FullImage->SetRegions(region);
   ptxImage.FullImage->Allocate();
 
+  unsigned int numberOfInvalidPoints = 0;
   // Skip 8 lines (identity matrices)
   for(int i = 0; i < 8; i++)
     {
@@ -114,11 +116,13 @@ PTXImage PTXReader::Read(const std::string& filename)
       pixel.G = color[1];
       pixel.B = color[2];
 
-      // Check for a particular value (0 0 0 0.5 0 0 0) which indicates that the scanner did not receive a valid return.
+      // Check for a particular value (0 0 0 0.5 0 0 0) which indicates that the
+      // scanner did not receive a valid return.
       if(pixel.X == 0 && pixel.Y == 0 && pixel.Z == 0 &&
         intensity == 0.50 && pixel.R == 0 && pixel.G == 0 && pixel.B == 0)
         {
         pixel.Valid = false;
+        numberOfInvalidPoints++;
         }
       else
         {
@@ -134,6 +138,8 @@ PTXImage PTXReader::Read(const std::string& filename)
   // Close the input file
   infile.close();
 
+  std::cout << "PTXReader: Read " << numberOfInvalidPoints << " invalid points." << std::endl;
+  
   ptxImage.Backup();
 
   return ptxImage;

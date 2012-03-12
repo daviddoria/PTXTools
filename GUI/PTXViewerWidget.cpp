@@ -45,6 +45,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QTimer>
+#include <QProgressDialog>
+#include <QtConcurrentRun>
 
 // STL
 #include <iostream>
@@ -67,7 +69,8 @@ void PTXViewerWidget::SharedConstructor()
   this->progressBar->setMaximum(0);
   this->progressBar->hide();
   
-  // Add renderers - we flip the image by changing the camera view up because of the conflicting conventions used by ITK and VTK
+  // Add renderers - we flip the image by changing the camera view up because of
+  // the conflicting conventions used by ITK and VTK
   this->LeftRenderer = vtkSmartPointer<vtkRenderer>::New();
   this->LeftRenderer->GradientBackgroundOn();
   this->LeftRenderer->SetBackground(this->BackgroundColor);
@@ -109,6 +112,10 @@ void PTXViewerWidget::SharedConstructor()
   this->qvtkWidgetRight->GetInteractor()->SetInteractorStyle(this->InteractorStyle3D);
   // Default GUI settings
   this->radRGB->setChecked(true);
+
+  // Whenever the operation in another thread finishes, hide the progress bar.
+  connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
+
 }
 
 PTXViewerWidget::PTXViewerWidget(const std::string& fileName) : QMainWindow(NULL)
@@ -473,8 +480,15 @@ void PTXViewerWidget::on_actionReplaceDepthImage_activated()
   ReaderType::Pointer reader = ReaderType::New();
   reader->SetFileName(fileName.toStdString());
   reader->Update();
+
   
-  this->PTX.ReplaceDepth(reader->GetOutput());
+  //this->PTX.ReplaceDepth(reader->GetOutput());
+  QFuture<void> readerFuture = QtConcurrent::run(&PTX, &PTXImage::ReplaceDepth, reader->GetOutput());
+  this->FutureWatcher.setFuture(readerFuture);
+  this->ProgressDialog->setLabelText("Opening PTX file...");
+  this->ProgressDialog->exec();
+
+  
   Display();
   
   this->statusBar()->showMessage("Replaced depth image.");

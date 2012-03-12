@@ -214,6 +214,7 @@ public:
   /** Count invalid points */
   unsigned int CountInvalidPoints() const;
   unsigned int CountValidPoints() const;
+  unsigned int CountZeroPoints() const;
 
   /** The main storage image. */
   FullImageType::Pointer FullImage;

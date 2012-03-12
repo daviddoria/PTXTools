@@ -85,6 +85,10 @@ public slots:
   // File menu
   void on_actionHelp_activated();
   void on_actionQuit_activated();
+
+  // Export menu
+  void on_action_Export_ResultPTX_activated();
+  void on_action_Export_ResultRGB_activated();
   
   void on_btnResection_clicked();
 

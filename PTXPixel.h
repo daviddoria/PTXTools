@@ -44,6 +44,9 @@ struct PTXPixel
 
   bool operator==(const PTXPixel &pixel) const;
   bool operator!=(const PTXPixel &pixel) const;
+
+  bool IsZero() const;
+  bool IsValid() const;
 };
 
 // This is needed to allow the TileImagesFilter to work with PTXPixel images.

@@ -89,3 +89,24 @@ bool PTXPixel::operator!=(const PTXPixel &pixel) const
 {
   return !(*this == pixel);
 }
+
+bool PTXPixel::IsZero() const
+{
+  //if(X == 0 && Y == 0 && Z == 0 && Intensity == 0.50 && R == 0 && G == 0 && B == 0)
+  if(X == 0 && Y == 0 && Z == 0)
+  {
+    return true;
+  }
+
+  return false;
+}
+
+bool PTXPixel::IsValid() const
+{
+  if(Valid && !IsZero())
+  {
+    return true;
+  }
+
+  return false;
+}

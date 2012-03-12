@@ -517,6 +517,8 @@ void ResectioningWidget::on_action_Image_SaveCorrespondences_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
+  SaveCorrespondencesImage(fileName.toStdString());
+  
 }
 
 void ResectioningWidget::on_action_PointCloud_SaveCorrespondences_activated()
@@ -528,6 +530,7 @@ void ResectioningWidget::on_action_PointCloud_SaveCorrespondences_activated()
     std::cout << "Filename was empty." << std::endl;
     return;
     }
+  SaveCorrespondencesPointCloud(fileName.toStdString());
 }
 
 void ResectioningWidget::on_btnDeleteLastCorrespondencePointCloud_clicked()
@@ -564,7 +567,8 @@ void ResectioningWidget::on_btnResection_clicked()
   std::cout << "There are " << ImagePane->SelectionStyle->GetNumberOfCorrespondences()
             << " correspondences in the image pane." << std::endl;
 
-  for(vtkIdType pointId = 0; pointId < ImagePane->SelectionStyle->GetNumberOfCorrespondences(); ++pointId)
+  for(vtkIdType pointId = 0;
+      pointId < static_cast<vtkIdType>(ImagePane->SelectionStyle->GetNumberOfCorrespondences()); ++pointId)
   {
     Coord3D coord = ImagePane->SelectionStyle->GetCorrespondence(pointId);
     points2D.push_back(Eigen::Vector2d (coord.x, coord.y));
@@ -573,7 +577,8 @@ void ResectioningWidget::on_btnResection_clicked()
   CameraCalibration::Point3DVector points3D;
   std::cout << "There are " << PointCloudPane->SelectionStyle->GetNumberOfCorrespondences()
             << " correspondences in the point cloud pane." << std::endl;
-  for(vtkIdType pointId = 0; pointId < PointCloudPane->SelectionStyle->GetNumberOfCorrespondences(); ++pointId)
+  for(vtkIdType pointId = 0;
+      pointId < static_cast<vtkIdType>(PointCloudPane->SelectionStyle->GetNumberOfCorrespondences()); ++pointId)
   {
     Coord3D coord = PointCloudPane->SelectionStyle->GetCorrespondence(pointId);
     points3D.push_back(Eigen::Vector3d (coord.x, coord.y, coord.z));
@@ -639,4 +644,38 @@ void ResectioningWidget::ShowResultImage()
   ResultImagePane->Renderer->ResetCamera();
 
   qvtkResultImage->GetRenderWindow()->Render();
+}
+
+void ResectioningWidget::on_action_Export_ResultPTX_activated()
+{
+  QString fileName = QFileDialog::getSaveFileName(this, "Save PTX", 
+                                                  "PTX Files (*.ptx)");
+
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  QFuture<void> writerFuture = QtConcurrent::run(&PTX, &PTXImage::WritePTX, fileName.toStdString());
+  this->FutureWatcher.setFuture(writerFuture);
+  this->ProgressDialog->setLabelText("Writing PTX file...");
+  this->ProgressDialog->exec();
+
+  //this->PTX.WritePTX(fileName.toStdString());
+}
+
+void ResectioningWidget::on_action_Export_ResultRGB_activated()
+{
+  QString fileName = QFileDialog::getSaveFileName(this, "Save Image",
+                                                  "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+  this->PTX.WriteRGBImage(fileName.toStdString());
 }

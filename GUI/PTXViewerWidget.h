@@ -25,8 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef PTXViewerWidget_H
 #define PTXViewerWidget_H
 
-// Qt
+// GUI
 #include "ui_PTXViewerWidget.h"
+
+// Qt
+#include <QFutureWatcher>
+class QProgressDialog;
 
 // VTK
 #include <vtkActor.h>
@@ -138,6 +142,11 @@ protected:
   
   bool AutoOpen;
   std::string FileName;
+
+  /** Allow things to be run in a different thread while displaying a progress bar */
+  QFutureWatcher<void> FutureWatcher;
+  QProgressDialog* ProgressDialog;
+
 };
 
 #include "PTXViewerWidget.hpp"
