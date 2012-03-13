@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 
 // VTK
+#include <vtkMath.h>
 #include <vtkPolyData.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataWriter.h>
@@ -132,5 +133,30 @@ void ITKRGBImageToVectorImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>*
     }
 }
 
+unsigned int NumberOfUniquePoints(vtkPoints* const points, const float tolerance)
+{
+  if(points->GetNumberOfPoints() <= 1)
+  {
+    return points->GetNumberOfPoints();
+  }
+  
+  double currentPoint[3];
+  points->GetPoint(0, currentPoint);
+  unsigned int numberOfUniquePoints = 1;
+  
+  double p[3];
+
+  for(vtkIdType i = 1; i < points->GetNumberOfPoints(); ++i)
+    {
+    points->GetPoint(i,p);
+    double distance = sqrt(vtkMath::Distance2BetweenPoints(currentPoint, p));
+    if(distance > tolerance)
+      {
+      points->GetPoint(i,currentPoint);
+      numberOfUniquePoints++;
+      }
+    }
+  return numberOfUniquePoints;
+}
 
 }; // end Helpers namespace

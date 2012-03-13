@@ -111,6 +111,20 @@
       </property>
      </widget>
     </item>
+    <item row="4" column="0">
+     <widget class="QPushButton" name="btnComputeP">
+      <property name="text">
+       <string>Compute P</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QPushButton" name="btnWriteMesh">
+      <property name="text">
+       <string>Write Mesh</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -119,7 +133,7 @@
      <x>0</x>
      <y>0</y>
      <width>928</width>
-     <height>21</height>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuLeft_Pane">

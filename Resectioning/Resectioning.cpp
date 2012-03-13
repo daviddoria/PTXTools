@@ -1,6 +1,7 @@
 #include "Resectioning.h"
 
 // Custom
+#include "CameraCalibration.h"
 #include "Helpers.h"
 #include "ResectioningHelpers.h"
 #include "PTXImage.h"
@@ -49,24 +50,38 @@ PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& pt
 
   unsigned int numberOfFailedProjectionPoints = 0;
   unsigned int numberOfOutsidePoints = 0;
+  unsigned int numberOfSuccessfullyColoredPoints = 0;
 
+  std::cout << "Mesh has " << ptxImage.GetMesh()->GetNumberOfPoints() << " points." << std::endl;
+  
   vtkSmartPointer<vtkModifiedBSPTree> tree = vtkSmartPointer<vtkModifiedBSPTree>::New();
   tree->SetDataSet(ptxImage.GetMesh());
   tree->BuildLocator();
 
+  std::cout << "Finished building tree." << std::endl;
+  
   // Track which pixels were filled
   PTXImage::MaskImageType::Pointer validityMask = PTXImage::MaskImageType::New();
   validityMask->SetRegions(xyzImage->GetLargestPossibleRegion());
   validityMask->Allocate();
   validityMask->FillBuffer(0);
 
-  double cameraLocation[3] = {P(0, 3), P(1,3), P(2,3)};
+  Eigen::VectorXd C = CameraCalibration::GetCameraCenter(P);
+
+  double cameraLocation[3] = {C[0], C[1], C[2]};
   
+  unsigned int iteration = 0;
   // Iterate over the scan points image and project each one in the 'inputImage'
   while(!xyzImageIterator.IsAtEnd())
     {
+    iteration++;
+    if(iteration % 1000 == 0)
+      {
+      std::cout << "So far: " << numberOfFailedProjectionPoints << " failed intersection test, "
+                << numberOfSuccessfullyColoredPoints << " successfully colored" << std::endl;
+      }
     itk::Index<2> ptxPixelLocation = xyzImageIterator.GetIndex();
-    if(ptxImage.GetPTXPixel(ptxPixelLocation).Valid)
+    if(ptxImage.GetPTXPixel(ptxPixelLocation).IsValid())
       {
       // Get the value of the current pixel
       PTXImage::XYZImageType::PixelType xyz = xyzImageIterator.Get();
@@ -98,35 +113,49 @@ PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& pt
         }
       else
         {
-        // Check if the line segment from the point to the scanner intersects the mesh. If it does, then it should not take the color that it projects to in the image.
-        float tolerance = .001;
-        double t;
-        double x[3];
-        double pcoords[3];
-        int subId = 0;
-        vtkIdType cellId = 0;
-
-        unsigned int numberOfTreeHits = 0;
-        unsigned int numberOfManualHits = 0;
-
         double p[3] = {xyz[0], xyz[1], xyz[2]};
 
-//         std::cout << "Casting ray between " << p0[0] << " " << p0[1] << " " << p0[2]
-//                     << " and " << p1[0] << " " << p1[1] << " " << p1[2] << std::endl;
-        // Perform the intersection using the tree
-        int treeHit = tree->IntersectWithLine(p, cameraLocation, tolerance, t, x, pcoords, subId, cellId);
+        // Check if the line segment from the point to the scanner intersects the mesh. If it does, then it should not take the color that it projects to in the image.
+//         float tolerance = .001;
+//         double t;
+//         double x[3];
+//         double pcoords[3];
+//         int subId = 0;
+//         vtkIdType cellId = 0;
+//         int treeHit = tree->IntersectWithLine(p, cameraLocation, tolerance, t, x, pcoords, subId, cellId);
 
-        if(!treeHit) // If we don't intersect the mesh, then this point should be colored by the pixel it projects to
+        float tolerance = .001;
+        vtkSmartPointer<vtkPoints> intersections = vtkSmartPointer<vtkPoints>::New();
+        //int treeHit = tree->IntersectWithLine(p, cameraLocation, tolerance, intersections, NULL);
+        tree->IntersectWithLine(p, cameraLocation, tolerance, intersections, NULL);
+
+        float nearnessTolerance = .001;
+        unsigned int numberOfUniquePoints = Helpers::NumberOfUniquePoints(intersections, nearnessTolerance);
+        // std::cout << "Unique intersections " << numberOfUniquePoints << std::endl;
+
+        //if(!treeHit) // If we don't intersect the mesh, then this point should be colored by the pixel it projects to
+        //if(intersections->GetNumberOfPoints() <= 1) // If we don't intersect the mesh more than once (we will definitely intersect it at the end point that is the 3d scene point), then this point should be colored by the pixel it projects to
+        if(numberOfUniquePoints == 1) // If we don't intersect the mesh more than once (we will definitely intersect it at the end point that is the 3d scene point), then this point should be colored by the pixel it projects to
           {
           resultImage->SetPixel(xyzImageIterator.GetIndex(), inputImage->GetPixel(projectedPixel));
           validityMask->SetPixel(xyzImageIterator.GetIndex(), 255);
+          numberOfSuccessfullyColoredPoints++;
           }
         else
           {
           numberOfFailedProjectionPoints++;
+          std::cout << "Failed projection test, there were " << intersections->GetNumberOfPoints() << " intersections." << std::endl;
+//           std::cout << "3D point " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+//           for(vtkIdType intersectionId = 0; intersectionId < intersections->GetNumberOfPoints(); ++intersectionId)
+//             {
+//             double intersectionCoord[3];
+//             intersections->GetPoint(intersectionId, intersectionCoord);
+//             std::cout << "Intersection " << intersectionId << " : " << intersectionCoord[0] << " " << intersectionCoord[1] << " " << intersectionCoord[2] << std::endl;
+//             }
+        
           }
         //std::cout << "pixel: " << projectedPixel << std::endl;
-        }
+        } // end else (the projected pixel is inside the image)
       } // end if valid
 
     ++xyzImageIterator;

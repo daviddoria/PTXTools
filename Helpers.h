@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // VTK
 #include "vtkSmartPointer.h"
 class vtkImageData;
+class vtkPoints;
 class vtkPolyData;
 
 namespace Helpers
@@ -34,6 +35,9 @@ namespace Helpers
 
   /** Write a PolyData to a file */
   void OutputPolyData(vtkPolyData* const points, const std::string& filename);
+
+  /** Compute how many unique points there are in a vtkPoints object. This is a special case where the points are all along a line in order. */
+  unsigned int NumberOfUniquePoints(vtkPoints* const points, const float tolerance);
 
   /** Convert an ITK image to a VTK image */
   void ITKRGBImageToVTKImage(const itk::Image<itk::RGBPixel<unsigned char>, 2>* const image,

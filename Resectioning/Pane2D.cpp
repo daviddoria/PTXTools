@@ -1,6 +1,7 @@
 #include "Pane2D.h"
 
 #include <vtkImageData.h>
+#include <vtkImageProperty.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkImageSlice.h>
 #include <vtkRenderWindow.h>
@@ -14,6 +15,8 @@ Pane2D::Pane2D(QVTKWidget* qvtkWidget) : Pane(qvtkWidget)
   this->ImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
   
   this->ImageSlice = vtkSmartPointer<vtkImageSlice>::New();
+  // Make the pixels sharp instead of blurry when zoomed
+  this->ImageSlice->GetProperty()->SetInterpolationTypeToNearest();
   
   this->CameraLeftToRightVector.resize(3);
   this->CameraLeftToRightVector[0] = -1;

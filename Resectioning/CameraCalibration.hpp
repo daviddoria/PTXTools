@@ -25,7 +25,7 @@ Eigen::MatrixXd ComputeNormalizationTransform(const typename std::vector<T,typen
 {
   unsigned int numberOfPoints = points.size();
   unsigned int dimensions = points[0].rows();
-  std::cout << "dimensions: " << dimensions << std::endl;
+  // std::cout << "dimensions: " << dimensions << std::endl;
   
   T centroid = Centroid<T>(points);
 

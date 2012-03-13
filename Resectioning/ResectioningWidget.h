@@ -24,10 +24,16 @@
 // ITK
 #include "itkImage.h"
 
+// Eigen
+#include <Eigen/Dense>
+
 // Qt
 #include <QMainWindow>
 #include <QFutureWatcher>
 class QProgressDialog;
+
+// VTK
+class vtkSphereSource;
 
 // Custom
 #include "Pane.h"
@@ -89,11 +95,16 @@ public slots:
   // Export menu
   void on_action_Export_ResultPTX_activated();
   void on_action_Export_ResultRGB_activated();
-  
+
+  // Action buttons
   void on_btnResection_clicked();
+  void on_btnComputeP_clicked();
+  void on_btnWriteMesh_clicked();
 
 private:
 
+  Eigen::MatrixXd ComputeP();
+    
   void SharedConstructor();
 
   /** Allow things to be run in a different thread while displaying a progress bar */
@@ -139,6 +150,10 @@ private:
   /** The image that was loaded. */
   FloatVectorImageType::Pointer ColorImage;
   //PTXImage::RGBImageType::Pointer ColorImage;
+
+  vtkSmartPointer<vtkSphereSource> CameraSource;
+  vtkSmartPointer<vtkPolyDataMapper> CameraMapper;
+  vtkSmartPointer<vtkActor> CameraActor;
 };
 
 #endif

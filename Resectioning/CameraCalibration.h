@@ -8,6 +8,8 @@
 namespace CameraCalibration
 {
 
+Eigen::VectorXd GetCameraCenter(const Eigen::MatrixXd& P);
+
 typedef std::vector<Eigen::Vector2d,Eigen::aligned_allocator<Eigen::Vector2d> > Point2DVector;
 typedef std::vector<Eigen::Vector3d,Eigen::aligned_allocator<Eigen::Vector3d> > Point3DVector;
 

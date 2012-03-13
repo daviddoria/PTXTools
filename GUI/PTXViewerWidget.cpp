@@ -99,7 +99,7 @@ void PTXViewerWidget::SharedConstructor()
   this->PointsActor = vtkSmartPointer<vtkActor>::New();
   this->PointsPolyData = vtkSmartPointer<vtkPolyData>::New();
   this->PointsPolyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  this->PointsPolyDataMapper->SetInputConnection(this->PointsPolyData->GetProducerPort());
+  this->PointsPolyDataMapper->SetInputData(this->PointsPolyData);
   this->PointsActor->SetMapper(this->PointsPolyDataMapper);
   this->RightRenderer->AddViewProp(this->PointsActor);
 

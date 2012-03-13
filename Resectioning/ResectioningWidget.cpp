@@ -63,9 +63,11 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataReader.h>
+#include <vtkXMLPolyDataWriter.h>
 
 // Custom
 #include "CameraCalibration.h"
@@ -109,6 +111,14 @@ void ResectioningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
+  CameraSource = vtkSmartPointer<vtkSphereSource>::New();
+  CameraSource->Update();
+  
+  CameraMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  CameraMapper->SetInputData(CameraSource->GetOutput());
+  CameraActor = vtkSmartPointer<vtkActor>::New();
+  CameraActor->SetMapper(CameraMapper);
+  
   this->ProgressDialog = new QProgressDialog;
   this->ProgressDialog->setMinimum(0);
   this->ProgressDialog->setMaximum(0);
@@ -298,12 +308,6 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
 
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
   this->PTX.CreatePointCloud(polyData);
-
-  QFuture<void> triangulationFuture = QtConcurrent::run(&PTX, &PTXImage::ComputeMesh);
-  this->FutureWatcher.setFuture(triangulationFuture);
-  this->ProgressDialog->setLabelText("Triangulating...");
-  this->ProgressDialog->exec();
-  // this->PTX.GetMesh(this->Mesh);
 
   vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
   //lookupTable->SetTableRange(0.0, 10.0);
@@ -567,7 +571,7 @@ void ResectioningWidget::on_btnDeleteAllCorrespondencesImage_clicked()
   //this->qvtkWidgetRight->GetRenderWindow()->Render();
 }
 
-void ResectioningWidget::on_btnResection_clicked()
+Eigen::MatrixXd ResectioningWidget::ComputeP()
 {
   CameraCalibration::Point2DVector points2D;
   std::cout << "There are " << ImagePane->SelectionStyle->GetNumberOfCorrespondences()
@@ -579,7 +583,7 @@ void ResectioningWidget::on_btnResection_clicked()
     Coord3D coord = ImagePane->SelectionStyle->GetCorrespondence(pointId);
     points2D.push_back(Eigen::Vector2d (coord.x, coord.y));
   }
-  
+
   CameraCalibration::Point3DVector points3D;
   std::cout << "There are " << PointCloudPane->SelectionStyle->GetNumberOfCorrespondences()
             << " correspondences in the point cloud pane." << std::endl;
@@ -594,6 +598,32 @@ void ResectioningWidget::on_btnResection_clicked()
             << points3D.size() << " 3D points to use with DLT." << std::endl;
   Eigen::MatrixXd P = CameraCalibration::ComputeP_NormalizedDLT(points2D, points3D);
 
+  return P;
+}
+
+void ResectioningWidget::on_btnComputeP_clicked()
+{
+  Eigen::MatrixXd P = ComputeP();
+
+  //double cameraLocation[3] = {P(0, 3), P(1,3), P(2,3)};
+  
+  
+  Eigen::VectorXd C = CameraCalibration::GetCameraCenter(P);
+
+  double cameraLocation[3] = {C[0], C[1], C[2]};
+  
+  std::cout << "cameraLocation: " << cameraLocation[0] << " " << cameraLocation[1] << " " << cameraLocation[2] << std::endl;
+  CameraActor->SetPosition(cameraLocation);
+
+  PointCloudPane->Renderer->AddActor(CameraActor);
+  PointCloudPane->qvtkWidget->GetRenderWindow()->Render();
+}
+
+void ResectioningWidget::on_btnResection_clicked()
+{
+  // this->PTX.GetMesh(this->Mesh);
+
+  Eigen::MatrixXd P = ComputeP();
 
   typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
   RGBImageType::Pointer rgbImage = RGBImageType::New();
@@ -613,9 +643,14 @@ void ResectioningWidget::on_btnResection_clicked()
 //                                                         this->OriginalPTX, rgbImage.GetPointer());
 
   if(PTX.GetMesh()->GetNumberOfPoints() == 0)
-  {
-    PTX.ComputeMesh();
-  }
+    {
+    float maxEdgeLength = 1.0f;
+    QFuture<void> triangulationFuture = QtConcurrent::run(&PTX, &PTXImage::ComputeMesh, maxEdgeLength);
+    this->FutureWatcher.setFuture(triangulationFuture);
+    this->ProgressDialog->setLabelText("Triangulating...");
+    this->ProgressDialog->exec();
+    }
+
   QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::Resection_MeshIntersection, P,
                                                         this->OriginalPTX, rgbImage.GetPointer());
 
@@ -662,7 +697,7 @@ void ResectioningWidget::ShowResultImage()
 
 void ResectioningWidget::on_action_Export_ResultPTX_activated()
 {
-  QString fileName = QFileDialog::getSaveFileName(this, "Save PTX", 
+  QString fileName = QFileDialog::getSaveFileName(this, "Save PTX", ".",
                                                   "PTX Files (*.ptx)");
 
   std::cout << "Got filename: " << fileName.toStdString() << std::endl;
@@ -682,7 +717,7 @@ void ResectioningWidget::on_action_Export_ResultPTX_activated()
 
 void ResectioningWidget::on_action_Export_ResultRGB_activated()
 {
-  QString fileName = QFileDialog::getSaveFileName(this, "Save Image",
+  QString fileName = QFileDialog::getSaveFileName(this, "Save Image", ".",
                                                   "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
 
   std::cout << "Got filename: " << fileName.toStdString() << std::endl;
@@ -692,4 +727,29 @@ void ResectioningWidget::on_action_Export_ResultRGB_activated()
     return;
     }
   this->PTX.WriteRGBImage(fileName.toStdString());
+}
+
+void ResectioningWidget::on_btnWriteMesh_clicked()
+{
+  QString fileName = QFileDialog::getSaveFileName(this, "Save VTP", ".",
+                                                  "VTP Files (*.vtp)");
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+    
+  if(PTX.GetMesh()->GetNumberOfPoints() == 0)
+    {
+    QFuture<void> triangulationFuture = QtConcurrent::run(&PTX, &PTXImage::ComputeMesh, 1.0f);
+    this->FutureWatcher.setFuture(triangulationFuture);
+    this->ProgressDialog->setLabelText("Triangulating...");
+    this->ProgressDialog->exec();
+    }
+
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  writer->SetFileName(fileName.toStdString().c_str());
+  writer->SetInputData(PTX.GetMesh());
+  writer->Write();
 }

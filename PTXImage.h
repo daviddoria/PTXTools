@@ -268,9 +268,9 @@ public:
   itk::Index<2> FindValidTopCenterPixel() const;
   itk::Index<2> FindValidCenterPixel() const;
 
-  void SetDebug(bool);
+  void SetDebug(const bool);
 
-  void ComputeMesh();
+  void ComputeMesh(const float maxMeshEdgeLength = std::numeric_limits<float>::max());
   
   //void GetMesh(vtkPolyData* const output);
   vtkPolyData* GetMesh() const;

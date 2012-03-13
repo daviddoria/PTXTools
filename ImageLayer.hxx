@@ -31,11 +31,11 @@ ImageLayer<TImage>::ImageLayer()
   
   this->ImageData = vtkSmartPointer<vtkImageData>::New();
   this->ImageData->SetDimensions(0,0,0);
-  this->ImageData->AllocateScalars();
+  //this->ImageData->AllocateScalars();
 
   this->ImageSlice = vtkSmartPointer<vtkImageSlice>::New();
   this->ImageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
-  this->ImageSliceMapper->SetInputConnection(this->ImageData->GetProducerPort());
+  this->ImageSliceMapper->SetInputData(this->ImageData);
   this->ImageSlice->SetMapper(this->ImageSliceMapper);
   this->ImageSlice->VisibilityOff();
 

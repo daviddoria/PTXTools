@@ -9,20 +9,26 @@
 
 int main (int argc, char *argv[])
 {
-  if(argc != 3)
+  if(argc != 4)
     {
-    std::cout << "Required arguments: Input (PTX) OutputFileName" << std::endl;
+    std::cout << "Required arguments: input.ptx MaxEdgeLength OutputFileName.vtp" << std::endl;
     return EXIT_FAILURE;
     }
 
-  std::string inputFilename = argv[1];
-  std::string outputFileName = argv[2];
+  std::string inputFileName = argv[1];
+  std::stringstream ss;
+  ss << argv[2];
+  float maxEdgeLength = 0.0f;
+  ss >> maxEdgeLength;
+  std::string outputFileName = argv[3];
 
-  //FilePrefix prefix(outputPrefix);
+  std::cout << "Input file: " << inputFileName << std::endl;
+  std::cout << "maxEdgeLength: " << maxEdgeLength << std::endl;
+  std::cout << "Output file: " << outputFileName << std::endl;
   
 
-  PTXImage ptxImage = PTXReader::Read(inputFilename);
-  ptxImage.ComputeMesh();
+  PTXImage ptxImage = PTXReader::Read(inputFileName);
+  ptxImage.ComputeMesh(maxEdgeLength);
 
   vtkPolyData* polyData = ptxImage.GetMesh();
 

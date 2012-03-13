@@ -62,7 +62,7 @@ PTXImage::PTXImage(FullImageType* const fullImage)
   Helpers::DeepCopy(fullImage, FullImage.GetPointer());
 }
 
-void PTXImage::SetDebug(bool value)
+void PTXImage::SetDebug(const bool value)
 {
   this->Debug = value;
 }
@@ -2392,7 +2392,7 @@ vtkPolyData* PTXImage::GetMesh() const
   return this->Mesh;
 }
 
-void PTXImage::ComputeMesh()
+void PTXImage::ComputeMesh(const float maxMeshEdgeLength)
 {
   // Create a grid of theta/phi coordinates (keeps only connectivity, not geometry)
   vtkSmartPointer<vtkPoints> points2D = vtkSmartPointer<vtkPoints>::New();
@@ -2445,6 +2445,25 @@ void PTXImage::ComputeMesh()
     points3D->GetPoint(pts[0], p0);
     points3D->GetPoint(pts[1], p1);
     points3D->GetPoint(pts[2], p2);
+
+    // Throw away triangles that are bigger than a threshold
+    double edgeLength = vtkMath::Distance2BetweenPoints(p0, p1);
+    if(edgeLength > maxMeshEdgeLength)
+      {
+      continue;
+      }
+
+    edgeLength = vtkMath::Distance2BetweenPoints(p1, p2);
+    if(edgeLength > maxMeshEdgeLength)
+      {
+      continue;
+      }
+
+    edgeLength = vtkMath::Distance2BetweenPoints(p0, p2);
+    if(edgeLength > maxMeshEdgeLength)
+      {
+      continue;
+      }
 
     // Add the triangle to the 3d polydata
     vtkSmartPointer<vtkTriangle> triangle = vtkSmartPointer<vtkTriangle>::New();
