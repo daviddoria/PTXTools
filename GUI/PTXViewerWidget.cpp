@@ -114,6 +114,7 @@ void PTXViewerWidget::SharedConstructor()
   this->radRGB->setChecked(true);
 
   // Whenever the operation in another thread finishes, hide the progress bar.
+  this->ProgressDialog = new QProgressDialog;
   connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
 }
