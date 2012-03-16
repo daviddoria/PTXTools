@@ -252,6 +252,8 @@ public:
   /** Interpolated direction of the sphereical grid point */
   itk::Vector<float, 3> ApproximateRayDirection(const itk::Index<2>& pixel) const;
 
+  void PrintCoordinate(const itk::Index<2>& index) const;
+  
   /** Get the phi (up and down) angle of a pixel */
   float GetPhi(const itk::Index<2>& index) const;
 
@@ -281,7 +283,8 @@ private:
 
   bool Debug;
 
-
+  void OutputInfo();
+  
   /** The main storage image. */
   FullImageType::Pointer FullImage;
 

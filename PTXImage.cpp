@@ -880,6 +880,9 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
   PTXImage originalPTXImage(OriginalFullImage);
   originalPTXImage.ComputeAverageDeltaPhi();
   originalPTXImage.ComputeAverageDeltaTheta();
+
+  std::cout << "Original info:" << std::endl;
+  originalPTXImage.OutputInfo();
   
   // Setup iterators
   itk::ImageRegionIteratorWithIndex<FullImageType> imageIterator(this->FullImage,
@@ -891,6 +894,7 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
   origin.Fill(0);
 
   unsigned int numberOfApproximatedDirections = 0;
+  unsigned int numberOfInvalidPoints = 0;
   while(!imageIterator.IsAtEnd())
     {
     // Get the old point
@@ -901,6 +905,7 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     // If the point is not valid, set it to the origin and move on to the next point.
     if(!currentPTXPixel.Valid) // Note: this should not be IsValid(), as we test the IsZero condition separately
     {
+      numberOfInvalidPoints++;
       currentPTXPixel.X = origin[0];
       currentPTXPixel.Y = origin[1];
       currentPTXPixel.Z = origin[2];
@@ -928,6 +933,9 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
         std::cout << "Old depth: " << oldDepth << " New depth: " << newDepthIterator.Get() << std::endl;
         }
 
+      //std::cout << "Actual theta: " << GetTheta(imageIterator.GetIndex())
+      //          << " phi: " << GetPhi(imageIterator.GetIndex()) << std::endl;
+      
       // Get the vector from the origin (scanner location) to the old point
       rayDirection = oldPoint - origin;
 
@@ -936,18 +944,23 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     }
     else
     {
+      // We should get here if the point is 0 0 0 1 0 0 0 - indicating that it should be filled,
+      // but was not previously valid
       // std::cout << "Approximating ray direction..." << std::endl;
       numberOfApproximatedDirections++;
-      //oldPoint = originalPTXImage.ApproximateOldPoint(imageIterator.GetIndex());
+      
       rayDirection = originalPTXImage.ApproximateRayDirection(imageIterator.GetIndex());
-      // std::cout << "rayDirection " << rayDirection << std::endl;
+
+//       std::cout << "Approximated ray direction " << rayDirection << std::endl;
+//       std::cout << "New depth: " << newDepthIterator.Get() << std::endl;
+      
       if(isnan(rayDirection[0]))
       {
         throw std::runtime_error("Error computing old point!");
       }
 
     }
-
+    //std::cout << "Using ray direction: " << rayDirection << std::endl;
     // Compute the new point from the vector and the new depth
     itk::Point<float, 3> newPoint = origin + rayDirection * newDepthIterator.Get();
 
@@ -963,6 +976,8 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     }
 
   std::cout << "Approximated " << numberOfApproximatedDirections << " directions." << std::endl;
+  std::cout << "Invalid points " << numberOfInvalidPoints << std::endl;
+  
 }
 
 void PTXImage::ReplaceRGB(const RGBVectorImageType* const rgb)
@@ -1170,7 +1185,7 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
     // If the point was invalid, construct a vector in its direction incase the depth is now valid
     bool previousValidity = pixel.Valid;
 
-    if(pixel.IsValid() == false)
+    if(!pixel.IsValid())
       {
       madeValid++;
       pixel.Valid = true;
@@ -1229,50 +1244,40 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
   CountInvalidPoints();
 }
 
-itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& pixel) const
+
+itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& queryPixel) const
 {
   /**
    * This function creates a point unit distance from the origin in the approximate direction
    * the old point would have been aquired. It should be used, for example, when replacing a
    * previously invalid point.
    */
-  float phi = ApproximatePhi(pixel);
-  float theta = ApproximateTheta(pixel);
+  float phi = ApproximatePhi(queryPixel);
+  float theta = ApproximateTheta(queryPixel);
 
-  if(isnan(phi))
-  {
-    throw std::runtime_error("Phi is nan!");
-  }
+  // std::cout << "Approximated Theta: " << theta << " phi: " << phi << std::endl;
 
-  if(isnan(theta))
-  {
-    //ApproximateTheta(pixel);
-    throw std::runtime_error("Theta is nan!");
-  }
+//   if(isnan(phi))
+//   {
+//     throw std::runtime_error("Phi is nan!");
+//   }
+// 
+//   if(isnan(theta))
+//   {
+//     //ApproximateTheta(pixel);
+//     throw std::runtime_error("Theta is nan!");
+//   }
 
-  itk::Point<float, 3> azEl;
-  azEl[0] = theta;
-  azEl[1] = phi;
-  azEl[2] = 1;
-  //azEl[2] = -1.0f; // This doesn't seem to make a difference? Seems odd...
+  double x, y, z;
+  Helpers::sphericalToCartesian(x,y,z,1.0f,theta,phi); // should be like this
 
-  typedef itk::AzimuthElevationToCartesianTransform< float, 3 >
-    AzimuthElevationToCartesian;
-  AzimuthElevationToCartesian::Pointer azimuthElevation =
-    AzimuthElevationToCartesian::New();
-
-  itk::Point<float, 3> transformedPoint = azimuthElevation->TransformAzElToCartesian(azEl);
   itk::Vector<float, 3> direction;
-  direction[0] = transformedPoint[0];
-  direction[1] = transformedPoint[1];
-  direction[2] = transformedPoint[2];
+  direction[0] = x;
+  direction[1] = y;
+  direction[2] = z;
   direction.Normalize();
-
-  // Not sure why negating this is necessary, but it seems to be.
-  direction[0] *= -1.0f;
-  direction[1] *= -1.0f;
-  direction[2] *= -1.0f;
-
+  std::cout << "Approximated direction: " << direction << std::endl;
+  
   return direction;
 }
 
@@ -1590,7 +1595,7 @@ void PTXImage::ComputeAverageDeltaPhi()
         }
       else
         {
-        deltaPhis.push_back(GetPhi(index) - GetPhi(lastIndex));
+        deltaPhis.push_back(fabs(GetPhi(index) - GetPhi(lastIndex)));
         }
 
       lastIndex = index;
@@ -1615,72 +1620,126 @@ void PTXImage::ComputeAverageDeltaPhi()
 
 float PTXImage::GetPhi(const itk::Index<2>& index) const
 {
-  if(!this->FullImage->GetPixel(index).IsValid())
-    {
-    std::cerr << "Cannot GetPhi on an invalid pixel!" << std::endl;
-    exit(-1);
-    }
+  if(this->FullImage->GetPixel(index).IsZero())
+  {
+    throw std::runtime_error("GetPhi index has a zero point!");
+  }
+  float x = this->FullImage->GetPixel(index).X;
+  float y = this->FullImage->GetPixel(index).Y;
+  float z = this->FullImage->GetPixel(index).Z;
+  
+  double r, theta, phi;
+  
+  Helpers::cartesianToSpherical(r, theta, phi, x, y, z );
 
-  typedef itk::Point<float, 3> PointType;
-  PointType cartesian;
-  cartesian[0] = this->FullImage->GetPixel(index).X;
-  cartesian[1] = this->FullImage->GetPixel(index).Y;
-  cartesian[2] = this->FullImage->GetPixel(index).Z;
-
-  typedef itk::AzimuthElevationToCartesianTransform< float, 3 >
-    AzimuthElevationToCartesian;
-  AzimuthElevationToCartesian::Pointer azimuthElevation =
-    AzimuthElevationToCartesian::New();
-
-  return azimuthElevation->TransformCartesianToAzEl(cartesian)[1];
+  return phi;
 }
 
 float PTXImage::GetTheta(const itk::Index<2>& index) const
 {
-  if(!this->FullImage->GetPixel(index).IsValid())
-    {
-    std::cerr << "Cannot GetPhi on an invalid pixel!" << std::endl;
-    exit(-1);
-    }
+  if(this->FullImage->GetPixel(index).IsZero())
+  {
+    throw std::runtime_error("GetTheta index has a zero point!");
+  }
+  
+  float x = this->FullImage->GetPixel(index).X;
+  float y = this->FullImage->GetPixel(index).Y;
+  float z = this->FullImage->GetPixel(index).Z;
 
-  typedef itk::Point<float, 3> PointType;
-  PointType cartesian;
-  cartesian[0] = this->FullImage->GetPixel(index).X;
-  cartesian[1] = this->FullImage->GetPixel(index).Y;
-  cartesian[2] = this->FullImage->GetPixel(index).Z;
+  double r, theta, phi;
 
-  typedef itk::AzimuthElevationToCartesianTransform< float, 3 >
-    AzimuthElevationToCartesian;
-  AzimuthElevationToCartesian::Pointer azimuthElevation =
-    AzimuthElevationToCartesian::New();
+  Helpers::cartesianToSpherical(r, theta, phi, x, y, z );
 
-  return azimuthElevation->TransformCartesianToAzEl(cartesian)[0];
+  return theta;
 }
 
-float PTXImage::ApproximateTheta(const itk::Index<2>& pixel) const
+float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
 {
-  itk::Offset<2> offset;
-  offset[0] = 1;
-  offset[1] = 0;
+  itk::Index<2> corner1 = {{0,0}};
+  PrintCoordinate(corner1);
+  
+  itk::Index<2> corner2 = {{this->GetFullRegion().GetSize()[0] - 1, 0}};
+  PrintCoordinate(corner2);
+  
+  itk::Index<2> corner3 = {{0, this->GetFullRegion().GetSize()[1] - 1}};
+  PrintCoordinate(corner3);
+  
+  itk::Index<2> corner4 = {{this->GetFullRegion().GetSize()[0] - 1, this->GetFullRegion().GetSize()[1] - 1}};
+  PrintCoordinate(corner4);
 
-  itk::Index<2> nearestPixel = FindNearestValidPixel(pixel, offset);
+  std::cout << "Corner 1: " << std::endl;
+  Helpers::PrintSpherical(this->FullImage->GetPixel(corner1).X,
+                          this->FullImage->GetPixel(corner1).Y,
+                          this->FullImage->GetPixel(corner1).Z);
+  
+  std::cout << "Corner 2: " << std::endl;
+  Helpers::PrintSpherical(this->FullImage->GetPixel(corner2).X,
+                          this->FullImage->GetPixel(corner2).Y,
+                          this->FullImage->GetPixel(corner2).Z);
 
-  float nearestTheta = GetTheta(nearestPixel);
+  std::cout << "Corner 3: " << std::endl;
+  Helpers::PrintSpherical(this->FullImage->GetPixel(corner3).X,
+                          this->FullImage->GetPixel(corner3).Y,
+                          this->FullImage->GetPixel(corner3).Z);
 
-  return nearestTheta + static_cast<float>(pixel[0] - nearestPixel[0])*this->AverageDeltaTheta;
+  std::cout << "Corner 4: " << std::endl;
+  Helpers::PrintSpherical(this->FullImage->GetPixel(corner4).X,
+                          this->FullImage->GetPixel(corner4).Y,
+                          this->FullImage->GetPixel(corner4).Z);
+
+  itk::Index<2> left = corner3;
+  itk::Index<2> right = corner1;
+  
+  if(this->FullImage->GetPixel(left).IsZero() || this->FullImage->GetPixel(right).IsZero())
+  {
+    throw std::runtime_error("ApproximateTheta: one of the corner is a zero point!");
+  }
+  std::cout << "Left point: " << this->FullImage->GetPixel(left).X << " "
+            << this->FullImage->GetPixel(left).Y << " "
+            << this->FullImage->GetPixel(left).Z << std::endl;
+  std::cout << "Right point: " << this->FullImage->GetPixel(right).X
+            << " " << this->FullImage->GetPixel(right).Y << " "
+            << this->FullImage->GetPixel(right).Z << std::endl;
+
+  float minTheta = GetTheta(left);
+  float maxTheta = GetTheta(right);
+
+  float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[1]);
+  std::cout << "minTheta: " << minTheta << " maxTheta " << maxTheta << " thetaStep: " << thetaStep << std::endl;
+  float approximateTheta = minTheta + static_cast<float>(queryPixel[1]) * thetaStep;
+  std::cout << "approximateTheta: " << approximateTheta << std::endl;
+  return approximateTheta;
 }
 
-float PTXImage::ApproximatePhi(const itk::Index<2>& pixel) const
+float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
 {
-  itk::Offset<2> offset;
-  offset[0] = 0;
-  offset[1] = 1;
+//   itk::Index<2> bottom = {{0,0}};
+//   itk::Index<2> top = {{0, maxIndex}};
 
-  itk::Index<2> nearestPixel = FindNearestValidPixel(pixel, offset);
+  itk::Index<2> corner1 = {{0,0}};
+  PrintCoordinate(corner1);
 
-  float phi = GetPhi(nearestPixel);
+  itk::Index<2> corner2 = {{this->GetFullRegion().GetSize()[0] - 1, 0}};
+  PrintCoordinate(corner2);
+  
+  itk::Index<2> bottom = corner2;
+  itk::Index<2> top = corner1;
 
-  return phi + (pixel[1] - nearestPixel[1])*this->AverageDeltaPhi;
+  if(this->FullImage->GetPixel(bottom).IsZero() || this->FullImage->GetPixel(top).IsZero())
+  {
+    throw std::runtime_error("ApproximateTheta: one of the corner is a zero point!");
+  }
+  
+  float minPhi = GetPhi(bottom);
+  float maxPhi = GetPhi(top);
+
+  float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[0]);
+  
+  std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
+  
+  float approximatePhi = minPhi + static_cast<float>(queryPixel[0]) * phiStep;
+  std::cout << "approximatePhi: " << approximatePhi << std::endl;
+  return approximatePhi;
 }
 
 itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, itk::Offset<2> offset) const
@@ -1724,7 +1783,7 @@ itk::Index<2> PTXImage::FindNearestValidPixel(const itk::Index<2>& pixel, itk::O
     pixelCounter++;
     if(this->FullImage->GetPixel(currentPixel).IsValid())
       {
-      std::cout << "Closest valid pixel to " << pixel << " is " << currentPixel << std::endl;
+      //std::cout << "Closest valid pixel to " << pixel << " is " << currentPixel << std::endl;
       return currentPixel;
       }
     }
@@ -2483,4 +2542,18 @@ void PTXImage::ComputeMesh(const float maxMeshEdgeLength)
   this->Mesh->DeepCopy(polydata3d);
   this->Mesh->SetPolys(Triangles3D);
 
+}
+
+void PTXImage::OutputInfo()
+{
+  std::cout << "Invalid points: " << CountInvalidPoints() << std::endl;
+  std::cout << "Valid points: " << CountValidPoints() << std::endl;
+  std::cout << "Zero points: " << CountZeroPoints() << std::endl;
+}
+
+void PTXImage::PrintCoordinate(const itk::Index<2>& index) const
+{
+  std::cout << "X: " << this->FullImage->GetPixel(index).X << " y: " <<
+                        this->FullImage->GetPixel(index).Y << " z: " << 
+                        this->FullImage->GetPixel(index).Z << std::endl;
 }

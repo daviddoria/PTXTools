@@ -33,6 +33,16 @@ namespace Helpers
 {
   ///// Non-templated functions /////
 
+void
+sphericalToCartesian( double & x, double & y, double & z,
+                      double   r, double   theta, double   phi );
+
+void
+cartesianToSpherical( double & r, double & theta, double & phi,
+                      double   x, double   y, double   z );
+
+void PrintSpherical(double   x, double   y, double   z );
+
   /** Write a PolyData to a file */
   void OutputPolyData(vtkPolyData* const points, const std::string& filename);
 

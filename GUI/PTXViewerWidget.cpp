@@ -486,7 +486,7 @@ void PTXViewerWidget::on_actionReplaceDepthImage_activated()
   //this->PTX.ReplaceDepth(reader->GetOutput());
   QFuture<void> readerFuture = QtConcurrent::run(&PTX, &PTXImage::ReplaceDepth, reader->GetOutput());
   this->FutureWatcher.setFuture(readerFuture);
-  this->ProgressDialog->setLabelText("Opening PTX file...");
+  this->ProgressDialog->setLabelText("Opening depth image...");
   this->ProgressDialog->exec();
 
   
