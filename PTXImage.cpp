@@ -1269,7 +1269,7 @@ itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& que
 //   }
 
   double x, y, z;
-  Helpers::sphericalToCartesian(x,y,z,1.0f,theta,phi); // should be like this
+  Helpers::sphericalToCartesian(x,y,z,1.0f,theta,phi);
 
   itk::Vector<float, 3> direction;
   direction[0] = x;
@@ -1660,53 +1660,27 @@ float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
   
   itk::Index<2> corner2 = {{this->GetFullRegion().GetSize()[0] - 1, 0}};
   PrintCoordinate(corner2);
-  
-  itk::Index<2> corner3 = {{0, this->GetFullRegion().GetSize()[1] - 1}};
-  PrintCoordinate(corner3);
-  
-  itk::Index<2> corner4 = {{this->GetFullRegion().GetSize()[0] - 1, this->GetFullRegion().GetSize()[1] - 1}};
-  PrintCoordinate(corner4);
 
-  std::cout << "Corner 1: " << std::endl;
-  Helpers::PrintSpherical(this->FullImage->GetPixel(corner1).X,
-                          this->FullImage->GetPixel(corner1).Y,
-                          this->FullImage->GetPixel(corner1).Z);
-  
-  std::cout << "Corner 2: " << std::endl;
-  Helpers::PrintSpherical(this->FullImage->GetPixel(corner2).X,
-                          this->FullImage->GetPixel(corner2).Y,
-                          this->FullImage->GetPixel(corner2).Z);
-
-  std::cout << "Corner 3: " << std::endl;
-  Helpers::PrintSpherical(this->FullImage->GetPixel(corner3).X,
-                          this->FullImage->GetPixel(corner3).Y,
-                          this->FullImage->GetPixel(corner3).Z);
-
-  std::cout << "Corner 4: " << std::endl;
-  Helpers::PrintSpherical(this->FullImage->GetPixel(corner4).X,
-                          this->FullImage->GetPixel(corner4).Y,
-                          this->FullImage->GetPixel(corner4).Z);
-
-  itk::Index<2> left = corner3;
+  itk::Index<2> left = corner2;
   itk::Index<2> right = corner1;
   
   if(this->FullImage->GetPixel(left).IsZero() || this->FullImage->GetPixel(right).IsZero())
   {
     throw std::runtime_error("ApproximateTheta: one of the corner is a zero point!");
   }
-  std::cout << "Left point: " << this->FullImage->GetPixel(left).X << " "
-            << this->FullImage->GetPixel(left).Y << " "
-            << this->FullImage->GetPixel(left).Z << std::endl;
-  std::cout << "Right point: " << this->FullImage->GetPixel(right).X
-            << " " << this->FullImage->GetPixel(right).Y << " "
-            << this->FullImage->GetPixel(right).Z << std::endl;
+  std::cout << "Left point: ";
+  PrintCoordinate(left);
+  
+  std::cout << "Right point: ";
+  PrintCoordinate(right);
 
   float minTheta = GetTheta(left);
   float maxTheta = GetTheta(right);
 
-  float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[1]);
+  float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[0]);
   std::cout << "minTheta: " << minTheta << " maxTheta " << maxTheta << " thetaStep: " << thetaStep << std::endl;
-  float approximateTheta = minTheta + static_cast<float>(queryPixel[1]) * thetaStep;
+  //float approximateTheta = minTheta + static_cast<float>(queryPixel[0]) * thetaStep;
+  float approximateTheta = minTheta + static_cast<float>(this->GetFullRegion().GetSize()[0] - queryPixel[0]) * thetaStep;
   std::cout << "approximateTheta: " << approximateTheta << std::endl;
   return approximateTheta;
 }
@@ -1719,7 +1693,7 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
   itk::Index<2> corner1 = {{0,0}};
   PrintCoordinate(corner1);
 
-  itk::Index<2> corner2 = {{this->GetFullRegion().GetSize()[0] - 1, 0}};
+  itk::Index<2> corner2 = {{0, this->GetFullRegion().GetSize()[1] - 1}};
   PrintCoordinate(corner2);
   
   itk::Index<2> bottom = corner2;
@@ -1733,12 +1707,14 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
   float minPhi = GetPhi(bottom);
   float maxPhi = GetPhi(top);
 
-  float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[0]);
+  float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[1]);
   
   std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
   
-  float approximatePhi = minPhi + static_cast<float>(queryPixel[0]) * phiStep;
+  float approximatePhi = minPhi + static_cast<float>(this->GetFullRegion().GetSize()[1] - queryPixel[1]) * phiStep;
+  //float approximatePhi = minPhi + static_cast<float>(queryPixel[1]) * phiStep;
   std::cout << "approximatePhi: " << approximatePhi << std::endl;
+  
   return approximatePhi;
 }
 

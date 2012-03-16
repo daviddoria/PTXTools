@@ -180,10 +180,18 @@ cartesianToSpherical( double & r,
                       double   y,
                       double   z )
 {
+//     if ( ( r = sqrt( x * x + y * y + z * z ) ) != 0.0 )
+//     {
+//         theta = acos( z / r );
+//         phi   = atan2( y, x );
+//     }
+//     else
+//         theta = phi = 0.0;
+
     if ( ( r = sqrt( x * x + y * y + z * z ) ) != 0.0 )
     {
-        theta = acos( z / r );
-        phi   = atan2( y, x );
+        theta = atan2( y, x );
+        phi   = acos( z / r );
     }
     else
         theta = phi = 0.0;
@@ -207,11 +215,17 @@ sphericalToCartesian( double & x,
                       double   theta,
                       double   phi )
 {
+//         if ( r < 0.0 )
+//                 throw "Negative radius in sphericalToCartesian()";
+//     x = r * sin( theta ) * cos( phi );
+//     y = r * sin( theta ) * sin( phi );
+//     z = r * cos( theta );
+
         if ( r < 0.0 )
                 throw "Negative radius in sphericalToCartesian()";
-    x = r * sin( theta ) * cos( phi );
+    x = r * cos( theta ) * sin( phi );
     y = r * sin( theta ) * sin( phi );
-    z = r * cos( theta );
+    z = r * cos( phi );
 } 
 
 void PrintSpherical(double x, double y, double z)
