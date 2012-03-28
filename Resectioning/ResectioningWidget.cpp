@@ -48,7 +48,9 @@
 #include <vtkImageActor.h>
 #include <vtkImageData.h>
 #include <vtkImageSlice.h>
+#include <vtkImageSliceMapper.h>
 #include <vtkInteractorStyleImage.h>
+#include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkLookupTable.h>
 #include <vtkMath.h>
 #include <vtkPointData.h>
@@ -64,12 +66,13 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
-#include <vtkImageSliceMapper.h>
+
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 
 // Custom
+#include "Custom3DStyle.h"
 #include "CameraCalibration.h"
 #include "Helpers.h"
 #include "PointSelectionStyle2D.h"
@@ -111,13 +114,19 @@ void ResectioningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
-  CameraSource = vtkSmartPointer<vtkSphereSource>::New();
-  CameraSource->Update();
+  ScannerLocationMarkerSource = vtkSmartPointer<vtkSphereSource>::New();
+  ScannerLocationMarkerSource->Update();
+  ScannerLocationMarkerMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  ScannerLocationMarkerMapper->SetInputData(ScannerLocationMarkerSource->GetOutput());
+  ScannerLocationMarker = vtkSmartPointer<vtkActor>::New();
+  ScannerLocationMarker->SetMapper(ScannerLocationMarkerMapper);
   
-  CameraMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  CameraMapper->SetInputData(CameraSource->GetOutput());
-  CameraActor = vtkSmartPointer<vtkActor>::New();
-  CameraActor->SetMapper(CameraMapper);
+  CameraLocationMarkerSource = vtkSmartPointer<vtkSphereSource>::New();
+  CameraLocationMarkerSource->Update();
+  CameraLocationMarkerMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  CameraLocationMarkerMapper->SetInputData(CameraLocationMarkerSource->GetOutput());
+  CameraLocationMarker = vtkSmartPointer<vtkActor>::New();
+  CameraLocationMarker->SetMapper(CameraLocationMarkerMapper);
   
   this->ProgressDialog = new QProgressDialog;
   this->ProgressDialog->setMinimum(0);
@@ -128,6 +137,9 @@ void ResectioningWidget::SharedConstructor()
   connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
   this->PointCloudPane = new Pane3D(this->qvtkPointCloud);
+
+  this->OutputPointCloudPane = new Pane3D(this->qvtkResult3D);
+  
   this->ImagePane = new Pane2D(this->qvtkImage);
 
   this->ResultImagePane = new Pane2D(this->qvtkResultImage);
@@ -172,17 +184,21 @@ void ResectioningWidget::LoadCorrespondencesImage(const std::string& filename)
     throw std::runtime_error("LoadCorrespondences2D Cannot open file.");
     }
 
-  ImagePane->SelectionStyle->RemoveAll();
-
-  while(getline(fin, line))
+  if(PointSelectionStyle2D::SafeDownCast(ImagePane->InteractorStyle))
     {
-    std::stringstream ss;
-    ss << line;
-    double p[3];
-    ss >> p[0] >> p[1];
-    p[2] = 0;
+    PointSelectionStyle2D* selectionStyle = PointSelectionStyle2D::SafeDownCast(ImagePane->InteractorStyle);
+    selectionStyle->RemoveAll();
 
-    ImagePane->SelectionStyle->AddNumber(p);
+    while(getline(fin, line))
+      {
+      std::stringstream ss;
+      ss << line;
+      double p[3];
+      ss >> p[0] >> p[1];
+      p[2] = 0;
+
+      selectionStyle->AddNumber(p);
+      }
     }
 }
 
@@ -196,44 +212,59 @@ void ResectioningWidget::LoadCorrespondencesPointCloud(const std::string& filena
     throw std::runtime_error("LoadCorrespondences3D Cannot open file.");
     }
 
-  PointCloudPane->SelectionStyle->RemoveAll();
-
-  while(getline(fin, line))
+  if(PointSelectionStyle3D::SafeDownCast(PointCloudPane->InteractorStyle))
     {
-    std::stringstream ss;
-    ss << line;
-    double p[3];
-    ss >> p[0] >> p[1] >> p[2];
+    PointSelectionStyle3D* selectionStyle = PointSelectionStyle3D::SafeDownCast(PointCloudPane->InteractorStyle);
 
-    PointCloudPane->SelectionStyle->AddNumber(p);
+    selectionStyle->RemoveAll();
+
+    while(getline(fin, line))
+      {
+      std::stringstream ss;
+      ss << line;
+      double p[3];
+      ss >> p[0] >> p[1] >> p[2];
+
+      selectionStyle->AddNumber(p);
+      }
     }
 }
 
 
 void ResectioningWidget::SaveCorrespondencesImage(const std::string& filename)
 {
-  std::ofstream fout(filename.c_str());
-
-  for(unsigned int i = 0; i < ImagePane->SelectionStyle->GetNumberOfCorrespondences(); i++)
+  if(PointSelectionStyle2D::SafeDownCast(ImagePane->InteractorStyle))
     {
-    fout << ImagePane->SelectionStyle->GetCorrespondence(i).x << " "
-         << ImagePane->SelectionStyle->GetCorrespondence(i).y << std::endl;
+    PointSelectionStyle2D* selectionStyle = PointSelectionStyle2D::SafeDownCast(ImagePane->InteractorStyle);
 
+    std::ofstream fout(filename.c_str());
+
+    for(unsigned int i = 0; i < selectionStyle->GetNumberOfCorrespondences(); i++)
+      {
+      fout << selectionStyle->GetCorrespondence(i).x << " "
+           << selectionStyle->GetCorrespondence(i).y << std::endl;
+
+      }
+    fout.close();
     }
-  fout.close();
 }
 
 void ResectioningWidget::SaveCorrespondencesPointCloud(const std::string& filename)
 {
-  std::ofstream fout(filename.c_str());
-
-  for(unsigned int i = 0; i < PointCloudPane->SelectionStyle->GetNumberOfCorrespondences(); i++)
+  if(PointSelectionStyle3D::SafeDownCast(PointCloudPane->InteractorStyle))
     {
-    fout << PointCloudPane->SelectionStyle->GetCorrespondence(i).x << " "
-         << PointCloudPane->SelectionStyle->GetCorrespondence(i).y << " "
-         << PointCloudPane->SelectionStyle->GetCorrespondence(i).z << std::endl;
+    PointSelectionStyle3D* selectionStyle = PointSelectionStyle3D::SafeDownCast(PointCloudPane->InteractorStyle);
+
+    std::ofstream fout(filename.c_str());
+
+    for(unsigned int i = 0; i < selectionStyle->GetNumberOfCorrespondences(); i++)
+      {
+      fout << selectionStyle->GetCorrespondence(i).x << " "
+          << selectionStyle->GetCorrespondence(i).y << " "
+          << selectionStyle->GetCorrespondence(i).z << std::endl;
+      }
+    fout.close();
     }
-  fout.close();
 }
 
 void ResectioningWidget::LoadImage(const std::string& fileName)
@@ -265,11 +296,13 @@ void ResectioningWidget::LoadImage(const std::string& fileName)
 
   vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
   ImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
-  ImagePane->SelectionStyle = PointSelectionStyle2D::New();
-  ImagePane->SelectionStyle->SetCurrentRenderer(ImagePane->Renderer);
+
+  ImagePane->InteractorStyle = PointSelectionStyle2D::New();
+  ImagePane->InteractorStyle->SetCurrentRenderer(ImagePane->Renderer);
+
   //pane->SelectionStyle->Initialize();
   ImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->
-            SetInteractorStyle(static_cast<PointSelectionStyle2D*>(ImagePane->SelectionStyle));
+            SetInteractorStyle(static_cast<PointSelectionStyle2D*>(ImagePane->InteractorStyle));
 
   ImagePane->Renderer->ResetCamera();
 
@@ -342,12 +375,14 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
   pointPicker->PickFromListOn();
   pointPicker->AddPickList(PointCloudPane->PointCloudActor);
   PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
-  PointCloudPane->SelectionStyle = PointSelectionStyle3D::New();
-  PointCloudPane->SelectionStyle->SetCurrentRenderer(PointCloudPane->Renderer);
-  PointCloudPane->SelectionStyle->Initialize();
-  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->Data = polyData;
+
+  PointCloudPane->InteractorStyle = PointSelectionStyle3D::New();
+  PointCloudPane->InteractorStyle->SetCurrentRenderer(PointCloudPane->Renderer);
+  dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->Initialize();
+  
+  static_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->Data = polyData;
   PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-         static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle));
+        static_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle));
 
   PointCloudPane->Renderer->ResetCamera();
 
@@ -363,7 +398,7 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
   float averageSpacing = *spacingFuture.begin();
   std::cout << "Done computing average spacing: " << averageSpacing << std::endl;
 
-  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->SetMarkerRadius(averageSpacing * 10.0);
+  dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->SetMarkerRadius(averageSpacing * 10.0);
 }
 
 void ResectioningWidget::LoadVTP(const std::string& fileName)
@@ -422,12 +457,12 @@ void ResectioningWidget::LoadVTP(const std::string& fileName)
   pointPicker->PickFromListOn();
   pointPicker->AddPickList(PointCloudPane->PointCloudActor);
   PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
-  PointCloudPane->SelectionStyle = PointSelectionStyle3D::New();
-  PointCloudPane->SelectionStyle->SetCurrentRenderer(PointCloudPane->Renderer);
-  PointCloudPane->SelectionStyle->Initialize();
-  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->Data = reader->GetOutput();
+  PointCloudPane->InteractorStyle = PointSelectionStyle3D::New();
+  PointCloudPane->InteractorStyle->SetCurrentRenderer(PointCloudPane->Renderer);
+  dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->Initialize();
+  dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->Data = reader->GetOutput();
   PointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-         static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle));
+         dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle));
 
   PointCloudPane->Renderer->ResetCamera();
 
@@ -435,7 +470,7 @@ void ResectioningWidget::LoadVTP(const std::string& fileName)
   float averageSpacing = ResectioningHelpers::ComputeAverageSpacing(reader->GetOutput()->GetPoints(), 100000);
   std::cout << "Done computing average spacing: " << averageSpacing << std::endl;
 
-  static_cast<PointSelectionStyle3D*>(PointCloudPane->SelectionStyle)->SetMarkerRadius(averageSpacing * 10.0);
+  dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->SetMarkerRadius(averageSpacing * 10.0);
 }
 
 void ResectioningWidget::on_action_Image_LoadCorrespondences_activated()
@@ -545,13 +580,13 @@ void ResectioningWidget::on_action_PointCloud_SaveCorrespondences_activated()
 
 void ResectioningWidget::on_btnDeleteLastCorrespondencePointCloud_clicked()
 {
-  this->PointCloudPane->SelectionStyle->DeleteLastCorrespondence();
+  dynamic_cast<PointSelectionStyle3D*>(this->PointCloudPane->InteractorStyle)->DeleteLastCorrespondence();
   this->PointCloudPane->Refresh();
 }
 
 void ResectioningWidget::on_btnDeleteAllCorrespondencesPointCloud_clicked()
 {
-  this->PointCloudPane->SelectionStyle->RemoveAll();
+  dynamic_cast<PointSelectionStyle3D*>(this->PointCloudPane->InteractorStyle)->RemoveAll();
   this->PointCloudPane->Refresh();
   //static_cast<PointSelectionStyle2D*>(pane->SelectionStyle)->RemoveAll();
   //this->qvtkWidgetLeft->GetRenderWindow()->Render();
@@ -559,13 +594,13 @@ void ResectioningWidget::on_btnDeleteAllCorrespondencesPointCloud_clicked()
 
 void ResectioningWidget::on_btnDeleteLastCorrespondenceImage_clicked()
 {
-  this->ImagePane->SelectionStyle->DeleteLastCorrespondence();
+  dynamic_cast<PointSelectionStyle2D*>(this->ImagePane->InteractorStyle)->DeleteLastCorrespondence();
   this->ImagePane->Refresh();
 }
 
 void ResectioningWidget::on_btnDeleteAllCorrespondencesImage_clicked()
 {
-  this->ImagePane->SelectionStyle->RemoveAll();
+  dynamic_cast<PointSelectionStyle2D*>(this->ImagePane->InteractorStyle)->RemoveAll();
   this->ImagePane->Refresh();
   //static_cast<PointSelectionStyle2D*>(pane->SelectionStyle)->RemoveAll();
   //this->qvtkWidgetRight->GetRenderWindow()->Render();
@@ -574,23 +609,23 @@ void ResectioningWidget::on_btnDeleteAllCorrespondencesImage_clicked()
 Eigen::MatrixXd ResectioningWidget::ComputeP()
 {
   CameraCalibration::Point2DVector points2D;
-  std::cout << "There are " << ImagePane->SelectionStyle->GetNumberOfCorrespondences()
+  std::cout << "There are " << dynamic_cast<PointSelectionStyle2D*>(ImagePane->InteractorStyle)->GetNumberOfCorrespondences()
             << " correspondences in the image pane." << std::endl;
 
   for(vtkIdType pointId = 0;
-      pointId < static_cast<vtkIdType>(ImagePane->SelectionStyle->GetNumberOfCorrespondences()); ++pointId)
+      pointId < static_cast<vtkIdType>(dynamic_cast<PointSelectionStyle2D*>(ImagePane->InteractorStyle)->GetNumberOfCorrespondences()); ++pointId)
   {
-    Coord3D coord = ImagePane->SelectionStyle->GetCorrespondence(pointId);
+    Coord3D coord = dynamic_cast<PointSelectionStyle2D*>(ImagePane->InteractorStyle)->GetCorrespondence(pointId);
     points2D.push_back(Eigen::Vector2d (coord.x, coord.y));
   }
 
   CameraCalibration::Point3DVector points3D;
-  std::cout << "There are " << PointCloudPane->SelectionStyle->GetNumberOfCorrespondences()
+  std::cout << "There are " << dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->GetNumberOfCorrespondences()
             << " correspondences in the point cloud pane." << std::endl;
   for(vtkIdType pointId = 0;
-      pointId < static_cast<vtkIdType>(PointCloudPane->SelectionStyle->GetNumberOfCorrespondences()); ++pointId)
+      pointId < static_cast<vtkIdType>(dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->GetNumberOfCorrespondences()); ++pointId)
   {
-    Coord3D coord = PointCloudPane->SelectionStyle->GetCorrespondence(pointId);
+    Coord3D coord = dynamic_cast<PointSelectionStyle3D*>(PointCloudPane->InteractorStyle)->GetCorrespondence(pointId);
     points3D.push_back(Eigen::Vector3d (coord.x, coord.y, coord.z));
   }
 
@@ -606,20 +641,55 @@ void ResectioningWidget::on_btnComputeP_clicked()
   Eigen::MatrixXd P = ComputeP();
 
   //double cameraLocation[3] = {P(0, 3), P(1,3), P(2,3)};
-  
-  
+
   Eigen::VectorXd C = CameraCalibration::GetCameraCenter(P);
 
   double cameraLocation[3] = {C[0], C[1], C[2]};
-  
-  std::cout << "cameraLocation: " << cameraLocation[0] << " " << cameraLocation[1] << " " << cameraLocation[2] << std::endl;
-  CameraActor->SetPosition(cameraLocation);
 
-  PointCloudPane->Renderer->AddActor(CameraActor);
+  std::cout << "cameraLocation: " << cameraLocation[0] << " " << cameraLocation[1] << " " << cameraLocation[2] << std::endl;
+  CameraLocationMarker->SetPosition(cameraLocation);
+
+  PointCloudPane->Renderer->AddActor(CameraLocationMarker);
+
+  PointCloudPane->Renderer->AddActor(ScannerLocationMarker);
+  
   PointCloudPane->qvtkWidget->GetRenderWindow()->Render();
 }
 
 void ResectioningWidget::on_btnResection_clicked()
+{
+  Eigen::MatrixXd P = ComputeP();
+
+  typedef itk::Image<itk::RGBPixel<unsigned char>, 2> RGBImageType;
+  RGBImageType::Pointer rgbImage = RGBImageType::New();
+
+  //Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
+
+  Helpers::ITKVectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
+
+  //Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
+
+  // Compute the resectioning in the same thread
+  //this->PTX = Resectioning::ResectionSmart(P, this->OriginalPTX, rgbImage.GetPointer());
+  //this->PTX = Resectioning::ResectionNaive(P, this->OriginalPTX, rgbImage.GetPointer());
+
+  // Compute the resectioning in a different thread
+//   QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::Resection_ProjectionSorting, P,
+//                                                         this->OriginalPTX, rgbImage.GetPointer());
+
+  QFuture<PTXImage> resectionFuture = QtConcurrent::run(Resectioning::Resection_ProjectionSorting, P,
+                                                        this->OriginalPTX, rgbImage.GetPointer());
+
+  this->FutureWatcher.setFuture(resectionFuture);
+  this->ProgressDialog->setLabelText("Resectioning...");
+  this->ProgressDialog->exec();
+  this->PTX = *resectionFuture.begin();
+
+  ShowResultImage();
+  ShowResultPointCloud();
+}
+
+void ResectioningWidget::on_btnResectionMesh_clicked()
 {
   // this->PTX.GetMesh(this->Mesh);
 
@@ -655,11 +725,28 @@ void ResectioningWidget::on_btnResection_clicked()
                                                         this->OriginalPTX, rgbImage.GetPointer());
 
   this->FutureWatcher.setFuture(resectionFuture);
-  this->ProgressDialog->setLabelText("Resectioning...");
+  this->ProgressDialog->setLabelText("Resectioning using mesh intersection...");
   this->ProgressDialog->exec();
   this->PTX = *resectionFuture.begin();
 
   ShowResultImage();
+}
+
+void ResectioningWidget::ShowResultPointCloud()
+{
+  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+  this->PTX.CreatePointCloud(polyData);
+
+  this->OutputPointCloudPane->SetPolyData(polyData);
+
+  this->OutputPointCloudPane->Renderer->ResetCamera();
+
+  OutputPointCloudPane->InteractorStyle = Custom3DStyle::New();
+  OutputPointCloudPane->InteractorStyle->SetCurrentRenderer(OutputPointCloudPane->Renderer);
+
+  OutputPointCloudPane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(OutputPointCloudPane->InteractorStyle);
+
+  qvtkResult3D->GetRenderWindow()->Render();
 }
 
 void ResectioningWidget::ShowResultImage()
@@ -671,7 +758,7 @@ void ResectioningWidget::ShowResultImage()
   VectorImageType::Pointer image = VectorImageType::New();
 
   Helpers::ITKRGBImageToVectorImage(rgbimage, image);
-  
+
   ResultImagePane->Image = image;
 
   ResectioningHelpers::ITKImagetoVTKRGBImage(ResultImagePane->Image.GetPointer(), ResultImagePane->ImageData);
@@ -680,15 +767,11 @@ void ResectioningWidget::ShowResultImage()
   ResultImagePane->ImageSlice->SetMapper(ResultImagePane->ImageSliceMapper);
 
   // Add Actor to renderer
-  //pane->Renderer->AddActor(pane->ImageActor);
   ResultImagePane->Renderer->AddActor(ResultImagePane->ImageSlice);
-  ResultImagePane->Renderer->ResetCamera();
 
-  ResultImagePane->SelectionStyle = PointSelectionStyle2D::New();
-  ResultImagePane->SelectionStyle->SetCurrentRenderer(ResultImagePane->Renderer);
-  //pane->SelectionStyle->Initialize();
-  ResultImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->
-            SetInteractorStyle(static_cast<PointSelectionStyle2D*>(ResultImagePane->SelectionStyle));
+  ResultImagePane->InteractorStyle = vtkInteractorStyleImage::New();
+  ResultImagePane->InteractorStyle->SetCurrentRenderer(ResultImagePane->Renderer);
+  ResultImagePane->qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(ResultImagePane->InteractorStyle);
 
   ResultImagePane->Renderer->ResetCamera();
 

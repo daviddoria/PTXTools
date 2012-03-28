@@ -7,6 +7,7 @@
 
 class vtkImageSliceMapper;
 class vtkImageSlice;
+class vtkInteractorStyleImage;
 
 struct Pane2D : public Pane
 {
@@ -21,10 +22,14 @@ struct Pane2D : public Pane
   void FlipVertically();
   void FlipHorizontally();
 
+  vtkInteractorStyleImage* InteractorStyle;
+  
 private:
   std::vector<float> CameraLeftToRightVector;
   std::vector<float> CameraBottomToTopVector;
   void SetCameraPosition();
+
+  
 };
 
 #endif

@@ -147,6 +147,13 @@ if(PTX_ReplaceDepthImage)
   INSTALL( TARGETS ptxReplaceDepthImage RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
+SET(PTX_ReplaceValidityImage ON CACHE BOOL "Replace the depths of points in a ptx file")
+if(PTX_ReplaceValidityImage)
+  ADD_EXECUTABLE(ptxReplaceValidityImage PTXReplaceValidityImage.cpp)
+  TARGET_LINK_LIBRARIES(ptxReplaceValidityImage ${PTXLibraries})
+  INSTALL( TARGETS ptxReplaceValidityImage RUNTIME DESTINATION ${INSTALL_DIR} )
+endif()
+
 SET(PTX_ReplaceRGBD ON CACHE BOOL "Replace the depths and colors of points in a ptx file")
 if(PTX_ReplaceRGBD)
   ADD_EXECUTABLE(ptxReplaceRGBD PTXReplaceRGBD.cpp)

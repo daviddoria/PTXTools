@@ -97,6 +97,7 @@ public slots:
   void on_action_Export_ResultRGB_activated();
 
   // Action buttons
+  void on_btnResectionMesh_clicked();
   void on_btnResection_clicked();
   void on_btnComputeP_clicked();
   void on_btnWriteMesh_clicked();
@@ -125,6 +126,9 @@ private:
   /** Get the resulting image from the resulting ptx and display it. */
   void ShowResultImage();
 
+  /** Get the colored points from the resulting ptx and display them. */
+  void ShowResultPointCloud();
+
   /** Load a VTP. */
   void LoadVTP(const std::string& fileName);
 
@@ -137,6 +141,9 @@ private:
   /** The pane responsible for displaying, manipulating, and selecting the point cloud. */
   Pane3D* PointCloudPane;
 
+  /** The pane responsible for displaying, manipulating, and selecting the point cloud. */
+  Pane3D* OutputPointCloudPane;
+  
   /** The pane responsible for displaying the output image. */
   Pane2D* ResultImagePane;
 
@@ -151,9 +158,13 @@ private:
   FloatVectorImageType::Pointer ColorImage;
   //PTXImage::RGBImageType::Pointer ColorImage;
 
-  vtkSmartPointer<vtkSphereSource> CameraSource;
-  vtkSmartPointer<vtkPolyDataMapper> CameraMapper;
-  vtkSmartPointer<vtkActor> CameraActor;
+  vtkSmartPointer<vtkSphereSource> CameraLocationMarkerSource;
+  vtkSmartPointer<vtkPolyDataMapper> CameraLocationMarkerMapper;
+  vtkSmartPointer<vtkActor> CameraLocationMarker;
+
+  vtkSmartPointer<vtkSphereSource> ScannerLocationMarkerSource;
+  vtkSmartPointer<vtkPolyDataMapper> ScannerLocationMarkerMapper;
+  vtkSmartPointer<vtkActor> ScannerLocationMarker;
 };
 
 #endif

@@ -37,6 +37,9 @@ ResectioningHelpers.cpp
 Pane.cpp
 Pane2D.cpp
 Pane3D.cpp
+
+Custom3DStyle.cpp
+
 PointSelectionStyle.cpp
 PointSelectionStyle2D.cpp
 PointSelectionStyle3D.cpp

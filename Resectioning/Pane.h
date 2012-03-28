@@ -13,16 +13,12 @@ struct Pane
 {
   Pane(QVTKWidget* qvtkWidget);
   virtual ~Pane();
-  
-  vtkSmartPointer<vtkRenderer> Renderer;
 
-  PointSelectionStyle* SelectionStyle;
+  vtkSmartPointer<vtkRenderer> Renderer;
 
   QVTKWidget* qvtkWidget;
 
   void Refresh();
-
-  
 };
 
 #endif

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>928</width>
-    <height>494</height>
+    <width>1270</width>
+    <height>835</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -53,7 +53,14 @@
            <widget class="QVTKWidget" name="qvtkImage"/>
           </item>
           <item>
-           <widget class="QVTKWidget" name="qvtkResultImage"/>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="QVTKWidget" name="qvtkResultImage"/>
+            </item>
+            <item>
+             <widget class="QVTKWidget" name="qvtkResult3D"/>
+            </item>
+           </layout>
           </item>
          </layout>
         </item>
@@ -105,23 +112,30 @@
      </layout>
     </item>
     <item row="3" column="0">
-     <widget class="QPushButton" name="btnResection">
+     <widget class="QPushButton" name="btnResectionMesh">
       <property name="text">
-       <string>Resection</string>
+       <string>Resection Mesh</string>
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
+    <item row="5" column="0">
      <widget class="QPushButton" name="btnComputeP">
       <property name="text">
        <string>Compute P</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="0">
+    <item row="6" column="0">
      <widget class="QPushButton" name="btnWriteMesh">
       <property name="text">
        <string>Write Mesh</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QPushButton" name="btnResection">
+      <property name="text">
+       <string>Resection Standard</string>
       </property>
      </widget>
     </item>
@@ -132,7 +146,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>928</width>
+     <width>1270</width>
      <height>28</height>
     </rect>
    </property>

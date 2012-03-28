@@ -23,6 +23,11 @@
 
 #include "ResectioningWidget.h"
 
+// Run with
+// camera.png scan.ptx
+// or
+// camera.png 2D.txt scan.ptx 3D.txt
+
 int main( int argc, char** argv )
 {
   QApplication app( argc, argv );

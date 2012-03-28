@@ -7,7 +7,6 @@
 Pane::Pane(QVTKWidget* inputQVTKWidget)
 {
   this->Renderer = vtkSmartPointer<vtkRenderer>::New();
-  this->SelectionStyle = NULL;
 
   this->qvtkWidget = inputQVTKWidget;
   this->qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
