@@ -66,7 +66,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
-
+#include <vtkStructuredGrid.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
@@ -127,6 +127,17 @@ void ResectioningWidget::SharedConstructor()
   CameraLocationMarkerMapper->SetInputData(CameraLocationMarkerSource->GetOutput());
   CameraLocationMarker = vtkSmartPointer<vtkActor>::New();
   CameraLocationMarker->SetMapper(CameraLocationMarkerMapper);
+
+  Mesh = vtkSmartPointer<vtkPolyData>::New();
+  InputMeshMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  InputMeshActor = vtkSmartPointer<vtkActor>::New();
+  InputMeshActor->SetMapper(InputMeshMapper);
+  InputMeshMapper->SetInputData(Mesh);
+
+  OutputMeshMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  OutputMeshActor = vtkSmartPointer<vtkActor>::New();
+  OutputMeshActor->SetMapper(OutputMeshMapper);
+  OutputMeshMapper->SetInputData(Mesh);
   
   this->ProgressDialog = new QProgressDialog;
   this->ProgressDialog->setMinimum(0);
@@ -341,6 +352,10 @@ void ResectioningWidget::LoadPTX(const std::string& fileName)
 
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
   this->PTX.CreatePointCloud(polyData);
+
+  vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+  this->PTX.CreateStructuredGrid(structuredGrid);
+  ResectioningHelpers::StructuredGridToPolyData(structuredGrid, Mesh);
 
   vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
   //lookupTable->SetTableRange(0.0, 10.0);
@@ -835,4 +850,31 @@ void ResectioningWidget::on_btnWriteMesh_clicked()
   writer->SetFileName(fileName.toStdString().c_str());
   writer->SetInputData(PTX.GetMesh());
   writer->Write();
+}
+
+void ResectioningWidget::on_chkInputMesh_clicked()
+{
+  if(chkInputMesh->isChecked())
+  {
+    PointCloudPane->Renderer->AddActor(InputMeshActor);
+  }
+  else
+  {
+    PointCloudPane->Renderer->RemoveActor(InputMeshActor);
+  }
+
+  PointCloudPane->Refresh();
+}
+
+void ResectioningWidget::on_chkOutputMesh_clicked()
+{
+  if(chkOutputMesh->isChecked())
+  {
+    OutputPointCloudPane->Renderer->AddActor(OutputMeshActor);
+  }
+  else
+  {
+    OutputPointCloudPane->Renderer->RemoveActor(OutputMeshActor);
+  }
+  OutputPointCloudPane->Refresh();
 }

@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout" columnstretch="0">
     <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,20">
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,20,0">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
@@ -63,6 +63,24 @@
            </layout>
           </item>
          </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QCheckBox" name="chkInputMesh">
+          <property name="text">
+           <string>Show mesh in input</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="chkOutputMesh">
+          <property name="text">
+           <string>Show mesh in output</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

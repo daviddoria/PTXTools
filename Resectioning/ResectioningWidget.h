@@ -87,6 +87,9 @@ public slots:
   void on_action_PointCloud_SaveCorrespondences_activated();
   void on_btnDeleteLastCorrespondencePointCloud_clicked();
   void on_btnDeleteAllCorrespondencesPointCloud_clicked();
+
+  void on_chkInputMesh_clicked();
+  void on_chkOutputMesh_clicked();
   
   // File menu
   void on_actionHelp_activated();
@@ -165,6 +168,15 @@ private:
   vtkSmartPointer<vtkSphereSource> ScannerLocationMarkerSource;
   vtkSmartPointer<vtkPolyDataMapper> ScannerLocationMarkerMapper;
   vtkSmartPointer<vtkActor> ScannerLocationMarker;
+
+  vtkSmartPointer<vtkPolyData> Mesh;
+
+  // The "input" and "output" meshes are identical, but we need different actors for each renderer to follow good VTK practice
+  vtkSmartPointer<vtkPolyDataMapper> InputMeshMapper;
+  vtkSmartPointer<vtkActor> InputMeshActor;
+
+  vtkSmartPointer<vtkPolyDataMapper> OutputMeshMapper;
+  vtkSmartPointer<vtkActor> OutputMeshActor;
 };
 
 #endif

@@ -24,9 +24,12 @@
 #include "itkRescaleIntensityImageFilter.h"
 
 // VTK
+#include <vtkCell.h>
 #include <vtkIdList.h>
 #include <vtkKdTree.h>
 #include <vtkMath.h>
+#include <vtkPolyData.h>
+#include <vtkStructuredGrid.h>
 
 namespace ResectioningHelpers
 {
@@ -184,6 +187,28 @@ float ComputeAverageSpacing(vtkPoints* const points, unsigned int numberOfPoints
   float averageDistance = sumOfDistances / static_cast<float>(points->GetNumberOfPoints());
   
   return averageDistance;
+}
+
+
+void StructuredGridToPolyData(vtkStructuredGrid* const structuredGrid, vtkPolyData* const polyData)
+{
+  polyData->SetPoints(structuredGrid->GetPoints());
+
+  polyData->Allocate();
+
+  for(vtkIdType cellId = 0; cellId < structuredGrid->GetNumberOfCells(); ++cellId)
+    {
+    vtkCell* cell = structuredGrid->GetCell(cellId);
+    //polyData->InsertNextCell(cell->GetCellType(), cell->GetNumberOfPoints(), cell->GetPoints());
+    vtkIdType pointIds[cell->GetNumberOfPoints()];
+    for(vtkIdType pointId = 0; pointId < cell->GetNumberOfPoints(); ++pointId)
+      {
+      pointIds[pointId] = cell->GetPointId(pointId);
+      }
+    polyData->InsertNextCell(cell->GetCellType(), cell->GetNumberOfPoints(), pointIds);
+
+    //std::cout << "cell " << cellId << " has " << cell->GetNumberOfPoints() << " points." << std::endl;
+    }
 }
 
 } // end namespace

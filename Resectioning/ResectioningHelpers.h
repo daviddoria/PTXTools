@@ -31,7 +31,8 @@
 #include <vtkProp.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
-
+class vtkStructuredGrid;
+class vtkPolyData;
 // Custom
 #include "Types.h"
 
@@ -51,8 +52,11 @@ void ITKImagetoVTKMagnitudeImage(const FloatVectorImageType* const image, vtkIma
  * is not const because if it is 0, then it is set to the full number of points in the data set. */
 float ComputeAverageSpacing(vtkPoints* const points, unsigned int numberOfPointsToUse);
 
-#include "ResectioningHelpers.hpp"
+void StructuredGridToPolyData(vtkStructuredGrid* const structuredGrid, vtkPolyData* const polyData);
 
 }
+
+
+#include "ResectioningHelpers.hpp"
 
 #endif
