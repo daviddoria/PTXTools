@@ -1,7 +1,7 @@
 #include "Resectioning.h"
 
 // Custom
-#include "CameraCalibration.h"
+#include "CameraCalibration/CameraCalibration.h"
 #include "Helpers.h"
 #include "ResectioningHelpers.h"
 #include "PTXImage.h"

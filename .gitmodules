@@ -1,0 +1,3 @@
+[submodule "Resectioning/CameraCalibration"]
+	path = Resectioning/CameraCalibration
+	url = git@github.com:daviddoria/CameraCalibration.git

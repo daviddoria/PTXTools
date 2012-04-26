@@ -21,14 +21,19 @@ INCLUDE(${QT_USE_FILE})
 FIND_PACKAGE(ITK 4 REQUIRED)
 INCLUDE(${ITK_USE_FILE})
 
+# We do this in the CameraCalibration submodule, but it doesn't seem to work unless it is here as well ("cannot find -lvgl" type of errors)
+FIND_PACKAGE(VXL REQUIRED)
+INCLUDE(${VXL_CMAKE_DIR}/UseVXL.cmake)
+
 QT4_WRAP_UI(ResectioningUISrcs ResectioningWidget.ui)
 QT4_WRAP_CPP(ResectioningMOCSrcs ResectioningWidget.h)
+
+add_subdirectory(CameraCalibration)
 
 ADD_EXECUTABLE(ResectioningInteractive
 ResectioningInteractive.cpp
 ResectioningWidget.cpp
 
-CameraCalibration.cpp
 Resectioning.cpp
 
 ResectioningHelpers.cpp
@@ -45,7 +50,7 @@ PointSelectionStyle2D.cpp
 PointSelectionStyle3D.cpp
 
 ${ResectioningUISrcs} ${ResectioningMOCSrcs} ${ResourceSrcs} )
-TARGET_LINK_LIBRARIES(ResectioningInteractive QVTK ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${PTXLibraries})
+TARGET_LINK_LIBRARIES(ResectioningInteractive libCameraCalibration QVTK ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${PTXLibraries})
 
 
 # SET(ResectionSmart ON CACHE BOOL "Append one ptx to the right of another")

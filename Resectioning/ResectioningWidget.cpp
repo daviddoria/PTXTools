@@ -73,7 +73,7 @@
 
 // Custom
 #include "Custom3DStyle.h"
-#include "CameraCalibration.h"
+#include "CameraCalibration/CameraCalibration.h"
 #include "Helpers.h"
 #include "PointSelectionStyle2D.h"
 #include "PointSelectionStyle3D.h"
