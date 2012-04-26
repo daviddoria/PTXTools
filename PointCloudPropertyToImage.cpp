@@ -14,8 +14,10 @@
 #include "itkImageFileWriter.h"
 
 // Custom
-#include "Helpers.h"
 #include "PTXImage.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
 
 int main(int argc, char *argv[])
 {

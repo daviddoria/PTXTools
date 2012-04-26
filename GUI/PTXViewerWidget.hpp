@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QFileDialog>
 
-#include "Helpers.h"
+// Submodules
+#include "ITKHelpers/ITKHelpers.h"
 
 template <typename TImage>
 void PTXViewerWidget::SaveImage(const TImage* const image)
@@ -32,6 +33,6 @@ void PTXViewerWidget::SaveImage(const TImage* const image)
     return;
     }
 
-  Helpers::WriteImage(image, fileName.toStdString());
+  ITKHelpers::WriteImage(image, fileName.toStdString());
 
 }

@@ -67,7 +67,7 @@ int main (int argc, char *argv[])
 
   vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
     vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexGlyphFilter->AddInput(polydata);
+  vertexGlyphFilter->AddInputData(polydata);
   vertexGlyphFilter->Update();
 
   // Write the file
