@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-PROJECT(SelectCorrespondences)
+PROJECT(Resectioning)
 
 FIND_PACKAGE(VTK REQUIRED)
 INCLUDE(${VTK_USE_FILE})
@@ -37,7 +37,6 @@ ResectioningWidget.cpp
 Resectioning.cpp
 
 ResectioningHelpers.cpp
-../Helpers.cpp
 
 Pane.cpp
 Pane2D.cpp

@@ -1,6 +1,10 @@
 #include "PTXImage.h"
 #include "Frame.h"
-#include "Helpers.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
+#include "ITKHelpers/ITKHelpers.h"
+#include "VTKHelpers/VTKHelpers.h"
 
 // ITK
 #include "itkAzimuthElevationToCartesianTransform.h"
@@ -59,7 +63,7 @@ PTXImage::PTXImage()
 PTXImage::PTXImage(FullImageType* const fullImage)
 {
   this->FullImage = FullImageType::New();
-  Helpers::DeepCopy(fullImage, FullImage.GetPointer());
+  ITKHelpers::DeepCopy(fullImage, FullImage.GetPointer());
 }
 
 void PTXImage::SetDebug(const bool value)
@@ -76,8 +80,9 @@ PTXPixel PTXImage::GetPTXPixel(const itk::Index<2>& pixel) const
     }
   else
     {
-    std::cout << "Pixel " << pixel << " is not inside FullImage: " << this->FullImage->GetLargestPossibleRegion() << std::endl;
-    exit(-1);
+    std::stringstream ss;
+    ss << "Pixel " << pixel << " is not inside FullImage: " << this->FullImage->GetLargestPossibleRegion() << std::endl;
+    throw std::runtime_error(ss.str());
     // Should never get here, this is just to avoid no return value warning.
     PTXPixel zeroPixel;
     //zeroPixel.Fill(2);
@@ -112,7 +117,7 @@ void PTXImage::AppendPTXRight(const PTXImage& ptxImage)
   tileImageFilter->SetInput(1, ptxImage.GetFullImage());
   tileImageFilter->Update();
 
-  Helpers::DeepCopy<FullImageType>(tileImageFilter->GetOutput(), this->FullImage);
+  ITKHelpers::DeepCopy(tileImageFilter->GetOutput(), this->FullImage.GetPointer());
 }
 
 unsigned int PTXImage::CountValidPoints() const
@@ -1783,7 +1788,7 @@ PTXImage PTXImage::Downsample(const unsigned int factor) const
   shrinkFilter->Update();
 
   PTXImage output;
-  Helpers::DeepCopy<FullImageType>(shrinkFilter->GetOutput(), output.FullImage);
+  ITKHelpers::DeepCopy(shrinkFilter->GetOutput(), output.FullImage.GetPointer());
 
   return output;
 }
@@ -1871,7 +1876,7 @@ void PTXImage::Crop(const itk::ImageRegion<2>& region)
   regionOfInterestImageFilter->SetInput(this->FullImage);
   regionOfInterestImageFilter->Update();
 
-  Helpers::DeepCopy<FullImageType>(regionOfInterestImageFilter->GetOutput(), this->FullImage);
+  ITKHelpers::DeepCopy(regionOfInterestImageFilter->GetOutput(), this->FullImage.GetPointer());
 }
 
 void PTXImage::ComputeWeightedDepthLaplacian(const std::string& filename) const
@@ -2098,7 +2103,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   projectedPointsPolydata->SetPoints(projectedPoints); // replace the point coordinates
   //projectedPointsPolydata->GetPointData()->SetScalars(pointCloud->GetPointData()->GetScalars());
 
-  Helpers::OutputPolyData(projectedPointsPolydata, "projectedPoints.vtp");
+  VTKHelpers::WritePolyData(projectedPointsPolydata, "projectedPoints.vtp");
 
   //// Determine a coordinate system for the new image ////
 
@@ -2187,9 +2192,9 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   //float originalFrameOrigin[3] = {projectedCenter[0], projectedCenter[1], projectedCenter[2]};
   float originalFrameOrigin[3] = {0,0,0};
   //float originalFrameXDirection[3] = {horizontalAxis[0], horizontalAxis[1], horizontalAxis[2]};
-  float originalFrameXDirection[3] = {-horizontalAxis[0], -horizontalAxis[1], -horizontalAxis[2]};
-  float originalFrameYDirection[3] = {up[0], up[1], up[2]};
-  float originalFrameZDirection[3] = {principalAxisArray[0], principalAxisArray[1], principalAxisArray[2]};
+  float originalFrameXDirection[3] = {static_cast<float>(-horizontalAxis[0]), static_cast<float>(-horizontalAxis[1]), static_cast<float>(-horizontalAxis[2])}; // casts to float are needed to avoid "error: narrowing conversion of double to float inside {}"
+  float originalFrameYDirection[3] = {static_cast<float>(up[0]), static_cast<float>(up[1]), static_cast<float>(up[2])};
+  float originalFrameZDirection[3] = {static_cast<float>(principalAxisArray[0]), static_cast<float>(principalAxisArray[1]), static_cast<float>(principalAxisArray[2])};
   Frame originalFrame(originalFrameOrigin, originalFrameXDirection, originalFrameYDirection, originalFrameZDirection);
   originalFrame.Write("originalFrame.vtp");
 
@@ -2203,7 +2208,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   transformFilter->SetTransform(transform);
   transformFilter->Update();
 
-  Helpers::OutputPolyData(vtkPolyData::SafeDownCast(transformFilter->GetOutput()), "transformedProjectedPoints.vtp");
+  VTKHelpers::WritePolyData(vtkPolyData::SafeDownCast(transformFilter->GetOutput()), "transformedProjectedPoints.vtp");
 
   // Compute the corner of the image
   double bounds[6];
@@ -2221,7 +2226,7 @@ PTXImage PTXImage::OrthogonalProjection(const VectorType& axis) const
   shiftTransformFilter->SetTransform(translation);
   shiftTransformFilter->Update();
 
-  Helpers::OutputPolyData(vtkPolyData::SafeDownCast(shiftTransformFilter->GetOutput()), "shiftedTransformedProjectedPoints.vtp");
+  VTKHelpers::WritePolyData(vtkPolyData::SafeDownCast(shiftTransformFilter->GetOutput()), "shiftedTransformedProjectedPoints.vtp");
 
   // Create an image into which to project the points
   PTXImage orthoPTX;
@@ -2409,7 +2414,7 @@ unsigned int PTXImage::GetWidth() const
 
 void PTXImage::Backup()
 {
-  Helpers::DeepCopy(FullImage.GetPointer(), OriginalFullImage.GetPointer());
+  ITKHelpers::DeepCopy(FullImage.GetPointer(), OriginalFullImage.GetPointer());
 }
 
 itk::ImageRegion<2> PTXImage::GetFullRegion() const

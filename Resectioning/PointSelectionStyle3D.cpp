@@ -43,8 +43,10 @@
 #include <stdexcept>
 
 // Custom
-#include "Helpers.h"
 #include "ResectioningHelpers.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
 
 vtkStandardNewMacro(PointSelectionStyle3D);
 

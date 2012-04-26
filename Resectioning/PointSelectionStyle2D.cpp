@@ -44,8 +44,10 @@
 #include <sstream>
 
 // Custom
-#include "Helpers.h"
 #include "ResectioningHelpers.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
 
 vtkStandardNewMacro(PointSelectionStyle2D);
  

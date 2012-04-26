@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 2.6)
 
 PROJECT(PTXTools)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-######### Libraries #########3
+######### Libraries #########
 #ITK
 FIND_PACKAGE(ITK REQUIRED)
 INCLUDE(${ITK_USE_FILE})
@@ -34,9 +37,17 @@ SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 #   message("Compiled in Debug mode")
 # endif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
+
+# Submodules
+add_subdirectory(Helpers)
+add_subdirectory(ITKHelpers)
+add_subdirectory(VTKHelpers)
+
+set(SubmoduleLibraries libHelpers libITKHelpers libVTKHelpers)
+
 # Create the main library that will be used in all of the exectuables
-add_library(PTX PTXPixel.cpp PTXImage.cpp PTXReader.cpp Helpers.cpp)
-set(PTXLibraries PTX ${ITK_LIBRARIES} ${VTK_LIBRARIES})
+add_library(PTX PTXPixel.cpp PTXImage.cpp PTXReader.cpp)
+set(PTXLibraries PTX ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${SubmoduleLibraries})
 
 #############
 SET(PTX_CoordinateImages ON CACHE BOOL "Write images of the coordinates")

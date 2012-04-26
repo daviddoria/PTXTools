@@ -2,9 +2,13 @@
 
 // Custom
 #include "CameraCalibration/CameraCalibration.h"
-#include "Helpers.h"
 #include "ResectioningHelpers.h"
 #include "PTXImage.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
+#include "ITKHelpers/ITKHelpers.h"
+#include "VTKHelpers/VTKHelpers.h"
 
 // Eigen
 #include <Eigen/Geometry>
@@ -43,7 +47,7 @@ PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& pt
   green.SetGreen(255);
   green.SetBlue(0);
 
-  Helpers::SetAllPixelsToValue(resultImage.GetPointer(), green);
+  ITKHelpers::SetImageToConstant(resultImage.GetPointer(), green);
 
   itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage,
                                                                          xyzImage->GetLargestPossibleRegion());
@@ -130,7 +134,7 @@ PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& pt
         tree->IntersectWithLine(p, cameraLocation, tolerance, intersections, NULL);
 
         float nearnessTolerance = .001;
-        unsigned int numberOfUniquePoints = Helpers::NumberOfUniquePoints(intersections, nearnessTolerance);
+        unsigned int numberOfUniquePoints = VTKHelpers::NumberOfUniquePoints(intersections, nearnessTolerance);
         // std::cout << "Unique intersections " << numberOfUniquePoints << std::endl;
 
         //if(!treeHit) // If we don't intersect the mesh, then this point should be colored by the pixel it projects to
@@ -164,7 +168,7 @@ PTXImage Resection_MeshIntersection(const Eigen::MatrixXd& P, const PTXImage& pt
   std::cout << "There were " << numberOfFailedProjectionPoints << " that failed the mesh intersection test!" << std::endl;
   std::cout << "There were " << numberOfOutsidePoints << " that did not project to inside of the image!" << std::endl;
 
-  Helpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
+  ITKHelpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
 
   PTXImage outputPTX = ptxImage;
   //outputPTX.ReplaceValidity(validityMask);
@@ -197,7 +201,7 @@ PTXImage Resection_ProjectionSorting(const Eigen::MatrixXd& P, const PTXImage& p
   green.SetGreen(255);
   green.SetBlue(0);
 
-  Helpers::SetAllPixelsToValue(resultImage.GetPointer(), green);
+  ITKHelpers::SetImageToConstant(resultImage.GetPointer(), green);
 
   //ptxImage.CreateRGBImage(resultImage);
 
@@ -213,7 +217,7 @@ PTXImage Resection_ProjectionSorting(const Eigen::MatrixXd& P, const PTXImage& p
 
   std::vector<itk::Index<2> > emptyVector;
   //projectedImage->FillBuffer(emptyVector);
-  Helpers::SetAllPixelsToValue(projectedImage.GetPointer(), emptyVector);
+  ITKHelpers::SetImageToConstant(projectedImage.GetPointer(), emptyVector);
 
   itk::ImageRegionConstIterator<PTXImage::XYZImageType> xyzImageIterator(xyzImage,
                                                                          xyzImage->GetLargestPossibleRegion());
@@ -322,7 +326,7 @@ PTXImage Resection_ProjectionSorting(const Eigen::MatrixXd& P, const PTXImage& p
     ++projectedImageIterator;
     } // end while over whole image
 
-  Helpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
+  ITKHelpers::WriteImage(validityMask.GetPointer(), "ValidColorMask.png");
 
   PTXImage outputPTX = ptxImage;
   //outputPTX.ReplaceValidity(validityMask);

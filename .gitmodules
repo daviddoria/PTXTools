@@ -1,3 +1,12 @@
 [submodule "Resectioning/CameraCalibration"]
 	path = Resectioning/CameraCalibration
 	url = git@github.com:daviddoria/CameraCalibration.git
+[submodule "Helpers"]
+	path = Helpers
+	url = git@github.com:daviddoria/Helpers.git
+[submodule "ITKHelpers"]
+	path = ITKHelpers
+	url = git@github.com:daviddoria/ITKHelpers.git
+[submodule "VTKHelpers"]
+	path = VTKHelpers
+	url = git@github.com:daviddoria/VTKHelpers.git

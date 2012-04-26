@@ -74,7 +74,6 @@
 // Custom
 #include "Custom3DStyle.h"
 #include "CameraCalibration/CameraCalibration.h"
-#include "Helpers.h"
 #include "PointSelectionStyle2D.h"
 #include "PointSelectionStyle3D.h"
 #include "Pane.h"
@@ -85,6 +84,10 @@
 #include "Resectioning.h"
 #include "ResectioningHelpers.h"
 #include "Types.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
+#include "ITKHelpers/ITKHelpers.h"
 
 void ResectioningWidget::on_actionHelp_activated()
 {
@@ -291,7 +294,7 @@ void ResectioningWidget::LoadImage(const std::string& fileName)
   reader->SetFileName(fileName);
   reader->Update();
 
-  Helpers::DeepCopy(reader->GetOutput(), this->ColorImage.GetPointer());
+  ITKHelpers::DeepCopy(reader->GetOutput(), this->ColorImage.GetPointer());
 
   ImagePane->Image = reader->GetOutput();
 
@@ -680,7 +683,7 @@ void ResectioningWidget::on_btnResection_clicked()
 
   //Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
 
-  Helpers::ITKVectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
+  ITKHelpers::VectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
 
   //Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
 
@@ -715,7 +718,7 @@ void ResectioningWidget::on_btnResectionMesh_clicked()
 
   //Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
   
-  Helpers::ITKVectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
+  ITKHelpers::VectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
 
   //Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
   
@@ -772,7 +775,7 @@ void ResectioningWidget::ShowResultImage()
   typedef itk::VectorImage<float, 2> VectorImageType;
   VectorImageType::Pointer image = VectorImageType::New();
 
-  Helpers::ITKRGBImageToVectorImage(rgbimage, image);
+  ITKHelpers::RGBImageToVectorImage(rgbimage, image);
 
   ResultImagePane->Image = image;
 
