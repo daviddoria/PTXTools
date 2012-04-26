@@ -39,7 +39,7 @@
 #include <stdexcept>
 
 // Custom
-#include "Helpers.h"
+#include "Helpers/Helpers.h"
 
 vtkStandardNewMacro(PointSelectionStyle3D);
 

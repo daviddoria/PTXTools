@@ -17,8 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "PTXViewerWidget.h"
 
-#include "Helpers.h"
+#include "Helpers/Helpers.h"
 #include "PTXReader.h"
+
+// Submodules
+#include "ITKVTKHelpers/ITKVTKHelpers.h"
 
 // ITK
 #include <itkCastImageFilter.h>
@@ -334,18 +337,18 @@ void PTXViewerWidget::Display()
 {
   // Convert the images into a VTK images for display.
   this->PTX.CreateRGBImage(this->ColorImageLayer.Image);
-  Helpers::ITKRGBImageToVTKImage(this->ColorImageLayer.Image, this->ColorImageLayer.ImageData);
+  ITKVTKHelpers::ITKRGBImageToVTKImage(this->ColorImageLayer.Image.GetPointer(), this->ColorImageLayer.ImageData);
 
   this->PTX.CreateDepthImage(this->DepthImageLayer.Image);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->DepthImageLayer.Image,
+  ITKVTKHelpers::ITKScalarImageToScaledVTKImage(this->DepthImageLayer.Image.GetPointer(),
                                                                     this->DepthImageLayer.ImageData);
 
   this->PTX.CreateIntensityImage(this->IntensityImageLayer.Image);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::FloatImageType>(this->IntensityImageLayer.Image,
+  ITKVTKHelpers::ITKScalarImageToScaledVTKImage(this->IntensityImageLayer.Image.GetPointer(),
                                                                     this->IntensityImageLayer.ImageData);
 
   this->PTX.CreateValidityImage(this->ValidityImageLayer.Image);
-  Helpers::ITKScalarImageToScaledVTKImage<PTXImage::UnsignedCharImageType>(this->ValidityImageLayer.Image,
+  ITKVTKHelpers::ITKScalarImageToScaledVTKImage(this->ValidityImageLayer.Image.GetPointer(),
                                                                            this->ValidityImageLayer.ImageData);
 
   this->PTX.CreatePointCloud(this->PointsPolyData);

@@ -42,8 +42,9 @@ SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 add_subdirectory(Helpers)
 add_subdirectory(ITKHelpers)
 add_subdirectory(VTKHelpers)
+add_subdirectory(ITKVTKHelpers)
 
-set(SubmoduleLibraries libHelpers libITKHelpers libVTKHelpers)
+set(SubmoduleLibraries libHelpers libITKHelpers libVTKHelpers libITKVTKHelpers)
 
 # Create the main library that will be used in all of the exectuables
 add_library(PTX PTXPixel.cpp PTXImage.cpp PTXReader.cpp)
