@@ -1,6 +1,7 @@
 FIND_PACKAGE(Qt4 REQUIRED)
 INCLUDE(${QT_USE_FILE})
 
+message("building PTXViewer...")
 QT4_WRAP_UI(PTXViewerUISrcs PTXViewerWidget.ui)
 QT4_WRAP_CPP(PTXViewerMOCSrcs PTXViewerWidget.h)
 
