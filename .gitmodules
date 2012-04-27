@@ -10,3 +10,6 @@
 [submodule "VTKHelpers"]
 	path = VTKHelpers
 	url = git@github.com:daviddoria/VTKHelpers.git
+[submodule "ITKVTKHelpers"]
+	path = ITKVTKHelpers
+	url = git@github.com:daviddoria/ITKVTKHelpers.git
