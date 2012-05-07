@@ -62,6 +62,7 @@ SET(PTX_AppendRight ON CACHE BOOL "Append one ptx to the right of another")
 if(PTX_AppendRight)
   ADD_EXECUTABLE(ptxAppendRight AppendRight.cpp)
   TARGET_LINK_LIBRARIES(ptxAppendRight ${PTXLibraries})
+  #TARGET_LINK_LIBRARIES(ptxAppendRight PTX ${ITK_LIBRARIES} ${VTK_LIBRARIES} ${SubmoduleLibraries})
   INSTALL( TARGETS ptxAppendRight RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
@@ -221,7 +222,7 @@ endif()
 #   TARGET_LINK_LIBRARIES(ptxColorPTXFromImage ${PTXLibraries})
 #   INSTALL( TARGETS ptxColorPTXFromImage RUNTIME DESTINATION ${INSTALL_DIR} )
 # endif()
-# 
+#
 # SET(PTX_ColorPTXFromImageNaive ON CACHE BOOL "Remap the colors from an image to the ptx file")
 # if(PTX_ColorPTXFromImageNaive)
 #   ADD_EXECUTABLE(ptxColorPTXFromImageNaive ColorPTXFromImageNaive.cpp)
