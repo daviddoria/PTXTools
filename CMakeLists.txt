@@ -42,11 +42,22 @@ SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 if(NOT TARGET ITKVTKHelpers)
   add_subdirectory(ITKVTKHelpers)
   include_directories(${ITKVTKHelpers_includes})
+  set(PTXTools_includes ${PTXTools_includes} ${ITKVTKHelpers_includes})
+  set(PTXTools_libraries ${PTXTools_libraries} ${ITKVTKHelpers_libraries})
 endif()
 
 if(NOT TARGET VTKHelpers)
   add_subdirectory(VTKHelpers)
   include_directories(${VTKHelpers_includes})
+  set(PTXTools_includes ${PTXTools_includes} ${VTKHelpers_includes})
+  set(PTXTools_libraries ${PTXTools_libraries} ${VTKHelpers_libraries})
+endif()
+
+if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+  set(PTXTools_includes ${PTXTools_includes} #${EIGEN3_INCLUDE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+  set(PTXTools_libraries ${PTXTools_includes} PARENT_SCOPE)
+  message("PTXTools submodule used from ${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
 set(SubmoduleLibraries Helpers ITKHelpers VTKHelpers ITKVTKHelpers)
