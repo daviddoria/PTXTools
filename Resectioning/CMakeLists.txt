@@ -19,8 +19,8 @@ if(NOT vtkGUISupportQt_LOADED)
   message(FATAL_ERROR "You must turn on the vtkGUISupportQt module in your VTK build.") # because the UI is Qt
 endif()
 
-if(NOT vtkFiltersTracers_LOADED)
-  message(FATAL_ERROR "You must turn on the vtkFiltersTracers module in your VTK build.") # for vtkModifiedBSPTree
+if(NOT vtkFiltersFlowPaths_LOADED)
+  message(FATAL_ERROR "You must turn on the vtkFiltersFlowPaths module in your VTK build.") # for vtkModifiedBSPTree
 endif()
 
 FIND_PACKAGE(Qt4 REQUIRED)

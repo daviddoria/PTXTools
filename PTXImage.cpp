@@ -2,13 +2,14 @@
 #include "Frame.h"
 
 // Submodules
-#include "Helpers/Helpers.h"
-#include "ITKHelpers/ITKHelpers.h"
-#include "VTKHelpers/VTKHelpers.h"
+#include <Helpers/Helpers.h>
+#include <ITKHelpers/ITKHelpers.h>
+#include <VTKHelpers/VTKHelpers.h>
+#include <Mask.h>
 
 // ITK
 #include "itkAzimuthElevationToCartesianTransform.h"
-#include "itkCompose3DCovariantVectorImageFilter.h"
+#include "itkComposeImageFilter.h"
 #include "itkConstNeighborhoodIterator.h"
 #include "itkConstantBoundaryCondition.h"
 #include "itkCovariantVector.h"
@@ -47,7 +48,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <Mask.h>
 
 PTXImage::PTXImage()
 {
@@ -184,7 +184,7 @@ void PTXImage::WriteXYZ(const std::string& filePrefix) const
 
 PTXImage::XYZImageType::Pointer PTXImage::GetXYZImage() const
 {
-  typedef itk::Compose3DCovariantVectorImageFilter<FloatImageType,
+  typedef itk::ComposeImageFilter<FloatImageType,
                               XYZImageType> ComposeCovariantVectorImageFilterType;
 
   ComposeCovariantVectorImageFilterType::Pointer composeFilter = ComposeCovariantVectorImageFilterType::New();
@@ -210,10 +210,10 @@ void PTXImage::WriteXYZLaplacian(const std::string& filePrefix) const
 
 PTXImage::XYZImageType::Pointer PTXImage::GetXYZLaplacian() const
 {
-  typedef itk::Compose3DCovariantVectorImageFilter<FloatImageType,
-                              XYZImageType> ComposeCovariantVectorImageFilterType;
+  typedef itk::ComposeImageFilter<FloatImageType,
+                              XYZImageType> ComposeImageFilterType;
 
-  ComposeCovariantVectorImageFilterType::Pointer composeFilter = ComposeCovariantVectorImageFilterType::New();
+  ComposeImageFilterType::Pointer composeFilter = ComposeImageFilterType::New();
 
   composeFilter->SetInput1(GetLaplacian(0));
   composeFilter->SetInput2(GetLaplacian(1));

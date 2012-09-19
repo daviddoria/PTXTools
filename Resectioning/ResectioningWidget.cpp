@@ -683,7 +683,7 @@ void ResectioningWidget::on_btnResection_clicked()
 
   //Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
 
-  ITKHelpers::VectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
+  ITKHelpers::VectorImageToRGBImage(this->ColorImage.GetPointer(), rgbImage.GetPointer());
 
   //Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
 
@@ -718,7 +718,7 @@ void ResectioningWidget::on_btnResectionMesh_clicked()
 
   //Helpers::WriteImage(this->ColorImage.GetPointer(), "colorImage.mha");
   
-  ITKHelpers::VectorImageToRGBImage(this->ColorImage, rgbImage.GetPointer());
+  ITKHelpers::VectorImageToRGBImage(this->ColorImage.GetPointer(), rgbImage.GetPointer());
 
   //Helpers::WriteImage(rgbImage.GetPointer(), "rgbImage.png");
   
@@ -775,7 +775,7 @@ void ResectioningWidget::ShowResultImage()
   typedef itk::VectorImage<float, 2> VectorImageType;
   VectorImageType::Pointer image = VectorImageType::New();
 
-  ITKHelpers::RGBImageToVectorImage(rgbimage, image);
+  ITKHelpers::RGBImageToVectorImage(rgbimage.GetPointer(), image.GetPointer());
 
   ResultImagePane->Image = image;
 
