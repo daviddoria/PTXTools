@@ -875,8 +875,6 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
 {
   // This function allows the depth map to be modified externally and the new map applied to the grid
 
-  //CountInvalidPoints();
-
   if(OriginalFullImage->GetLargestPossibleRegion() != FullImage->GetLargestPossibleRegion())
   {
     throw std::runtime_error("You must call Backup() on the originally read ptx before using ReplaceDepth()!");
@@ -1158,16 +1156,19 @@ void PTXImage::ReplaceXYZ(const XYZImageType* const xyz)
 
 void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
 {
-  // This function allows the color and depth to be modified externally and the new map applied to the grid
+  // This function allows the color and depth to be modified externally and the new map applied to the grid.
+  // The color can be naively replaced, but since we store the point coordinates and not their depths,
+  // we have to compute the coordinates from the depths to replace this information.
 
-  CountInvalidPoints();
+  unsigned int invalidPointsBefore = CountInvalidPoints();
+  std::cout << "Before ReplaceRGBD there are " << invalidPointsBefore << " invalid points." << std::endl;
 
   ComputeAverageDeltaPhi();
   ComputeAverageDeltaTheta();
 
   // Setup iterators
-  itk::ImageRegionIterator<FullImageType> imageIterator(this->FullImage,
-                                                        this->FullImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage,
+                                                            this->FullImage->GetLargestPossibleRegion());
   itk::ImageRegionConstIterator<RGBDImageType> rgbdIterator(rgbd, rgbd->GetLargestPossibleRegion());
 
   itk::Point<float, 3> origin;
@@ -1175,10 +1176,10 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
 
   unsigned int madeValid = 0;
 
-  while(!imageIterator.IsAtEnd())
+  while(!fullImageIterator.IsAtEnd())
     {
     // Get the old point
-    PTXPixel pixel = imageIterator.Get();
+    PTXPixel pixel = fullImageIterator.Get();
 
     // Copy the color from the RGBD image
     pixel.R = rgbdIterator.Get()[0];
@@ -1195,28 +1196,23 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
       madeValid++;
       pixel.Valid = true;
 
-      oldPoint = ApproximateOldPoint(imageIterator.GetIndex());
-      std::cout << "new oldPoint: " << oldPoint << std::endl;
-
-      // For debugging, make new pixels bright green
-//       pixel.R = 0;
-//       pixel.G = 255;
-//       pixel.B = 0;
-
-      // For debugging, skip invalid pixels
-      ++imageIterator;
-      ++rgbdIterator;
-      continue;
+      oldPoint = ApproximateOldPoint(fullImageIterator.GetIndex());
+//      std::cout << "new oldPoint: " << oldPoint << std::endl;
       }
     else
       {
       // For debugging, turn off the pixels which are not newly valid
-      //pixel.Valid = false; //!!!
+      //pixel.Valid = false;
 
       oldPoint[0] = pixel.X;
       oldPoint[1] = pixel.Y;
       oldPoint[2] = pixel.Z;
       }
+
+    if(oldPoint[0] == 0 && oldPoint[1] == 0 && oldPoint[2] == 0)
+    {
+      throw std::runtime_error("oldPoint should never be zero!");
+    }
 
     // Get the vector from the origin (scanner location) and the old point
     itk::Vector<float, 3> unitVector = oldPoint - origin;
@@ -1238,15 +1234,26 @@ void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
     pixel.Y = newPoint[1];
     pixel.Z = newPoint[2];
 
-    imageIterator.Set(pixel);
+    if(newPoint[0] == 0 && newPoint[1] == 0 && newPoint[2] == 0)
+    {
+      throw std::runtime_error("newPoint should never be zero!");
+    }
+
+    if(!pixel.IsValid())
+    {
+      throw std::runtime_error("ReplaceRGBD(): Replaced pixels should always be valid!");
+    }
+    fullImageIterator.Set(pixel);
     //std::cout << pixel << std::endl;
 
-    ++imageIterator;
+    ++fullImageIterator;
     ++rgbdIterator;
     }
 
   std::cout << madeValid << " pixels were made valid." << std::endl;
-  CountInvalidPoints();
+
+  unsigned int invalidPointsAfter = CountInvalidPoints();
+  std::cout << "After ReplaceRGBD there are " << invalidPointsAfter << " invalid points." << std::endl;
 }
 
 
@@ -1862,8 +1869,9 @@ void PTXImage::WritePTX(const FilePrefix& filePrefix) const
       }
     }
 
-  std::cout << "WritePTX: Wrote " << numberOfInvalidPixels << " invalid pixels." << std::endl;
-  std::cout << "WritePTX: Wrote " << numberOfZeroPixels << " zero pixels." << std::endl;
+  std::cout << "WritePTX(): Wrote " << numberOfInvalidPixels << " invalid pixels." << std::endl;
+  // Note: this will not usually match the CountNumberOfZeroPixels() because it is only pixels that were zero AND valid.
+  std::cout << "WritePTX(): Wrote " << numberOfZeroPixels << " valid but zero pixels." << std::endl;
 
   fout.close();
 }

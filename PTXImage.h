@@ -213,7 +213,11 @@ public:
 
   /** Count invalid points */
   unsigned int CountInvalidPoints() const;
+
+  /** Count valid points */
   unsigned int CountValidPoints() const;
+
+  /** Count zero points */
   unsigned int CountZeroPoints() const;
 
   /** Copy FullImage into OriginalFullImage. */
@@ -276,14 +280,16 @@ public:
   
   //void GetMesh(vtkPolyData* const output);
   vtkPolyData* GetMesh() const;
-  
+
+  /** Output information about the ptx. */
+  void OutputInfo();
+
 private:
   float AverageDeltaTheta;
   float AverageDeltaPhi;
 
+  /** A flag to determine if debugging procedures should be performed. */
   bool Debug;
-
-  void OutputInfo();
   
   /** The main storage image. */
   FullImageType::Pointer FullImage;
