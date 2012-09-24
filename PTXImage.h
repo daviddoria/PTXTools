@@ -188,10 +188,12 @@ public:
   /** Interpret all points as being valid */
   void SetAllPointsToValid();
 
-  /** This function allows the depth map to be modified externally and the new map applied to the grid */
+  /** This function allows the depth map to be modified externally and the new map applied to the grid.
+    * This function only replaces the values of valid pixels. */
   void ReplaceDepth(const FloatImageType* const depthImage);
 
-  /** This function allows the color and depth to be modified externally and the new map applied to the grid */
+  /** This function allows the color and depth to be modified externally and the new map applied to the grid.
+    * This function only replaces the values of valid pixels. */
   void ReplaceRGBD(const RGBDImageType* const rgbd);
 
   /** This function allows the color to be modified */

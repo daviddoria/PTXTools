@@ -49,18 +49,16 @@
 #include <sstream>
 #include <string>
 
-PTXImage::PTXImage()
+PTXImage::PTXImage() : Debug(false)
 {
   // Create the main image
   this->FullImage = FullImageType::New();
   this->OriginalFullImage = FullImageType::New();
 
-  this->Debug = false;
-
   this->Mesh = vtkSmartPointer<vtkPolyData>::New();
 }
 
-PTXImage::PTXImage(FullImageType* const fullImage)
+PTXImage::PTXImage(FullImageType* const fullImage) : PTXImage()
 {
   this->FullImage = FullImageType::New();
   ITKHelpers::DeepCopy(fullImage, FullImage.GetPointer());
@@ -920,9 +918,10 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     }
 
     // If the original point was valid, use it's position as the unit vector along which to set the new depth.
-    // If the original point was not valid, interpolate this points direction.
+    // If the original point was not valid, interpolate this point's direction.
     itk::Vector<float, 3> rayDirection;
-    if(originalPTXPixel.IsValid())
+
+    if(originalPTXPixel.IsValid()) // This means the point is marked as valid, and is not zero
     {
       itk::Point<float, 3> oldPoint;
       oldPoint[0] = originalPTXPixel.X;
@@ -941,14 +940,11 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
       
       // Get the vector from the origin (scanner location) to the old point
       rayDirection = oldPoint - origin;
-
-      // Get a unit vector in the direction of the old point
-      rayDirection.Normalize();
     }
     else
     {
       // We should get here if the point is 0 0 0 1 0 0 0 - indicating that it should be filled,
-      // but was not previously valid
+      // but was not previously valid.
       // std::cout << "Approximating ray direction..." << std::endl;
       numberOfApproximatedDirections++;
       
@@ -959,10 +955,13 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
       
       if(isnan(rayDirection[0]))
       {
-        throw std::runtime_error("Error computing old point!");
+        throw std::runtime_error("ReplaceDepth(): Error computing ray direction!");
       }
+    } // end if(pixel is valid)
 
-    }
+    // Get a unit vector in the direction of the old point
+    rayDirection.Normalize();
+
     //std::cout << "Using ray direction: " << rayDirection << std::endl;
     // Compute the new point from the vector and the new depth
     itk::Point<float, 3> newPoint = origin + rayDirection * newDepthIterator.Get();
@@ -978,8 +977,8 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
     ++newDepthIterator;
     }
 
-  std::cout << "Approximated " << numberOfApproximatedDirections << " directions." << std::endl;
-  std::cout << "Invalid points " << numberOfInvalidPoints << std::endl;
+  std::cout << "ReplaceDepth(): Approximated " << numberOfApproximatedDirections << " directions." << std::endl;
+  std::cout << "ReplaceDepth(): Invalid points " << numberOfInvalidPoints << std::endl;
   
 }
 
@@ -1154,106 +1153,20 @@ void PTXImage::ReplaceXYZ(const XYZImageType* const xyz)
 
 }
 
-void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbd)
+void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbdImage)
 {
-  // This function allows the color and depth to be modified externally and the new map applied to the grid.
-  // The color can be naively replaced, but since we store the point coordinates and not their depths,
-  // we have to compute the coordinates from the depths to replace this information.
+  // Replace RGB
+  std::vector<unsigned int> rgbChannels = {0, 1, 2};
+  RGBVectorImageType::Pointer rgbImage = RGBVectorImageType::New();
+  ITKHelpers::ExtractChannels(rgbdImage, rgbChannels, rgbImage.GetPointer());
 
-  unsigned int invalidPointsBefore = CountInvalidPoints();
-  std::cout << "Before ReplaceRGBD there are " << invalidPointsBefore << " invalid points." << std::endl;
+  ReplaceRGB(rgbImage.GetPointer());
 
-  ComputeAverageDeltaPhi();
-  ComputeAverageDeltaTheta();
+  // Replace Depth
+  DepthImageType::Pointer depthImage = DepthImageType::New();
+  ITKHelpers::ExtractChannel(rgbdImage, 3, depthImage.GetPointer());
 
-  // Setup iterators
-  itk::ImageRegionIterator<FullImageType> fullImageIterator(this->FullImage,
-                                                            this->FullImage->GetLargestPossibleRegion());
-  itk::ImageRegionConstIterator<RGBDImageType> rgbdIterator(rgbd, rgbd->GetLargestPossibleRegion());
-
-  itk::Point<float, 3> origin;
-  origin.Fill(0);
-
-  unsigned int madeValid = 0;
-
-  while(!fullImageIterator.IsAtEnd())
-    {
-    // Get the old point
-    PTXPixel pixel = fullImageIterator.Get();
-
-    // Copy the color from the RGBD image
-    pixel.R = rgbdIterator.Get()[0];
-    pixel.G = rgbdIterator.Get()[1];
-    pixel.B = rgbdIterator.Get()[2];
-
-    itk::Point<float, 3> oldPoint;
-
-    // If the point was invalid, construct a vector in its direction incase the depth is now valid
-    bool previousValidity = pixel.Valid;
-
-    if(!pixel.IsValid())
-      {
-      madeValid++;
-      pixel.Valid = true;
-
-      oldPoint = ApproximateOldPoint(fullImageIterator.GetIndex());
-//      std::cout << "new oldPoint: " << oldPoint << std::endl;
-      }
-    else
-      {
-      // For debugging, turn off the pixels which are not newly valid
-      //pixel.Valid = false;
-
-      oldPoint[0] = pixel.X;
-      oldPoint[1] = pixel.Y;
-      oldPoint[2] = pixel.Z;
-      }
-
-    if(oldPoint[0] == 0 && oldPoint[1] == 0 && oldPoint[2] == 0)
-    {
-      throw std::runtime_error("oldPoint should never be zero!");
-    }
-
-    // Get the vector from the origin (scanner location) and the old point
-    itk::Vector<float, 3> unitVector = oldPoint - origin;
-
-    // Get a unit vector in the direction of the old point
-    unitVector.Normalize();
-
-    // Compute the new point from the vector and the new depth
-    float multiplier = 1.0;
-    if(!previousValidity)
-      {
-      multiplier = -1.0;
-      }
-    float depth = multiplier * rgbdIterator.Get()[3]; // This works, but why is the negative necessary?
-    itk::Point<float, 3> newPoint = origin + unitVector * depth;
-
-    // Save the new point in the PTXPixel
-    pixel.X = newPoint[0];
-    pixel.Y = newPoint[1];
-    pixel.Z = newPoint[2];
-
-    if(newPoint[0] == 0 && newPoint[1] == 0 && newPoint[2] == 0)
-    {
-      throw std::runtime_error("newPoint should never be zero!");
-    }
-
-    if(!pixel.IsValid())
-    {
-      throw std::runtime_error("ReplaceRGBD(): Replaced pixels should always be valid!");
-    }
-    fullImageIterator.Set(pixel);
-    //std::cout << pixel << std::endl;
-
-    ++fullImageIterator;
-    ++rgbdIterator;
-    }
-
-  std::cout << madeValid << " pixels were made valid." << std::endl;
-
-  unsigned int invalidPointsAfter = CountInvalidPoints();
-  std::cout << "After ReplaceRGBD there are " << invalidPointsAfter << " invalid points." << std::endl;
+  ReplaceDepth(depthImage.GetPointer());
 }
 
 
@@ -1288,7 +1201,7 @@ itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& que
   direction[1] = y;
   direction[2] = z;
   direction.Normalize();
-  std::cout << "Approximated direction: " << direction << std::endl;
+//  std::cout << "Approximated direction: " << direction << std::endl;
   
   return direction;
 }
@@ -1668,10 +1581,10 @@ float PTXImage::GetTheta(const itk::Index<2>& index) const
 float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
 {
   itk::Index<2> corner1 = {{0,0}};
-  PrintCoordinate(corner1);
+//  PrintCoordinate(corner1);
   
   itk::Index<2> corner2 = {{static_cast<itk::Index<2>::IndexValueType>(this->GetFullRegion().GetSize()[0] - 1), 0}};
-  PrintCoordinate(corner2);
+//  PrintCoordinate(corner2);
 
   itk::Index<2> left = corner2;
   itk::Index<2> right = corner1;
@@ -1680,20 +1593,24 @@ float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
   {
     throw std::runtime_error("ApproximateTheta: one of the corner is a zero point!");
   }
-  std::cout << "Left point: ";
-  PrintCoordinate(left);
-  
-  std::cout << "Right point: ";
-  PrintCoordinate(right);
+
+  if(this->Debug)
+  {
+    std::cout << "Left point: ";
+    PrintCoordinate(left);
+
+    std::cout << "Right point: ";
+    PrintCoordinate(right);
+  }
 
   float minTheta = GetTheta(left);
   float maxTheta = GetTheta(right);
 
   float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[0]);
-  std::cout << "minTheta: " << minTheta << " maxTheta " << maxTheta << " thetaStep: " << thetaStep << std::endl;
+//  std::cout << "minTheta: " << minTheta << " maxTheta " << maxTheta << " thetaStep: " << thetaStep << std::endl;
   //float approximateTheta = minTheta + static_cast<float>(queryPixel[0]) * thetaStep;
   float approximateTheta = minTheta + static_cast<float>(this->GetFullRegion().GetSize()[0] - queryPixel[0]) * thetaStep;
-  std::cout << "approximateTheta: " << approximateTheta << std::endl;
+//  std::cout << "approximateTheta: " << approximateTheta << std::endl;
   return approximateTheta;
 }
 
@@ -1703,10 +1620,10 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
 //   itk::Index<2> top = {{0, maxIndex}};
 
   itk::Index<2> corner1 = {{0,0}};
-  PrintCoordinate(corner1);
+//  PrintCoordinate(corner1);
 
   itk::Index<2> corner2 = {{0, static_cast<itk::Index<2>::IndexValueType>(this->GetFullRegion().GetSize()[1] - 1)}};
-  PrintCoordinate(corner2);
+//  PrintCoordinate(corner2);
   
   itk::Index<2> bottom = corner2;
   itk::Index<2> top = corner1;
@@ -1721,11 +1638,11 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
 
   float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[1]);
   
-  std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
+//  std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
   
   float approximatePhi = minPhi + static_cast<float>(this->GetFullRegion().GetSize()[1] - queryPixel[1]) * phiStep;
   //float approximatePhi = minPhi + static_cast<float>(queryPixel[1]) * phiStep;
-  std::cout << "approximatePhi: " << approximatePhi << std::endl;
+//  std::cout << "approximatePhi: " << approximatePhi << std::endl;
   
   return approximatePhi;
 }
