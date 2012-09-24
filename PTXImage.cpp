@@ -602,7 +602,7 @@ void PTXImage::CreatePointCloud(vtkPolyData* const pointCloud) const
 
   // Add the ptx image size to the field data
   vtkSmartPointer<vtkIntArray> imageSizeArray = vtkSmartPointer<vtkIntArray>::New();
-  int imageSize[2] = {this->GetSize()[0], this->GetSize()[1]};
+  int imageSize[2] = {static_cast<int>(this->GetSize()[0]), static_cast<int>(this->GetSize()[1])};
   imageSizeArray->SetNumberOfComponents(2);
   imageSizeArray->SetName("ImageSize");
   imageSizeArray->InsertNextTupleValue(imageSize);
@@ -614,7 +614,7 @@ void PTXImage::CreatePointCloud(vtkPolyData* const pointCloud) const
 
 void PTXImage::CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structuredGrid) const
 {
-  int dimensions[3] = {this->GetWidth(), this->GetHeight(), 1};
+  int dimensions[3] = {static_cast<int>(this->GetWidth()), static_cast<int>(this->GetHeight()), 1};
   structuredGrid->SetDimensions(dimensions);
 
   unsigned int totalPoints = this->GetWidth() * this->GetHeight();
@@ -1663,7 +1663,7 @@ float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
   itk::Index<2> corner1 = {{0,0}};
   PrintCoordinate(corner1);
   
-  itk::Index<2> corner2 = {{this->GetFullRegion().GetSize()[0] - 1, 0}};
+  itk::Index<2> corner2 = {{static_cast<itk::Index<2>::IndexValueType>(this->GetFullRegion().GetSize()[0] - 1), 0}};
   PrintCoordinate(corner2);
 
   itk::Index<2> left = corner2;
@@ -1698,7 +1698,7 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
   itk::Index<2> corner1 = {{0,0}};
   PrintCoordinate(corner1);
 
-  itk::Index<2> corner2 = {{0, this->GetFullRegion().GetSize()[1] - 1}};
+  itk::Index<2> corner2 = {{0, static_cast<itk::Index<2>::IndexValueType>(this->GetFullRegion().GetSize()[1] - 1)}};
   PrintCoordinate(corner2);
   
   itk::Index<2> bottom = corner2;
