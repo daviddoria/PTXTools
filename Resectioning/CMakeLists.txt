@@ -57,7 +57,7 @@ PointSelectionStyle2D.cpp
 PointSelectionStyle3D.cpp
 
 ${ResectioningUISrcs} ${ResectioningMOCSrcs} ${ResourceSrcs} )
-TARGET_LINK_LIBRARIES(ResectioningInteractive libCameraCalibration ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${PTXLibraries})
+TARGET_LINK_LIBRARIES(ResectioningInteractive libCameraCalibration ${PTXTools_libraries})
 
 
 # SET(ResectionSmart ON CACHE BOOL "Append one ptx to the right of another")
