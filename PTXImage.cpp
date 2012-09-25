@@ -1627,15 +1627,15 @@ float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
   float minTheta = MinTheta();
   float maxTheta = MaxTheta();
 
-  float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[0] - 1);
+  float thetaStep = fabs(CorrectForDiscontinuity(maxTheta) - CorrectForDiscontinuity(minTheta)) /
+      static_cast<float>(this->GetFullRegion().GetSize()[0] - 1);
 
-  // We use the column number counted from the right side of the grid (width - column) because
-  // the angles are measured from "right to left" (i.e. counter clockwise from +x if looking down at the XY plane
-  // from +z), but the scan grid is acquired from left to right
-  unsigned int column = this->GetFullRegion().GetSize()[0] - queryPixel[0];
-  float approximateTheta = minTheta + static_cast<float>(column) * thetaStep;
-//  std::cout << "approximateTheta: " << approximateTheta << std::endl;
-  return approximateTheta;
+  // We subtract the value because moving from left to right in the scan (clockwise looking at the XY plane
+  // from +z), sweeps a negative angle.
+  unsigned int column = queryPixel[0];
+  float approximateTheta = minTheta - static_cast<float>(column) * thetaStep;
+
+  return UncorrectForDiscontinuity(approximateTheta);
 }
 
 float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
@@ -1644,15 +1644,12 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
   float maxPhi = MaxPhi();
 
   float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[1] - 1);
-  
-//  std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
 
-  unsigned int row = this->GetFullRegion().GetSize()[1] - queryPixel[1];
+  // Index (0,0) is the bottom left corner of the scan, so index[1] is the number of rows from the bottom
+  unsigned int row = queryPixel[1];
 
   float approximatePhi = minPhi + static_cast<float>(row) * phiStep;
 
-//  std::cout << "approximatePhi: " << approximatePhi << std::endl;
-  
   return approximatePhi;
 }
 
@@ -2492,8 +2489,8 @@ float PTXImage::MinTheta() const
     itk::Index<2> index = {{column, static_cast<itk::Index<2>::IndexValueType>(row)}};
     if(this->FullImage->GetPixel(index).IsValid())
     {
-      float theta = GetTheta(index);
-      std::cout << "MinTheta: theta=" << theta << std::endl;
+      float theta = CorrectForDiscontinuity(GetTheta(index));
+//      std::cout << "MinTheta: theta=" << theta << std::endl;
       thetaSum += theta;
       numberOfUsedPixels++;
     }
@@ -2504,7 +2501,7 @@ float PTXImage::MinTheta() const
     throw std::runtime_error("MinTheta has no valid pixels!");
   }
   float averageTheta = thetaSum / static_cast<float>(numberOfUsedPixels);
-  return averageTheta;
+  return UncorrectForDiscontinuity(averageTheta);
 }
 
 float PTXImage::MaxTheta() const
@@ -2519,8 +2516,8 @@ float PTXImage::MaxTheta() const
     PTXPixel ptxPixel = this->FullImage->GetPixel(index);
     if(ptxPixel.IsValid())
     {
-      float theta = GetTheta(index);
-      std::cout << "MaxTheta: theta=" << theta << std::endl;
+      float theta = CorrectForDiscontinuity(GetTheta(index));
+//      std::cout << "MaxTheta: theta=" << theta << std::endl;
       thetaSum += theta;
       numberOfUsedPixels++;
     }
@@ -2531,7 +2528,7 @@ float PTXImage::MaxTheta() const
     throw std::runtime_error("MaxTheta has no valid pixels!");
   }
   float averageTheta = thetaSum / static_cast<float>(numberOfUsedPixels);
-  return averageTheta;
+  return UncorrectForDiscontinuity(averageTheta);
 }
 
 
@@ -2547,7 +2544,7 @@ float PTXImage::MinPhi() const
     if(this->FullImage->GetPixel(index).IsValid())
     {
       float phi = GetPhi(index);
-      std::cout << "MinPhi: phi=" << phi << std::endl;
+//      std::cout << "MinPhi: phi=" << phi << std::endl;
       phiSum += phi;
       numberOfUsedPixels++;
     }
@@ -2573,7 +2570,7 @@ float PTXImage::MaxPhi() const
     if(this->FullImage->GetPixel(index).IsValid())
     {
       float phi = GetPhi(index);
-      std::cout << "MaxPhi: phi=" << phi << std::endl;
+//      std::cout << "MaxPhi: phi=" << phi << std::endl;
       phiSum += phi;
       numberOfUsedPixels++;
     }
@@ -2587,7 +2584,7 @@ float PTXImage::MaxPhi() const
   return averagePhi;
 }
 
-float PTXImage::CorrectForDiscontinuity(const float value)
+float PTXImage::CorrectForDiscontinuity(const float value) const
 {
   // atan2() (used by the Boost Geometry transform() function), produces the angle from the +x axis, in the XY plane.
   // Looking down at the XY plane from +z, counter-clockwise angles are between 0 and 180 (the -x axis),
@@ -2602,7 +2599,7 @@ float PTXImage::CorrectForDiscontinuity(const float value)
   return value;
 }
 
-float PTXImage::UncorrectForDiscontinuity(const float value)
+float PTXImage::UncorrectForDiscontinuity(const float value) const
 {
   // atan2() (used by the Boost Geometry transform() function), produces the angle from the +x axis, in the XY plane.
   // Looking down at the XY plane from +z, counter-clockwise angles are between 0 and 180 (the -x axis),
