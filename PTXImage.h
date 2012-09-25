@@ -180,7 +180,6 @@ public:
   void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
 
   /** Compute and write the Laplacian of the depth image */
-  void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
   FloatImageType::Pointer GetDepthLaplacian() const;
 
   /** Compute a 4 channel image (r,g,b,depth) */
@@ -199,7 +198,6 @@ public:
   void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
 
   /** Compute and write a 5 channel image (r,g,b,depth,intensity) */
-  void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
   void WriteRGBDIImage(const FilePrefix& filePrefix) const;
 
   /** Write all of the different channels and images that can be created from the PTX. */
@@ -235,7 +233,6 @@ public:
   void WriteInvalidMask(const std::string& filename) const;
 
   /** Create a mask image where invalid pixels are non-zero */
-  void WriteInvalidMask(const std::string& filename) const;
   void CreateValidityImage(MaskImageType* const image) const;
 
   /** Create a mask image of points below a certain depthThreshold */
@@ -273,6 +270,18 @@ public:
 
   /** Find the nearest pixel which is not marked as invalid. */
   itk::Index<2> FindNearestValidPixel(const itk::Index<2>& pixel, itk::Offset<2> offset) const;
+
+  /** Get the average theta of valid pixels in the left column of the PTX. */
+  float MinTheta() const;
+
+  /** Get the average theta of valid pixels in the right column of the PTX. */
+  float MaxTheta() const;
+
+  /** Get the average phi of valid pixels in the bottom row of the PTX. */
+  float MinPhi() const;
+
+  /** Get the average phi of valid pixels in the top row of the PTX. */
+  float MaxPhi() const;
 
   /** Get the theta (side to side) angle of a pixel */
   float ApproximateTheta(const itk::Index<2>& pixel) const;
@@ -317,8 +326,14 @@ public:
   /** Get a mesh of the PTX points. */
   vtkPolyData* GetMesh() const;
 
-  /** Output information about the ptx. */
-  void OutputInfo();
+  /** Output information about the PTX. */
+  void OutputInfo() const;
+
+  /** Get the average angular distance between points in the theta direction. */
+  float GetAverageDeltaTheta() const;
+
+  /** Get the average angular distance between points in the phi direction. */
+  float GetAverageDeltaPhi() const;
 
 private:
   /** Store the average angular distance between points in the theta direction. */
@@ -329,9 +344,6 @@ private:
 
   /** A flag to determine if debugging procedures should be performed. */
   bool Debug;
-
-  /** Output information about the PTX. */
-  void OutputInfo();
   
   /** The main storage image. */
   FullImageType::Pointer FullImage;

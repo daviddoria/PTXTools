@@ -2450,7 +2450,7 @@ void PTXImage::ComputeMesh(const float maxMeshEdgeLength)
 
 }
 
-void PTXImage::OutputInfo()
+void PTXImage::OutputInfo() const
 {
   std::cout << "Invalid points: " << CountInvalidPoints() << std::endl;
   std::cout << "Valid points: " << CountValidPoints() << std::endl;
@@ -2462,4 +2462,95 @@ void PTXImage::PrintCoordinate(const itk::Index<2>& index) const
   std::cout << "X: " << this->FullImage->GetPixel(index).X << " y: " <<
                         this->FullImage->GetPixel(index).Y << " z: " << 
                         this->FullImage->GetPixel(index).Z << std::endl;
+}
+
+float PTXImage::GetAverageDeltaTheta() const
+{
+  return this->AverageDeltaTheta;
+}
+
+float PTXImage::GetAverageDeltaPhi() const
+{
+  return this->AverageDeltaPhi;
+}
+
+float PTXImage::MinTheta() const
+{
+  itk::Index<2>::IndexValueType column = 0;
+  float thetaSum = 0.0f;
+
+  unsigned int numberOfUsedPixels = 0;
+  for(itk::SizeValueType row = 0; row < this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1; ++row)
+  {
+    itk::Index<2> index = {{column, static_cast<itk::Index<2>::IndexValueType>(row)}};
+    if(this->FullImage->GetPixel(index).IsValid())
+    {
+      thetaSum += GetTheta(index);
+      numberOfUsedPixels++;
+    }
+  }
+
+  float averageTheta = thetaSum / static_cast<float>(numberOfUsedPixels);
+  return averageTheta;
+}
+
+float PTXImage::MaxTheta() const
+{
+  itk::Index<2>::IndexValueType column = this->FullImage->GetLargestPossibleRegion().GetSize()[0] - 1;
+  unsigned int numberOfUsedPixels = 0;
+  float thetaSum = 0.0f;
+
+  for(itk::SizeValueType row = 0; row < this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1; ++row)
+  {
+    itk::Index<2> index = {{column, static_cast<itk::Index<2>::IndexValueType>(row)}};
+    if(this->FullImage->GetPixel(index).IsValid())
+    {
+      thetaSum += GetTheta(index);
+      numberOfUsedPixels++;
+    }
+  }
+
+  float averageTheta = thetaSum / static_cast<float>(numberOfUsedPixels);
+  return averageTheta;
+}
+
+
+float PTXImage::MinPhi() const
+{
+  itk::Index<2>::IndexValueType row = 0;
+  float phiSum = 0.0f;
+  unsigned int numberOfUsedPixels = 0;
+
+  for(itk::SizeValueType column = 0; column < this->FullImage->GetLargestPossibleRegion().GetSize()[0] - 1; ++column)
+  {
+    itk::Index<2> index = {{static_cast<itk::Index<2>::IndexValueType>(column), row}};
+    if(this->FullImage->GetPixel(index).IsValid())
+    {
+      phiSum += GetPhi(index);
+      numberOfUsedPixels++;
+    }
+  }
+
+  float averagePhi = phiSum / static_cast<float>(numberOfUsedPixels);
+  return averagePhi;
+}
+
+float PTXImage::MaxPhi() const
+{
+  itk::Index<2>::IndexValueType row = this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1;
+  unsigned int numberOfUsedPixels = 0;
+  float phiSum = 0.0f;
+
+  for(itk::SizeValueType column = 0; column < this->FullImage->GetLargestPossibleRegion().GetSize()[0] - 1; ++column)
+  {
+    itk::Index<2> index = {{static_cast<itk::Index<2>::IndexValueType>(column), row}};
+    if(this->FullImage->GetPixel(index).IsValid())
+    {
+      phiSum += GetPhi(index);
+      numberOfUsedPixels++;
+    }
+  }
+
+  float averagePhi = phiSum / static_cast<float>(numberOfUsedPixels);
+  return averagePhi;
 }
