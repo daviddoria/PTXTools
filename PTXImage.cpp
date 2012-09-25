@@ -875,7 +875,7 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
 
   if(OriginalFullImage->GetLargestPossibleRegion() != FullImage->GetLargestPossibleRegion())
   {
-    throw std::runtime_error("You must call Backup() on the originally read ptx before using ReplaceDepth()!");
+    throw std::runtime_error("ReplaceDepth(): You must call Backup() on the originally read ptx before using ReplaceDepth()!");
   }
 
   PTXImage originalPTXImage(OriginalFullImage);
@@ -979,7 +979,6 @@ void PTXImage::ReplaceDepth(const FloatImageType* const depthImage)
 
   std::cout << "ReplaceDepth(): Approximated " << numberOfApproximatedDirections << " directions." << std::endl;
   std::cout << "ReplaceDepth(): Invalid points " << numberOfInvalidPoints << std::endl;
-  
 }
 
 void PTXImage::ReplaceRGB(const RGBVectorImageType* const rgb)
@@ -1194,6 +1193,7 @@ itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& que
 //   }
 
   double x, y, z;
+  // Get the point in the computed direction with radius 1.0
   Helpers::SphericalToCartesian(x,y,z,1.0f,theta,phi);
 
   itk::Vector<float, 3> direction;
@@ -1477,7 +1477,7 @@ void PTXImage::ComputeAverageDeltaTheta()
 
   if(deltaThetas.size() == 0)
     {
-    throw std::runtime_error("There are no valid theta neighbors!");
+    throw std::runtime_error("ComputeAverageDeltaTheta(): There are no valid theta neighbors!");
     }
 
   this->AverageDeltaTheta = total/static_cast<float>(deltaThetas.size());
@@ -1535,7 +1535,7 @@ void PTXImage::ComputeAverageDeltaPhi()
 
   if(deltaPhis.size() == 0)
     {
-    throw std::runtime_error("There are no valid phi neighbors!");
+    throw std::runtime_error("ComputeAverageDeltaPhi(): There are no valid phi neighbors!");
     }
 
   this->AverageDeltaPhi = total/static_cast<float>(deltaPhis.size());
@@ -1580,68 +1580,32 @@ float PTXImage::GetTheta(const itk::Index<2>& index) const
 
 float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
 {
-  itk::Index<2> corner1 = {{0,0}};
-//  PrintCoordinate(corner1);
-  
-  itk::Index<2> corner2 = {{static_cast<itk::Index<2>::IndexValueType>(this->GetFullRegion().GetSize()[0] - 1), 0}};
-//  PrintCoordinate(corner2);
+  float minTheta = MinTheta();
+  float maxTheta = MaxTheta();
 
-  itk::Index<2> left = corner2;
-  itk::Index<2> right = corner1;
-  
-  if(this->FullImage->GetPixel(left).IsZero() || this->FullImage->GetPixel(right).IsZero())
-  {
-    throw std::runtime_error("ApproximateTheta: one of the corner is a zero point!");
-  }
+  float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[0] - 1);
 
-  if(this->Debug)
-  {
-    std::cout << "Left point: ";
-    PrintCoordinate(left);
-
-    std::cout << "Right point: ";
-    PrintCoordinate(right);
-  }
-
-  float minTheta = GetTheta(left);
-  float maxTheta = GetTheta(right);
-
-  float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[0]);
-//  std::cout << "minTheta: " << minTheta << " maxTheta " << maxTheta << " thetaStep: " << thetaStep << std::endl;
-  //float approximateTheta = minTheta + static_cast<float>(queryPixel[0]) * thetaStep;
-  float approximateTheta = minTheta + static_cast<float>(this->GetFullRegion().GetSize()[0] - queryPixel[0]) * thetaStep;
+//  unsigned int column = queryPixel[0];
+  // Not sure why this switch (width - row) is necessary?
+  unsigned int column = this->GetFullRegion().GetSize()[0] - queryPixel[0];
+  float approximateTheta = minTheta + static_cast<float>(column) * thetaStep;
 //  std::cout << "approximateTheta: " << approximateTheta << std::endl;
   return approximateTheta;
 }
 
 float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
 {
-//   itk::Index<2> bottom = {{0,0}};
-//   itk::Index<2> top = {{0, maxIndex}};
+  float minPhi = MinPhi();
+  float maxPhi = MaxPhi();
 
-  itk::Index<2> corner1 = {{0,0}};
-//  PrintCoordinate(corner1);
-
-  itk::Index<2> corner2 = {{0, static_cast<itk::Index<2>::IndexValueType>(this->GetFullRegion().GetSize()[1] - 1)}};
-//  PrintCoordinate(corner2);
-  
-  itk::Index<2> bottom = corner2;
-  itk::Index<2> top = corner1;
-
-  if(this->FullImage->GetPixel(bottom).IsZero() || this->FullImage->GetPixel(top).IsZero())
-  {
-    throw std::runtime_error("ApproximateTheta: one of the corner is a zero point!");
-  }
-  
-  float minPhi = GetPhi(bottom);
-  float maxPhi = GetPhi(top);
-
-  float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[1]);
+  float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[1] - 1);
   
 //  std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
   
-  float approximatePhi = minPhi + static_cast<float>(this->GetFullRegion().GetSize()[1] - queryPixel[1]) * phiStep;
-  //float approximatePhi = minPhi + static_cast<float>(queryPixel[1]) * phiStep;
+  // We do this switch (heigh - row) because of the location of the origin of the PTX grid
+  unsigned int row = this->GetFullRegion().GetSize()[1] - queryPixel[1];
+  float approximatePhi = minPhi + static_cast<float>(row) * phiStep;
+
 //  std::cout << "approximatePhi: " << approximatePhi << std::endl;
   
   return approximatePhi;
@@ -2246,7 +2210,7 @@ itk::Index<2> PTXImage::FindValidTopCenterPixel() const
 {
   itk::Index<2> topCenterIndex;
   topCenterIndex[0] = this->FullImage->GetLargestPossibleRegion().GetSize()[0] / 2;
-  topCenterIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1;
+  topCenterIndex[1] = this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1; // This assumes the 0th row is the bottom of the PTX grid
 
   if(this->FullImage->GetPixel(topCenterIndex).IsValid())
     {
@@ -2272,10 +2236,8 @@ itk::Index<2> PTXImage::FindValidTopCenterPixel() const
     return topCenterIndex;
     }
 
-  // if we get to here, all pixels around the top center pixel are invalid
-  std::cerr << "All pixels around the top center pixel are invalid!" << std::endl;
-  exit(-1);
-  return topCenterIndex;
+  // If we get to here, all pixels around the top center pixel are invalid
+  throw std::runtime_error("FindValidTopCenterPixel(): All pixels around the top center pixel are invalid!");
 }
 
 
@@ -2480,16 +2442,22 @@ float PTXImage::MinTheta() const
   float thetaSum = 0.0f;
 
   unsigned int numberOfUsedPixels = 0;
-  for(itk::SizeValueType row = 0; row < this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1; ++row)
+  for(itk::SizeValueType row = 0; row < this->FullImage->GetLargestPossibleRegion().GetSize()[1]; ++row)
   {
     itk::Index<2> index = {{column, static_cast<itk::Index<2>::IndexValueType>(row)}};
     if(this->FullImage->GetPixel(index).IsValid())
     {
-      thetaSum += GetTheta(index);
+      float theta = GetTheta(index);
+      std::cout << "MinTheta: theta=" << theta << std::endl;
+      thetaSum += theta;
       numberOfUsedPixels++;
     }
   }
 
+  if(numberOfUsedPixels == 0)
+  {
+    throw std::runtime_error("MinTheta has no valid pixels!");
+  }
   float averageTheta = thetaSum / static_cast<float>(numberOfUsedPixels);
   return averageTheta;
 }
@@ -2500,16 +2468,23 @@ float PTXImage::MaxTheta() const
   unsigned int numberOfUsedPixels = 0;
   float thetaSum = 0.0f;
 
-  for(itk::SizeValueType row = 0; row < this->FullImage->GetLargestPossibleRegion().GetSize()[1] - 1; ++row)
+  for(itk::SizeValueType row = 0; row < this->FullImage->GetLargestPossibleRegion().GetSize()[1]; ++row)
   {
     itk::Index<2> index = {{column, static_cast<itk::Index<2>::IndexValueType>(row)}};
-    if(this->FullImage->GetPixel(index).IsValid())
+    PTXPixel ptxPixel = this->FullImage->GetPixel(index);
+    if(ptxPixel.IsValid())
     {
-      thetaSum += GetTheta(index);
+      float theta = GetTheta(index);
+      std::cout << "MaxTheta: theta=" << theta << std::endl;
+      thetaSum += theta;
       numberOfUsedPixels++;
     }
   }
 
+  if(numberOfUsedPixels == 0)
+  {
+    throw std::runtime_error("MaxTheta has no valid pixels!");
+  }
   float averageTheta = thetaSum / static_cast<float>(numberOfUsedPixels);
   return averageTheta;
 }
@@ -2521,16 +2496,22 @@ float PTXImage::MinPhi() const
   float phiSum = 0.0f;
   unsigned int numberOfUsedPixels = 0;
 
-  for(itk::SizeValueType column = 0; column < this->FullImage->GetLargestPossibleRegion().GetSize()[0] - 1; ++column)
+  for(itk::SizeValueType column = 0; column < this->FullImage->GetLargestPossibleRegion().GetSize()[0]; ++column)
   {
     itk::Index<2> index = {{static_cast<itk::Index<2>::IndexValueType>(column), row}};
     if(this->FullImage->GetPixel(index).IsValid())
     {
-      phiSum += GetPhi(index);
+      float phi = GetPhi(index);
+      std::cout << "MinPhi: phi=" << phi << std::endl;
+      phiSum += phi;
       numberOfUsedPixels++;
     }
   }
 
+  if(numberOfUsedPixels == 0)
+  {
+    throw std::runtime_error("MinPhi has no valid pixels!");
+  }
   float averagePhi = phiSum / static_cast<float>(numberOfUsedPixels);
   return averagePhi;
 }
@@ -2541,16 +2522,22 @@ float PTXImage::MaxPhi() const
   unsigned int numberOfUsedPixels = 0;
   float phiSum = 0.0f;
 
-  for(itk::SizeValueType column = 0; column < this->FullImage->GetLargestPossibleRegion().GetSize()[0] - 1; ++column)
+  for(itk::SizeValueType column = 0; column < this->FullImage->GetLargestPossibleRegion().GetSize()[0]; ++column)
   {
     itk::Index<2> index = {{static_cast<itk::Index<2>::IndexValueType>(column), row}};
     if(this->FullImage->GetPixel(index).IsValid())
     {
-      phiSum += GetPhi(index);
+      float phi = GetPhi(index);
+      std::cout << "MaxPhi: phi=" << phi << std::endl;
+      phiSum += phi;
       numberOfUsedPixels++;
     }
   }
 
+  if(numberOfUsedPixels == 0)
+  {
+    throw std::runtime_error("MaxPhi has no valid pixels!");
+  }
   float averagePhi = phiSum / static_cast<float>(numberOfUsedPixels);
   return averagePhi;
 }

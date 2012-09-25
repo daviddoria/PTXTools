@@ -221,9 +221,9 @@ PTXImage CreatePTX()
     ptxPixel.Intensity = .5;
 
     /** The Coordinate of the point. */
-    ptxPixel.X = fullImageIterator.GetIndex()[0];
-    ptxPixel.Y = fullImageIterator.GetIndex()[1];
-    ptxPixel.Z = 10;
+    ptxPixel.X = 10;
+    ptxPixel.Y = fullImageIterator.GetIndex()[0];
+    ptxPixel.Z = fullImageIterator.GetIndex()[1];
 
     fullImageIterator.Set(ptxPixel);
     ++fullImageIterator;

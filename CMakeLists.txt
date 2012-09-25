@@ -352,3 +352,9 @@ option(PTXTools_BuildTests "PTXTools_BuildTests" OFF)
 if(PTXTools_BuildTests)
   add_subdirectory(Tests)
 endif(PTXTools_BuildTests)
+
+# Build the demos if requested
+option(PTXTools_BuildDemos "PTXTools_BuildDemos" OFF)
+if(PTXTools_BuildDemos)
+  add_subdirectory(Demos)
+endif(PTXTools_BuildDemos)
