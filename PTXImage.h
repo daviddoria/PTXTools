@@ -180,6 +180,7 @@ public:
   void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
 
   /** Compute and write the Laplacian of the depth image */
+  void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
   FloatImageType::Pointer GetDepthLaplacian() const;
 
   /** Compute a 4 channel image (r,g,b,depth) */
@@ -198,6 +199,7 @@ public:
   void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
 
   /** Compute and write a 5 channel image (r,g,b,depth,intensity) */
+  void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
   void WriteRGBDIImage(const FilePrefix& filePrefix) const;
 
   /** Write all of the different channels and images that can be created from the PTX. */
@@ -209,10 +211,12 @@ public:
   /** Interpret all points as being valid */
   void SetAllPointsToValid();
 
-  /** This function allows the depth map to be modified externally and the new map applied to the grid */
+  /** This function allows the depth map to be modified externally and the new map applied to the grid.
+    * This function only replaces the values of valid pixels. */
   void ReplaceDepth(const FloatImageType* const depthImage);
 
-  /** This function allows the color and depth to be modified externally and the new map applied to the grid */
+  /** This function allows the color and depth to be modified externally and the new map applied to the grid.
+    * This function only replaces the values of valid pixels. */
   void ReplaceRGBD(const RGBDImageType* const rgbd);
 
   /** This function allows the color to be modified */
@@ -231,6 +235,7 @@ public:
   void WriteInvalidMask(const std::string& filename) const;
 
   /** Create a mask image where invalid pixels are non-zero */
+  void WriteInvalidMask(const std::string& filename) const;
   void CreateValidityImage(MaskImageType* const image) const;
 
   /** Create a mask image of points below a certain depthThreshold */
@@ -311,7 +316,10 @@ public:
   
   /** Get a mesh of the PTX points. */
   vtkPolyData* GetMesh() const;
-  
+
+  /** Output information about the ptx. */
+  void OutputInfo();
+
 private:
   /** Store the average angular distance between points in the theta direction. */
   float AverageDeltaTheta;
