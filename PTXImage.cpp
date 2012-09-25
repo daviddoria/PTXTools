@@ -1274,7 +1274,7 @@ itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& que
 //   }
 
   double x, y, z;
-  Helpers::sphericalToCartesian(x,y,z,1.0f,theta,phi);
+  Helpers::SphericalToCartesian(x,y,z,1.0f,theta,phi);
 
   itk::Vector<float, 3> direction;
   direction[0] = x;
@@ -1635,7 +1635,7 @@ float PTXImage::GetPhi(const itk::Index<2>& index) const
   
   double r, theta, phi;
   
-  Helpers::cartesianToSpherical(r, theta, phi, x, y, z );
+  Helpers::CartesianToSpherical(r, theta, phi, x, y, z );
 
   return phi;
 }
@@ -1653,7 +1653,7 @@ float PTXImage::GetTheta(const itk::Index<2>& index) const
 
   double r, theta, phi;
 
-  Helpers::cartesianToSpherical(r, theta, phi, x, y, z );
+  Helpers::CartesianToSpherical(r, theta, phi, x, y, z );
 
   return theta;
 }
