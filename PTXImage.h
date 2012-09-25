@@ -145,41 +145,62 @@ public:
 
   /** Create a 2D image of the points in the grid in which the points were acquired */
   void CreateRGBImage(RGBImageType* const image) const;
+
+  /** Create and write a 2D image of the points in the grid in which the points were acquired */
   void WriteRGBImage(const FilePrefix& prefix) const;
 
   /** Create a colored point cloud */
   void CreatePointCloud(vtkPolyData* const pointCloud) const;
+
+  /** Create and write a colored point cloud */
   void WritePointCloud(const FilePrefix& prefix) const;
+
+  /** Create and write a colored point cloud */
   void WritePointCloud(const std::string& fileName) const;
 
   /** Create an organized/structured grid of 3D points */
   void CreateStructuredGrid(vtkSmartPointer<vtkStructuredGrid> structuredGrid) const;
+
+  /** Create and write an organized/structured grid of 3D points */
   void WriteStructuredGrid(const std::string& fileName) const;
 
   /** Create an image of the intensities of the points in the grid in which they were acquired */
   void CreateIntensityImage(FloatImageType::Pointer image) const;
+
+  /** Create and write an image of the intensities of the points in the grid in which they were acquired */
   void WriteIntensityImage(const FilePrefix& filePrefix) const;
 
   /** Create a 2D, 1 channel image of the depths of the points in the grid in which they were acquired */
   void CreateDepthImage(FloatImageType::Pointer image) const;
+
+  /** Create and write a 2D, 1 channel image of the depths of the points in the grid in which they were acquired */
   void WriteDepthImage(const FilePrefix& filePrefix) const;
 
-  /** Compute and write the Laplacian of the depth image */
+  /** Compute the Laplacian of the depth image */
   void WriteDepthLaplacian(const FilePrefix& filePrefix) const;
+
+  /** Compute and write the Laplacian of the depth image */
   FloatImageType::Pointer GetDepthLaplacian() const;
 
-  /** Compute and write a 4 channel image (r,g,b,depth) */
+  /** Compute a 4 channel image (r,g,b,depth) */
   void CreateRGBDImage(RGBDImageType::Pointer image) const;
+
+  /** Compute and write a 4 channel image (r,g,b,depth) */
   void WriteRGBDImage(const FilePrefix& filePrefix) const;
 
-  /** Compute and write a 5 channel image (r,g,b,depth,validity) */
+  /** Compute a 5 channel image (r,g,b,depth,validity) */
   void CreateRGBDVImage(RGBDVImageType::Pointer image) const;
+
+  /** Compute and write a 5 channel image (r,g,b,depth,validity) */
   void WriteRGBDVImage(const FilePrefix& filePrefix) const;
 
-  /** Compute and write a 5 channel image (r,g,b,depth,intensity) */
+  /** Compute a 5 channel image (r,g,b,depth,intensity) */
   void CreateRGBDIImage(RGBDIImageType::Pointer image) const;
+
+  /** Compute and write a 5 channel image (r,g,b,depth,intensity) */
   void WriteRGBDIImage(const FilePrefix& filePrefix) const;
 
+  /** Write all of the different channels and images that can be created from the PTX. */
   void WriteEverything(const FilePrefix& filePrefix) const;
 
   /** This function allows the validity image to be modified externally and the new image applied to the grid */
@@ -196,6 +217,8 @@ public:
 
   /** This function allows the color to be modified */
   void ReplaceRGB(const RGBVectorImageType* const rgb);
+
+  /** This function allows the color to be modified */
   void ReplaceRGB(const RGBImageType* const rgb);
 
   /** This function allows the color to be modified */
@@ -204,8 +227,10 @@ public:
   /** Blank the PTX image in areas where mask is non-zero */
   void ApplyMask(const MaskImageType* const mask);
 
-  /** Create a mask image where invalid pixels are non-zero */
+  /** Create and write a mask image where invalid pixels are non-zero */
   void WriteInvalidMask(const std::string& filename) const;
+
+  /** Create a mask image where invalid pixels are non-zero */
   void CreateValidityImage(MaskImageType* const image) const;
 
   /** Create a mask image of points below a certain depthThreshold */
@@ -213,7 +238,11 @@ public:
 
   /** Count invalid points */
   unsigned int CountInvalidPoints() const;
+
+  /** Count valid points */
   unsigned int CountValidPoints() const;
+
+  /** Count zero points */
   unsigned int CountZeroPoints() const;
 
   /** Copy FullImage into OriginalFullImage. */
@@ -260,9 +289,13 @@ public:
   /** Get the theta (side to side) angle of a pixel */
   float GetTheta(const itk::Index<2>& index) const;
 
+  /** Compute the average angular distance between points in the phi direction. */
   void ComputeAverageDeltaPhi();
+
+  /** Compute the average angular distance between points in the theta direction. */
   void ComputeAverageDeltaTheta();
 
+  /** Compute the distance between two points. */
   float DistanceBetweenPoints(const PTXPixel& a, const PTXPixel& b) const;
 
   PTXImage OrthogonalProjection(const VectorType& axis) const;
@@ -270,19 +303,26 @@ public:
   itk::Index<2> FindValidTopCenterPixel() const;
   itk::Index<2> FindValidCenterPixel() const;
 
+  /** Set the flag to determine if debugging procedures should be performed. */
   void SetDebug(const bool);
 
+  /** Compute a mesh on the points. */
   void ComputeMesh(const float maxMeshEdgeLength = std::numeric_limits<float>::max());
   
-  //void GetMesh(vtkPolyData* const output);
+  /** Get a mesh of the PTX points. */
   vtkPolyData* GetMesh() const;
   
 private:
+  /** Store the average angular distance between points in the theta direction. */
   float AverageDeltaTheta;
+
+  /** Store the average angular distance between points in the phi direction. */
   float AverageDeltaPhi;
 
+  /** A flag to determine if debugging procedures should be performed. */
   bool Debug;
 
+  /** Output information about the PTX. */
   void OutputInfo();
   
   /** The main storage image. */
