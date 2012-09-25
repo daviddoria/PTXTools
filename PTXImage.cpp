@@ -8,7 +8,6 @@
 #include <Mask.h>
 
 // ITK
-#include "itkAzimuthElevationToCartesianTransform.h"
 #include "itkComposeImageFilter.h"
 #include "itkConstNeighborhoodIterator.h"
 #include "itkConstantBoundaryCondition.h"
@@ -48,6 +47,9 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+
+// Boost
+#include <boost/geometry/geometry.hpp>
 
 PTXImage::PTXImage() : Debug(false)
 {
@@ -1192,14 +1194,23 @@ itk::Vector<float, 3> PTXImage::ApproximateRayDirection(const itk::Index<2>& que
 //     throw std::runtime_error("Theta is nan!");
 //   }
 
-  double x, y, z;
-  // Get the point in the computed direction with radius 1.0
-  Helpers::SphericalToCartesian(x,y,z,1.0f,theta,phi);
+  // Get the point in the computed direction
+  namespace bg = boost::geometry; // bg = 'B'oost 'G'eometry
+  namespace cs = bg::cs; // cs = 'C'oordinate 'S'ystem
+
+  typedef bg::model::point<long double, 2, cs::spherical<bg::degree> > SphericalType;
+  SphericalType spherical(theta, phi);
+
+  typedef bg::model::point<long double, 3, cs::cartesian> CartesianType;
+  CartesianType cartesian;
+
+  bg::strategy::transform::from_spherical_equatorial_2_to_cartesian_3<SphericalType, CartesianType> strategy;
+  bg::transform(spherical, cartesian, strategy);
 
   itk::Vector<float, 3> direction;
-  direction[0] = x;
-  direction[1] = y;
-  direction[2] = z;
+  direction[0] = cartesian.get<0>();
+  direction[1] = cartesian.get<1>();
+  direction[2] = cartesian.get<2>();
   direction.Normalize();
 //  std::cout << "Approximated direction: " << direction << std::endl;
   
@@ -1227,17 +1238,24 @@ itk::Point<float, 3> PTXImage::ApproximateOldPoint(const itk::Index<2>& pixel) c
     throw std::runtime_error("Theta is nan!");
   }
   
-  typedef itk::Point<float, 3> PointType;
-  PointType azEl;
-  azEl[0] = theta;
-  azEl[1] = phi;
-  azEl[2] = 1;
+  namespace bg = boost::geometry; // bg = 'B'oost 'G'eometry
+  namespace cs = bg::cs; // cs = 'C'oordinate 'S'ystem
 
-  typedef itk::AzimuthElevationToCartesianTransform< float, 3 >
-    AzimuthElevationToCartesian;
-  AzimuthElevationToCartesian::Pointer azimuthElevation =
-    AzimuthElevationToCartesian::New();
-  return azimuthElevation->TransformAzElToCartesian(azEl);
+  typedef bg::model::point<long double, 2, cs::spherical<bg::degree> > SphericalType;
+  SphericalType spherical(theta, phi);
+
+  typedef bg::model::point<long double, 3, cs::cartesian> CartesianType;
+  CartesianType cartesian;
+
+  bg::strategy::transform::from_spherical_equatorial_2_to_cartesian_3<SphericalType, CartesianType> strategy;
+  bg::transform(spherical, cartesian, strategy);
+
+  itk::Point<float, 3> approximateOldPoint;
+  approximateOldPoint[0] = cartesian.get<0>();
+  approximateOldPoint[1] = cartesian.get<1>();
+  approximateOldPoint[2] = cartesian.get<2>();
+
+  return approximateOldPoint;
 }
 
 void PTXImage::ApplyMask(const MaskImageType* const mask)
@@ -1462,7 +1480,8 @@ void PTXImage::ComputeAverageDeltaTheta()
         }
       else
         {
-        deltaThetas.push_back(GetTheta(index) - GetTheta(lastIndex));
+//        deltaThetas.push_back(GetTheta(index) - GetTheta(lastIndex));
+        deltaThetas.push_back(fabs(CorrectForDiscontinuity(GetTheta(index)) - CorrectForDiscontinuity(GetTheta(lastIndex))));
         }
 
       lastIndex = index;
@@ -1547,17 +1566,29 @@ float PTXImage::GetPhi(const itk::Index<2>& index) const
 {
   if(this->FullImage->GetPixel(index).IsZero())
   {
-    throw std::runtime_error("GetPhi index has a zero point!");
+    throw std::runtime_error("GetPhi(): index is xa zero point!");
   }
-  float x = this->FullImage->GetPixel(index).X;
-  float y = this->FullImage->GetPixel(index).Y;
-  float z = this->FullImage->GetPixel(index).Z;
-  
-  double r, theta, phi;
-  
-  Helpers::CartesianToSpherical(r, theta, phi, x, y, z );
 
-  return phi;
+  namespace bg = boost::geometry; // bg = 'B'oost 'G'eometry
+  namespace cs = bg::cs; // cs = 'C'oordinate 'S'ystem
+
+  PTXPixel ptxPixel = this->FullImage->GetPixel(index);
+  typedef bg::model::point<long double, 3, cs::cartesian> CartesianType;
+
+  itk::CovariantVector<double, 3> normalizedPoint;
+  normalizedPoint[0] = ptxPixel.X;
+  normalizedPoint[1] = ptxPixel.Y;
+  normalizedPoint[2] = ptxPixel.Z;
+  normalizedPoint.Normalize();
+  CartesianType cartesian(normalizedPoint[0], normalizedPoint[1], normalizedPoint[2]);
+
+  typedef bg::model::point<long double, 2, cs::spherical<bg::degree> > SphericalType;
+  SphericalType spherical;
+
+  bg::strategy::transform::from_cartesian_3_to_spherical_equatorial_2<CartesianType, SphericalType> strategy;
+  bg::transform(cartesian, spherical, strategy);
+
+  return spherical.get<1>();
 }
 
 float PTXImage::GetTheta(const itk::Index<2>& index) const
@@ -1567,15 +1598,28 @@ float PTXImage::GetTheta(const itk::Index<2>& index) const
     throw std::runtime_error("GetTheta index has a zero point!");
   }
   
-  float x = this->FullImage->GetPixel(index).X;
-  float y = this->FullImage->GetPixel(index).Y;
-  float z = this->FullImage->GetPixel(index).Z;
+  namespace bg = boost::geometry; // bg = 'B'oost 'G'eometry
+  namespace cs = bg::cs; // cs = 'C'oordinate 'S'ystem
 
-  double r, theta, phi;
+  PTXPixel ptxPixel = this->FullImage->GetPixel(index);
+  typedef bg::model::point<long double, 3, cs::cartesian> CartesianType;
 
-  Helpers::CartesianToSpherical(r, theta, phi, x, y, z );
+  itk::CovariantVector<double, 3> normalizedPoint;
+  normalizedPoint[0] = ptxPixel.X;
+  normalizedPoint[1] = ptxPixel.Y;
+  normalizedPoint[2] = ptxPixel.Z;
+  normalizedPoint.Normalize();
+  CartesianType cartesian(normalizedPoint[0], normalizedPoint[1], normalizedPoint[2]);
 
-  return theta;
+  typedef bg::model::point<long double, 2, cs::spherical<bg::degree> > SphericalType;
+  SphericalType spherical;
+
+  bg::strategy::transform::from_cartesian_3_to_spherical_equatorial_2<CartesianType, SphericalType> strategy;
+  bg::transform(cartesian, spherical, strategy);
+
+  // This produces the angle from the +x axis, in the XY plane. Looking down at the XY plane from +z, counter-clockwise angles are between 0 and 180 (the -x axis),
+  // while clockwise angles are between 0 and -180 (the -x axis).
+  return spherical.get<0>();
 }
 
 float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
@@ -1585,8 +1629,9 @@ float PTXImage::ApproximateTheta(const itk::Index<2>& queryPixel) const
 
   float thetaStep = fabs(maxTheta - minTheta)/ static_cast<float>(this->GetFullRegion().GetSize()[0] - 1);
 
-//  unsigned int column = queryPixel[0];
-  // Not sure why this switch (width - row) is necessary?
+  // We use the column number counted from the right side of the grid (width - column) because
+  // the angles are measured from "right to left" (i.e. counter clockwise from +x if looking down at the XY plane
+  // from +z), but the scan grid is acquired from left to right
   unsigned int column = this->GetFullRegion().GetSize()[0] - queryPixel[0];
   float approximateTheta = minTheta + static_cast<float>(column) * thetaStep;
 //  std::cout << "approximateTheta: " << approximateTheta << std::endl;
@@ -1601,9 +1646,9 @@ float PTXImage::ApproximatePhi(const itk::Index<2>& queryPixel) const
   float phiStep = fabs(maxPhi - minPhi)/ static_cast<float>(this->GetFullRegion().GetSize()[1] - 1);
   
 //  std::cout << "minPhi: " << minPhi << " maxPhi " << maxPhi << " phiStep: " << phiStep << std::endl;
-  
-  // We do this switch (heigh - row) because of the location of the origin of the PTX grid
+
   unsigned int row = this->GetFullRegion().GetSize()[1] - queryPixel[1];
+
   float approximatePhi = minPhi + static_cast<float>(row) * phiStep;
 
 //  std::cout << "approximatePhi: " << approximatePhi << std::endl;
@@ -2540,4 +2585,35 @@ float PTXImage::MaxPhi() const
   }
   float averagePhi = phiSum / static_cast<float>(numberOfUsedPixels);
   return averagePhi;
+}
+
+float PTXImage::CorrectForDiscontinuity(const float value)
+{
+  // atan2() (used by the Boost Geometry transform() function), produces the angle from the +x axis, in the XY plane.
+  // Looking down at the XY plane from +z, counter-clockwise angles are between 0 and 180 (the -x axis),
+  // while clockwise angles are between 0 and -180 (the -x axis). To make this a smooth (0,360) type of value, we can
+  // simply add 360 to a value that is less than 0.
+
+  if(value < 0)
+  {
+    return value + 360;
+  }
+
+  return value;
+}
+
+float PTXImage::UncorrectForDiscontinuity(const float value)
+{
+  // atan2() (used by the Boost Geometry transform() function), produces the angle from the +x axis, in the XY plane.
+  // Looking down at the XY plane from +z, counter-clockwise angles are between 0 and 180 (the -x axis),
+  // while clockwise angles are between 0 and -180 (the -x axis).
+  // If we have previously correct for this discontinutity by adding 360, we can uncorrect for it (to give the value to the
+  // inverse conversion, for example), by subtracting 360 if the value is greater than 360.
+
+  if(value > 360)
+  {
+    return value - 360;
+  }
+
+  return value;
 }

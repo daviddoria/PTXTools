@@ -335,6 +335,12 @@ public:
   /** Get the average angular distance between points in the phi direction. */
   float GetAverageDeltaPhi() const;
 
+  /** Remove the discontinuity produced by atan2() inside of the Boost Geometry conversion if necessary. */
+  float CorrectForDiscontinuity(const float value);
+
+  /** Re-create the discontinuity produced by atan2(). */
+  float UncorrectForDiscontinuity(const float value);
+
 private:
   /** Store the average angular distance between points in the theta direction. */
   float AverageDeltaTheta;

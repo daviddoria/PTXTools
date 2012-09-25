@@ -1,0 +1,13 @@
+Coordinate System
+-----------------
+This code was developed with the Leica HDS3000 scanner in mind. The coordinate system is:
+
+Z = up (a raw coming out the top of the scanner). From this, we refer to increasing z as increasing "phi"
+The direction moving from the +Y axis towards the +X axis is increasing "theta".
+
+Note: These terms (particularly phi) may not correspond to the terms used in standard coordinate systems.
+For example, "phi" is usually measured from +Z. Therefore, some more general code (i.e. in Helpers)
+may not use the same coordinate system as the scanner defines.
+
+The origin (0,0) of the PTX image is the bottom left corner of the scan (the first point acquired in a
+"bottom to top, left to right" scan).

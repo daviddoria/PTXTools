@@ -35,16 +35,24 @@ int main(int argc, char*argv[])
 
   PTXImage ptxImage = PTXReader::Read(ptxFileName);
 
+  // Bottom left of the scan
   itk::Index<2> origin = {{0,0}};
+
+  // Top right of the scan
   itk::Index<2> farCorner = {{static_cast<itk::Index<2>::IndexValueType>(ptxImage.GetFullImage()->GetLargestPossibleRegion().GetSize()[0] - 1),
                               static_cast<itk::Index<2>::IndexValueType>(ptxImage.GetFullImage()->GetLargestPossibleRegion().GetSize()[1] - 1)}};
-  // Phi
-  std::cout << "Origin phi: " << ptxImage.GetPhi(origin) << std::endl;
-  std::cout << "farCorner phi: " << ptxImage.GetPhi(farCorner) << std::endl;
-
-  // Theta
+  // Origin
+  float originPhi = ptxImage.GetPhi(origin);
+  std::cout << "Origin phi: " << originPhi << std::endl;
   std::cout << "Origin theta: " << ptxImage.GetTheta(origin) << std::endl;
+  std::cout << "Origin z coordinate: " << ptxImage.GetFullImage()->GetPixel(origin).Z << std::endl;
+  std::cout << "Origin y coordinate: " << ptxImage.GetFullImage()->GetPixel(origin).Y << std::endl;
+
+  // Far corner
+  std::cout << "farCorner phi: " << ptxImage.GetPhi(farCorner) << std::endl;
   std::cout << "farCorner theta: " << ptxImage.GetTheta(farCorner) << std::endl;
+  std::cout << "farCorner z coordinate: " << ptxImage.GetFullImage()->GetPixel(farCorner).Z << std::endl;
+  std::cout << "farCorner y coordinate: " << ptxImage.GetFullImage()->GetPixel(farCorner).Y << std::endl;
 
   return 0;
 }
