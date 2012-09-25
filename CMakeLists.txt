@@ -322,19 +322,23 @@ endif()
 if(TurnOnAllPTX)
     getListOfVarsStartingWith("PTX_" matchedVars)
     foreach (_var IN LISTS matchedVars)
-        set(${_var} ON CACHE BOOL "test" FORCE)
+        get_property(currentHelpString CACHE "${_var}" PROPERTY HELPSTRING)
+        set(${_var} ON CACHE BOOL "${currentHelpString}" FORCE)
     endforeach()
 
-    set(TurnOnAllPTX OFF CACHE BOOL "test" FORCE)  # Set itself back to off, as this is a one time thing.
+    get_property(turnOnHelpString CACHE "${TurnOnAllPTX}" PROPERTY HELPSTRING)
+    set(TurnOnAllPTX OFF CACHE BOOL "${turnOnHelpString}" FORCE) # Set itself back to off, as this is a one time thing.
 endif()
 
 if(TurnOffAllPTX)
     getListOfVarsStartingWith("PTX_" matchedVars)
     foreach (_var IN LISTS matchedVars)
-        set(${_var} OFF CACHE BOOL "test" FORCE)
+        get_property(currentHelpString CACHE "${_var}" PROPERTY HELPSTRING)
+        set(${_var} OFF CACHE BOOL "${currentHelpString}" FORCE)
     endforeach()
 
-    set(TurnOffAllPTX OFF CACHE BOOL "test" FORCE) # Set itself back to off, as this is a one time thing.
+    get_property(turnOffHelpString CACHE "${TurnOffAllPTX}" PROPERTY HELPSTRING)
+    set(TurnOffAllPTX OFF CACHE BOOL "${turnOffHelpString}" FORCE) # Set itself back to off, as this is a one time thing.
 endif()
 
 # Display where this code was used from (if it is used as a submodule, there may be multiple instances of this submodule in the project, only the first of which is used)
@@ -342,3 +346,9 @@ option(PTXTools_ShowSubmoduleLocation "Show the path from which PTXTools was use
 if(PTXTools_ShowSubmoduleLocation)
   message("PTXTools used from ${CMAKE_CURRENT_SOURCE_DIR}")
 endif(PTXTools_ShowSubmoduleLocation)
+
+# Build the tests if requested
+option(PTXTools_BuildTests "PTXTools_BuildTests" OFF)
+if(PTXTools_BuildTests)
+  add_subdirectory(Tests)
+endif(PTXTools_BuildTests)
