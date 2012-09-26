@@ -1156,18 +1156,19 @@ void PTXImage::ReplaceXYZ(const XYZImageType* const xyz)
 
 void PTXImage::ReplaceRGBD(const RGBDImageType* const rgbdImage)
 {
+  // Replace depth. This must come before ReplaceRGB, as ReplaceRGB will operate on more
+  // points if they have been replaced with valid depths (are non-zero)
+  DepthImageType::Pointer depthImage = DepthImageType::New();
+  ITKHelpers::ExtractChannel(rgbdImage, 3, depthImage.GetPointer());
+
+  ReplaceDepth(depthImage.GetPointer());
+
   // Replace RGB
   std::vector<unsigned int> rgbChannels = {0, 1, 2};
   RGBVectorImageType::Pointer rgbImage = RGBVectorImageType::New();
   ITKHelpers::ExtractChannels(rgbdImage, rgbChannels, rgbImage.GetPointer());
 
   ReplaceRGB(rgbImage.GetPointer());
-
-  // Replace Depth
-  DepthImageType::Pointer depthImage = DepthImageType::New();
-  ITKHelpers::ExtractChannel(rgbdImage, 3, depthImage.GetPointer());
-
-  ReplaceDepth(depthImage.GetPointer());
 }
 
 
